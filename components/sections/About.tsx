@@ -142,7 +142,6 @@ export default function About() {
               className="about-char"
               style={{
                 display: 'inline-block',
-                transform: 'translateY(115%)', // Initially hidden below the overflow boundary
                 willChange: 'transform',
               }}
             >
@@ -170,7 +169,6 @@ export default function About() {
               className="about-char"
               style={{
                 display: 'inline-block',
-                transform: 'translateY(115%)', // Initially hidden below the overflow boundary
                 willChange: 'transform',
               }}
             >

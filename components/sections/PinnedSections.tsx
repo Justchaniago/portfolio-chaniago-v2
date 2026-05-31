@@ -115,10 +115,10 @@ export default function PinnedSections() {
         },
         {
           yPercent: 0,
-          stagger: 0.018, // Ultra premium rapid cascade reveal
+          stagger: 0.015, // Highly responsive organic rapid-fire stagger cascade
           ease: 'power3.out',
         },
-        0.81 // Triggers alongside the portrait image unveil
+        0.52 // Triggers much earlier as page morphs to white, making it highly visible
       );
     });
 
