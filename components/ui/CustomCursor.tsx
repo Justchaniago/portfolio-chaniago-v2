@@ -12,6 +12,11 @@ export default function CustomCursor() {
   const [cursorState, setCursorState] = useState<CursorState>('default');
   const [cursorText, setCursorText] = useState('');
   
+  // Dynamic interaction states
+  const [isClicked, setIsClicked] = useState(false);
+  const [isNearNav, setIsNearNav] = useState(false);
+  const [navAngle, setNavAngle] = useState(-45); // default points up-right (↗)
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set mounted flag to handle SSR safely
@@ -20,17 +25,41 @@ export default function CustomCursor() {
     return () => setMounted(false);
   }, []);
 
-  // 1. Direct hardware-level coordinates tracking with zero-latency updates
+  // 1. Direct hardware-level coordinates tracking + magnetic compass alignment math
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const updatePosition = (e: MouseEvent) => {
-      // Instantly position the outer wrapper to prevent 1-frame re-render latency
+      // Instantly position the outer wrapper to bypass React 1-frame latency
       if (containerRef.current) {
         containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       }
       if (!visible) {
         setVisible(true);
+      }
+
+      // Magnetic navigation trigger alignment calculation
+      const navEl = document.getElementById('morph-nav-container');
+      if (navEl) {
+        const rect = navEl.getBoundingClientRect();
+        const navX = rect.left + rect.width / 2;
+        const navY = rect.top + rect.height / 2;
+
+        const dx = navX - e.clientX;
+        const dy = navY - e.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // If mouse is within 200px of the navbar trigger, enter alignment state
+        if (dist < 200) {
+          setIsNearNav(true);
+          // Angle points from cursor center directly to menu button center
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          setNavAngle(angle);
+        } else {
+          setIsNearNav(false);
+        }
+      } else {
+        setIsNearNav(false);
       }
     };
 
@@ -48,7 +77,23 @@ export default function CustomCursor() {
     };
   }, [visible]);
 
-  // 2. High-performance global event delegation for dynamic hover target morphing
+  // 2. Global window click (press compression) tracking
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleMouseDown = () => setIsClicked(true);
+    const handleMouseUp = () => setIsClicked(false);
+
+    window.addEventListener('mousedown', handleMouseDown, { passive: true });
+    window.addEventListener('mouseup', handleMouseUp, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  // 3. High-performance global event delegation for dynamic hover target morphing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -92,6 +137,9 @@ export default function CustomCursor() {
 
   if (!mounted) return null;
 
+  // Arrow state represents when explicitly hovered OR magnetically approaching the navbar
+  const isArrow = cursorState === 'nav' || isNearNav;
+
   // Render cursor through a React Portal directly into document.body to isolate it on its own top-level context
   return createPortal(
     <>
@@ -124,6 +172,7 @@ export default function CustomCursor() {
           style={{
             x: '-50%',
             y: '-50%',
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -131,60 +180,118 @@ export default function CustomCursor() {
             backgroundColor: '#FFFFFF', // solid white inverts cleanly on difference mix-blend
           }}
           animate={{
-            width:
-              cursorState === 'default'
-                ? 6
-                : cursorState === 'button'
-                ? 48
-                : cursorState === 'image'
-                ? 76
-                : cursorState === 'nav'
-                ? 80
-                : cursorState === 'drag'
-                ? 68
-                : 6,
-            height:
-              cursorState === 'default'
-                ? 6
-                : cursorState === 'button'
-                ? 48
-                : cursorState === 'image'
-                ? 76
-                : cursorState === 'nav'
-                ? 32
-                : cursorState === 'drag'
-                ? 68
-                : 6,
-            borderRadius: cursorState === 'nav' ? '16px' : '50%',
-            border:
-              cursorState === 'default'
-                ? '0px solid rgba(255, 255, 255, 0)'
-                : '1px solid rgba(255, 255, 255, 0.45)',
-            // Transparent/minimal fill for rings, solid white for typography states to maximize contrast
-            backgroundColor:
-              cursorState === 'default'
-                ? '#FFFFFF'
-                : cursorState === 'button'
-                ? 'rgba(255, 255, 255, 0.05)'
-                : cursorState === 'image'
-                ? 'rgba(255, 255, 255, 0.15)'
-                : cursorState === 'nav'
-                ? 'rgba(255, 255, 255, 0.05)'
-                : cursorState === 'drag'
-                ? 'rgba(255, 255, 255, 0.15)'
-                : '#FFFFFF',
+            // Geometric width/height morphing across all states
+            width: isArrow
+              ? 24
+              : cursorState === 'default'
+              ? 6
+              : cursorState === 'button'
+              ? 48
+              : cursorState === 'image'
+              ? 76
+              : cursorState === 'drag'
+              ? 68
+              : 6,
+            height: isArrow
+              ? 1.5
+              : cursorState === 'default'
+              ? 6
+              : cursorState === 'button'
+              ? 48
+              : cursorState === 'image'
+              ? 76
+              : cursorState === 'drag'
+              ? 68
+              : 6,
+            borderRadius: isArrow ? '1px' : '50%',
+            // Remove border outline on Arrow/Dot state to keep pure minimalist strokes
+            border: isArrow
+              ? '0px solid transparent'
+              : cursorState === 'default'
+              ? '0px solid rgba(255, 255, 255, 0)'
+              : '1px solid rgba(255, 255, 255, 0.45)',
+            // Dynamic backplate color
+            backgroundColor: isArrow
+              ? '#FFFFFF' // solid white shaft line
+              : cursorState === 'default'
+              ? '#FFFFFF' // solid white dot
+              : cursorState === 'button'
+              ? 'rgba(255, 255, 255, 0.05)'
+              : cursorState === 'image'
+              ? 'rgba(255, 255, 255, 0.15)'
+              : cursorState === 'drag'
+              ? 'rgba(255, 255, 255, 0.15)'
+              : '#FFFFFF',
+            // Magnetic alignment vector rotation (shaft orientation)
+            rotate: isArrow ? navAngle : 0,
+            // Micro-tactile click compression (scale 0.92 on click) and subtle hover expansion (scale 1.08)
+            scale: isArrow
+              ? isClicked
+                ? 0.92
+                : 1.08
+              : isClicked
+              ? 0.88
+              : 1.0,
           }}
-          // Dynamic, highly refined mechanical spring easing
+          // Premium mechanical spring easing (extremely crisp Linear/Apple design feel)
           transition={{
             type: 'spring',
-            stiffness: 380,
-            damping: 30,
+            stiffness: 450,
+            damping: 35,
             mass: 0.8,
           }}
         >
-          {/* Centered Monospace Text Overlay */}
+          {/* Arrow Head - Symmetrical outward projection lines attached at the right tip */}
+          {/* Head Line 1: Pivots -45deg from the shaft direction */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              height: 1.5,
+              backgroundColor: '#FFFFFF',
+              transformOrigin: 'right center',
+              translateY: '-50%',
+            }}
+            animate={{
+              width: isArrow ? 9 : 0,
+              rotate: isArrow ? -45 : 0,
+              opacity: isArrow ? 1 : 0,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 450,
+              damping: 35,
+              mass: 0.8,
+            }}
+          />
+          {/* Head Line 2: Pivots 45deg from the shaft direction */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              height: 1.5,
+              backgroundColor: '#FFFFFF',
+              transformOrigin: 'right center',
+              translateY: '-50%',
+            }}
+            animate={{
+              width: isArrow ? 9 : 0,
+              rotate: isArrow ? 45 : 0,
+              opacity: isArrow ? 1 : 0,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 450,
+              damping: 35,
+              mass: 0.8,
+            }}
+          />
+
+          {/* Centered Monospace Text Overlay (for image & drag states) */}
           <AnimatePresence mode="wait">
-            {(cursorState === 'image' || cursorState === 'drag') && (
+            {!isArrow && (cursorState === 'image' || cursorState === 'drag') && (
               <motion.span
                 key={cursorText || 'drag'}
                 initial={{ opacity: 0, scale: 0.85 }}
