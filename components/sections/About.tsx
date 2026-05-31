@@ -134,7 +134,6 @@ export default function About() {
             lineHeight: 0.95,
             margin: 0,
             overflow: 'hidden',
-            display: 'flex',
           }}
         >
           {"HI,".split("").map((char, index) => (
@@ -163,7 +162,6 @@ export default function About() {
             lineHeight: 0.95,
             margin: 0,
             overflow: 'hidden',
-            display: 'flex',
           }}
         >
           {"I'M CHANIAGO".split("").map((char, index) => (
@@ -174,10 +172,9 @@ export default function About() {
                 display: 'inline-block',
                 transform: 'translateY(115%)', // Initially hidden below the overflow boundary
                 willChange: 'transform',
-                whiteSpace: char === " " ? "pre" : "normal", // Preserves space width
               }}
             >
-              {char}
+              {char === " " ? "\u00A0" : char}
             </span>
           ))}
         </h2>
