@@ -105,6 +105,83 @@ export default function About() {
           }}
         />
       </div>
+
+      {/* 4. Editorial Neue Montreal Text (HI, I'M CHANIAGO) with Character Split */}
+      <div
+        className="about-editorial-text"
+        style={{
+          position: 'absolute',
+          left: '10vw',
+          top: '30vh', // Positioned slightly upper-middle on the left side
+          zIndex: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '8px',
+          fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+          color: 'var(--color-text-1)',
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Line 1: HI, */}
+        <h2
+          className="about-text-line"
+          style={{
+            fontSize: 'clamp(48px, 6.5vw, 92px)',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '-0.04em',
+            lineHeight: 0.95,
+            margin: 0,
+            overflow: 'hidden',
+            display: 'flex',
+          }}
+        >
+          {"HI,".split("").map((char, index) => (
+            <span
+              key={index}
+              className="about-char"
+              style={{
+                display: 'inline-block',
+                transform: 'translateY(115%)', // Initially hidden below the overflow boundary
+                willChange: 'transform',
+              }}
+            >
+              {char}
+            </span>
+          ))}
+        </h2>
+
+        {/* Line 2: I'M CHANIAGO */}
+        <h2
+          className="about-text-line"
+          style={{
+            fontSize: 'clamp(48px, 6.5vw, 92px)',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '-0.04em',
+            lineHeight: 0.95,
+            margin: 0,
+            overflow: 'hidden',
+            display: 'flex',
+          }}
+        >
+          {"I'M CHANIAGO".split("").map((char, index) => (
+            <span
+              key={index}
+              className="about-char"
+              style={{
+                display: 'inline-block',
+                transform: 'translateY(115%)', // Initially hidden below the overflow boundary
+                willChange: 'transform',
+                whiteSpace: char === " " ? "pre" : "normal", // Preserves space width
+              }}
+            >
+              {char}
+            </span>
+          ))}
+        </h2>
+      </div>
     </section>
   );
 }

@@ -107,6 +107,19 @@ export default function PinnedSections() {
         },
         0.78
       );
+
+      // Split text reveal for "HI, I'M CHANIAGO" character-by-character from bottom to top
+      tl.fromTo('.about-char',
+        {
+          yPercent: 115,
+        },
+        {
+          yPercent: 0,
+          stagger: 0.018, // Ultra premium rapid cascade reveal
+          ease: 'power3.out',
+        },
+        0.81 // Triggers alongside the portrait image unveil
+      );
     });
 
     return () => {
