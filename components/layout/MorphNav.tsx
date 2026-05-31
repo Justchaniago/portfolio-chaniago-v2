@@ -131,102 +131,107 @@ function animateValue(
   });
 }
 
-// ─── Trigger dot — breathing ring animation ───────────────────────────────────
+// ─── Trigger dot — dynamic morphing pill ─────────────────────────────────────
 
 function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabled: boolean; isOpen: boolean }) {
-  const ringRef = useRef<HTMLDivElement>(null);
-  const ring2Ref = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>(0);
-  const tRef = useRef(0);
+  const [hovered, setHovered] = useState(false);
 
-  useEffect(() => {
-    function pulse() {
-      tRef.current += 0.018;
-      if (ringRef.current) {
-        const scale = 1 + Math.sin(tRef.current) * 0.12;
-        const opacity = 0.18 + Math.sin(tRef.current) * 0.22;
-        ringRef.current.style.transform = `scale(${scale})`;
-        ringRef.current.style.opacity = String(opacity);
-      }
-      if (ring2Ref.current) {
-        const scale2 = 1 + Math.sin(tRef.current + Math.PI) * 0.10;
-        const opacity2 = 0.08 + Math.sin(tRef.current + Math.PI) * 0.12;
-        ring2Ref.current.style.transform = `scale(${scale2})`;
-        ring2Ref.current.style.opacity = String(opacity2);
-      }
-      rafRef.current = requestAnimationFrame(pulse);
-    }
-    rafRef.current = requestAnimationFrame(pulse);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  // Dynamic contrast skinnings: follows CSS variables when closed (adapting on scroll), hardcoded dark on white overlay curtain when open
+  const activeColor = isOpen ? '#0A0A0A' : 'var(--color-text-1)';
+  const borderColor = isOpen ? 'rgba(10, 10, 10, 0.15)' : 'var(--color-border)';
 
-  const activeColor = isOpen ? COLORS.bg : COLORS.accent;
+  const width = hovered ? '112px' : '44px';
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
       style={{
-        all: 'unset',
-        position: 'relative',
-        width: '38px',
-        height: '38px',
-        cursor: disabled ? 'default' : 'pointer',
+        boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        padding: hovered ? '0 16px' : '0 11px',
+        width: width,
+        height: '44px',
+        borderRadius: '22px', // Always 22px to keep it a perfect pill
+        border: `1px solid ${borderColor}`,
+        background: isOpen ? 'rgba(10, 10, 10, 0.03)' : 'rgba(255, 255, 255, 0.05)',
+        color: activeColor,
+        cursor: disabled ? 'default' : 'pointer',
+        transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease',
+        overflow: 'hidden',
+        position: 'relative',
+        outline: 'none',
+        pointerEvents: 'auto',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
-      {/* Breathing outer ring */}
-      <div
-        ref={ringRef}
+      {/* Monospace label inside the morphing pill */}
+      <span
         style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '50%',
-          border: `0.5px solid ${activeColor}`,
+          fontFamily: 'var(--font-mono, monospace)',
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: activeColor,
+          opacity: hovered ? 1 : 0,
+          transform: hovered ? 'translateX(0)' : 'translateX(-10px)',
+          transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
           pointerEvents: 'none',
-          transition: 'border-color 0.4s ease',
+          whiteSpace: 'nowrap',
         }}
-      />
-      {/* Second ring — phase offset π */}
-      <div
-        ref={ring2Ref}
+      >
+        {isOpen ? 'CLOSE' : 'MENU'}
+      </span>
+
+      {/* Hamburger lines / Close cross SVG */}
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
         style={{
-          position: 'absolute',
-          inset: '-8px',
-          borderRadius: '50%',
-          border: `0.5px solid ${activeColor}`,
-          opacity: 0,
-          transform: 'scale(1)',
-          pointerEvents: 'none',
-          transition: 'border-color 0.4s ease',
-        }}
-      />
-      {/* Static inner ring */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: '6px',
-          borderRadius: '50%',
-          border: `0.5px solid ${isOpen ? 'rgba(10, 10, 10, 0.12)' : 'rgba(255, 255, 255, 0.12)'}`,
-          pointerEvents: 'none',
-          transition: 'border-color 0.4s ease',
-        }}
-      />
-      {/* Core dot */}
-      <div
-        style={{
-          width: '6px',
-          height: '6px',
-          borderRadius: '50%',
-          background: activeColor,
-          transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background-color 0.4s ease',
           flexShrink: 0,
+          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
         }}
-      />
+      >
+        {/* Top line / Diagonal 1 */}
+        <line
+          x1="2"
+          y1="6"
+          x2="18"
+          y2="6"
+          stroke={activeColor}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          style={{
+            transformOrigin: '10px 10px',
+            transform: isOpen ? 'translateY(4px) rotate(45deg)' : 'translateY(0) rotate(0deg)',
+            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
+          }}
+        />
+        {/* Bottom line / Diagonal 2 */}
+        <line
+          x1="2"
+          y1="14"
+          x2="18"
+          y2="14"
+          stroke={activeColor}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          style={{
+            transformOrigin: '10px 10px',
+            transform: isOpen ? 'translateY(-4px) rotate(-45deg)' : 'translateY(0) rotate(0deg)',
+            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
+          }}
+        />
+      </svg>
     </button>
   );
 }
@@ -457,19 +462,6 @@ export default function MorphNav() {
             zIndex: 1001,
           }}
         >
-          <span
-            style={{
-              fontSize: '9px',
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: navState === 'open' ? COLORS.bg : COLORS.dim,
-              transition: 'color 0.3s ease',
-              userSelect: 'none',
-            }}
-          >
-            {navState === 'open' ? '' : 'Menu'}
-          </span>
-
           {/* We forward ref to inner button via wrapper */}
           <div ref={triggerRef}>
             <TriggerDot
