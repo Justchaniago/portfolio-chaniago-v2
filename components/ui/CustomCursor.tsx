@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CustomCursor() {
@@ -10,11 +10,45 @@ export default function CustomCursor() {
   const [navAngle, setNavAngle] = useState(0);
   const [isNearNav, setIsNearNav] = useState(false);
 
+  // Jelly motion states
+  const [stretch, setStretch] = useState(0);
+  const [travelAngle, setTravelAngle] = useState(0);
+
+  const lastPosRef = useRef({ x: 0, y: 0, time: 0 });
+  const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const onMouseMove = useCallback((e: MouseEvent) => {
     const mouseX = e.clientX;
     const mouseY = e.clientY;
+    const now = performance.now();
+    
     setPosition({ x: mouseX, y: mouseY });
     setOpacity(1);
+
+    // Calculate mouse velocity for the elastic jelly stretch effect
+    const dxMouse = mouseX - lastPosRef.current.x;
+    const dyMouse = mouseY - lastPosRef.current.y;
+    const dt = now - lastPosRef.current.time || 16;
+    
+    // Speed in pixels per millisecond
+    const speed = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse) / dt;
+    
+    lastPosRef.current = { x: mouseX, y: mouseY, time: now };
+
+    if (speed > 0.08) {
+      const angle = Math.atan2(dyMouse, dxMouse) * (180 / Math.PI);
+      setTravelAngle(angle);
+      
+      // Calculate dynamic stretch factor (tastefully capped at 0.35 to maintain aesthetics)
+      const targetStretch = Math.min(speed * 0.12, 0.35);
+      setStretch(targetStretch);
+    }
+
+    // Smoothly snap back to a perfect circle when the mouse stops
+    if (stopTimeoutRef.current) clearTimeout(stopTimeoutRef.current);
+    stopTimeoutRef.current = setTimeout(() => {
+      setStretch(0);
+    }, 60);
 
     // Calculate distance and angle to navbar
     const navEl = document.getElementById('morph-nav-container');
@@ -27,10 +61,9 @@ export default function CustomCursor() {
       const dy = navY - mouseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // Trigger compass state if cursor is within 220px of the navbar
+      // Trigger navbar compass state if within 220px of the navbar
       if (dist < 220) {
         setIsNearNav(true);
-        // Angle in degrees
         const angle = Math.atan2(dy, dx) * (180 / Math.PI);
         setNavAngle(angle);
       } else {
@@ -92,17 +125,10 @@ export default function CustomCursor() {
 
   return (
     <>
-      {/* Hide standard browser mouse globally */}
+      {/* Hide standard browser mouse globally and apply cursor:none */}
       <style dangerouslySetInnerHTML={{ __html: `
         html, body, a, button, select, input, textarea, [role="button"] {
           cursor: none !important;
-        }
-      `}} />
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes spinText {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
         }
       `}} />
 
@@ -112,109 +138,114 @@ export default function CustomCursor() {
           position: 'fixed',
           top: 0,
           left: 0,
-          width: '96px',
-          height: '96px',
+          width: '88px',
+          height: '88px',
           borderRadius: '50%',
-          background: 'rgba(6, 6, 6, 0.92)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+          background: '#FFFFFF', // Base white enables absolute mix-blend color inversion
+          mixBlendMode: 'difference',
           pointerEvents: 'none',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          x: position.x - 48,
-          y: position.y - 48,
+          x: position.x - 44,
+          y: position.y - 44,
           opacity: opacity,
           scale: isHovered ? 1.15 : 1,
-          transition: 'opacity 0.2s ease, scale 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          rotate: travelAngle,
+          scaleX: 1 + stretch,
+          scaleY: 1 - stretch,
+          transformOrigin: 'center center',
+          transition: 'opacity 0.2s ease, scale 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.08s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Dynamic Edge Text SVG (Spinning) */}
-        <svg
-          viewBox="0 0 100 100"
+        {/* Inner container rotates in opposite direction to keep text horizontal & readable */}
+        <div
           style={{
-            position: 'absolute',
-            inset: 0,
+            transform: `rotate(${-travelAngle}deg)`,
+            transition: 'transform 0.08s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             width: '100%',
             height: '100%',
-            animation: 'spinText 20s linear infinite',
           }}
         >
-          <path
-            id="textPath"
-            d="M 50, 50 m -38, 0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"
-            fill="none"
-          />
-          <text fill="rgba(255, 255, 255, 0.65)">
-            <textPath
-              href="#textPath"
-              startOffset="0%"
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '7.8px',
-                fontWeight: 700,
-                letterSpacing: '0.13em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {isNearNav
-                ? "NAVBAR • NAVBAR • NAVBAR • NAVBAR • "
-                : "BRING ME AROUND • BRING ME AROUND • "}
-            </textPath>
-          </text>
-        </svg>
-
-        {/* Center Element - Swaps between dot and compass arrow */}
-        <AnimatePresence mode="wait">
-          {isNearNav ? (
-            <motion.div
-              key="compass"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                width: '12px',
-                height: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transform: `rotate(${navAngle + 90}deg)`,
-                transition: 'transform 0.1s ease-out',
-              }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                style={{ display: 'block' }}
+          <AnimatePresence mode="wait">
+            {isNearNav ? (
+              <motion.div
+                key="navbar-state"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.18 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '8px',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#000000', // Black inside, inverted to white over dark background
+                  textAlign: 'center',
+                  lineHeight: 1.1,
+                  userSelect: 'none',
+                }}
               >
-                <polygon
-                  points="6,1 11,11 6,8 1,11"
-                  fill="#FFFFFF"
-                />
-              </svg>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="dot"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: isHovered ? 1.5 : 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#FFFFFF',
-              }}
-            />
-          )}
-        </AnimatePresence>
+                {/* Dynamic Arrow pointing towards navbar */}
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: `rotate(${navAngle + 90}deg)`,
+                    transition: 'transform 0.1s ease-out',
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                    <polygon points="6,1 11,11 6,8 1,11" fill="#000000" />
+                  </svg>
+                </div>
+                <span>TO</span>
+                <span>NAVBAR</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="default-state"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.18 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '8px',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#000000', // Inverted to white over dark background
+                  textAlign: 'center',
+                  lineHeight: 1.1,
+                  userSelect: 'none',
+                }}
+              >
+                <span>BRING</span>
+                <span>ME</span>
+                <span>AROUND</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
     </>
   );
