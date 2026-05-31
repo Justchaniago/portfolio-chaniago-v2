@@ -197,9 +197,9 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
         style={{
           position: 'absolute',
           top: '50%',
-          left: hovered ? 'calc(100% - 22px)' : '50%', // Centers perfectly in circle, shifts to right in pill
-          transform: `translate(-50%, -50%) ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}`,
-          transition: 'left 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          right: '12px', // Centers perfectly in 44px circle (12px padding on both sides) and stays anchored on right in 112px pill!
+          transform: `translateY(-50%) ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}`,
+          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
           flexShrink: 0,
         }}
       >
