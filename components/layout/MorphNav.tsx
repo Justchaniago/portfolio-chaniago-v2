@@ -151,10 +151,6 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
       aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
       style={{
         boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: hovered ? '0 16px' : '0 11px',
         width: width,
         height: '44px',
         borderRadius: '22px', // Always 22px to keep it a perfect pill
@@ -173,6 +169,9 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
       {/* Monospace label inside the morphing pill */}
       <span
         style={{
+          position: 'absolute',
+          left: '18px',
+          top: '50%',
           fontFamily: 'var(--font-mono, monospace)',
           fontSize: '10px',
           fontWeight: 700,
@@ -180,7 +179,7 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
           textTransform: 'uppercase',
           color: activeColor,
           opacity: hovered ? 1 : 0,
-          transform: hovered ? 'translateX(0)' : 'translateX(-10px)',
+          transform: hovered ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-10px)',
           transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
           pointerEvents: 'none',
           whiteSpace: 'nowrap',
@@ -196,9 +195,12 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
         viewBox="0 0 20 20"
         fill="none"
         style={{
+          position: 'absolute',
+          top: '50%',
+          left: hovered ? 'calc(100% - 22px)' : '50%', // Centers perfectly in circle, shifts to right in pill
+          transform: `translate(-50%, -50%) ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}`,
+          transition: 'left 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
           flexShrink: 0,
-          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
         }}
       >
         {/* Top line / Diagonal 1 */}
@@ -232,6 +234,7 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
           }}
         />
       </svg>
+
     </button>
   );
 }
