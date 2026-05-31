@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #060606; width: 100vw; height: 100vh; overflow: hidden; cursor: none; }
+canvas { display: block; width: 100%; height: 100%; }
+#dot { position: fixed; width: 8px; height: 8px; border-radius: 50%; background: #C9F0A8; pointer-events: none; transform: translate(-50%,-50%); opacity: 0; transition: opacity .3s; }
+</style>
+</head>
+<body>
+<canvas id="C"></canvas>
+<div id="dot"></div>
+<script>
+const canvas = document.getElementById('C');
+const ctx    = canvas.getContext('2d');
+const dot    = document.getElementById('dot');
+
+let W, H, CELL, cols, rows, cur, vel;
+
+function init() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  CELL = Math.max(3, Math.round(Math.min(W, H) / 130));
+  cols = Math.floor(W / CELL) + 2;
+  rows = Math.floor(H / CELL) + 2;
+  cur = new Float32Array(cols * rows);
+  vel = new Float32Array(cols * rows);
+}
+
+function step() {
+  const c2 = 0.46 * 0.5;
+  const d  = 0.992;
+  for (let r = 1; r < rows - 1; r++) {
+    for (let c = 1; c < cols - 1; c++) {
+      const i   = r * cols + c;
+      const lap = cur[r*cols+(c-1)] + cur[r*cols+(c+1)] + cur[(r-1)*cols+c] + cur[(r+1)*cols+c] - 4*cur[i];
+      vel[i] = d * (vel[i] + c2 * lap);
+      cur[i] = d * (cur[i] + vel[i]);
+    }
+  }
+}
+
+function disturb(mx, my, vx, vy) {
+  const spd = Math.sqrt(vx*vx + vy*vy);
+  if (spd < 0.4) return;
+  const mag = Math.min(spd * 0.22, 1.6) * 1.2;
+  const br  = Math.max(2, Math.round(5 / CELL));
+  const gc  = Math.round(mx / CELL) + 1;
+  const gr  = Math.round(my / CELL) + 1;
+  const nx  = vx / spd, ny = vy / spd;
+  for (let dr = -br; dr <= br; dr++) {
+    for (let dc = -br; dc <= br; dc++) {
+      const tc = gc + dc, tr = gr + dr;
+      if (tc < 1 || tc >= cols-1 || tr < 1 || tr >= rows-1) continue;
+      if (dc*dc + dr*dr > br*br) continue;
+      const radF = 1 - Math.sqrt(dc*dc + dr*dr) / (br || 1);
+      const dot2 = (dc*nx + dr*ny) / (br || 1);
+      const f    = mag * radF * (dot2 * 0.6 + 0.4);
+      cur[tr*cols+tc] += f;
+      vel[tr*cols+tc] += f * 0.6;
+    }
+  }
+}
+
+function render() {
+  const img  = ctx.createImageData(W, H);
+  const px   = img.data;
+  for (let py = 0; py < H; py++) {
+    for (let px2 = 0; px2 < W; px2++) {
+      const gc = Math.min(Math.floor(px2/CELL)+1, cols-2);
+      const gr = Math.min(Math.floor(py /CELL)+1, rows-2);
+      const i  = gr*cols+gc;
+      const h  = cur[i];
+      const cL = Math.max(1,gc-1), cR = Math.min(cols-2,gc+1);
+      const rU = Math.max(1,gr-1), rD = Math.min(rows-2,gr+1);
+      const dxH = cur[gr*cols+cR] - cur[gr*cols+cL];
+      const dyH = cur[rD*cols+gc] - cur[rU*cols+gc];
+      const slope = Math.sqrt(dxH*dxH + dyH*dyH);
+      let R=8, G=8, B=8;
+      if (h > 0.004) { const sp=Math.min(h*100,90); R+=sp; G+=sp; B+=sp; }
+      if (slope > 0.012) {
+        const hue = ((Math.atan2(dyH,dxH)/(Math.PI*2))+1)%1*360;
+        const h6  = hue/60;
+        const xv  = 1-Math.abs(h6%2-1);
+        let cr=0,cg=0,cb=0;
+        if(h6<1){cr=1;cg=xv;}else if(h6<2){cr=xv;cg=1;}
+        else if(h6<3){cg=1;cb=xv;}else if(h6<4){cg=xv;cb=1;}
+        else if(h6<5){cr=xv;cb=1;}else{cr=1;cb=xv;}
+        const inten=Math.min(slope*0.5*180,140);
+        R+=cr*inten; G+=cg*inten; B+=cb*inten;
+      }
+      if (h < -0.006) { const dp=Math.min(Math.abs(h)*0.3*55,35); R+=dp*0.79; G+=dp*0.94; B+=dp*0.66; }
+      const b4=(py*W+px2)*4;
+      px[b4]  =Math.min(255,Math.max(0,R+.5)|0);
+      px[b4+1]=Math.min(255,Math.max(0,G+.5)|0);
+      px[b4+2]=Math.min(255,Math.max(0,B+.5)|0);
+      px[b4+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+
+let lx=-1, ly=-1, frame=0;
+function loop() {
+  frame++;
+  if (frame % 20 === 0) {
+    const c=1+Math.floor(Math.random()*(cols-2));
+    const r=1+Math.floor(Math.random()*(rows-2));
+    cur[r*cols+c]+=(Math.random()-.5)*0.016;
+  }
+  step(); step();
+  render();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('mousemove', e => {
+  const mx = e.clientX * (W / window.innerWidth);
+  const my = e.clientY * (H / window.innerHeight);
+  if (lx >= 0) disturb(mx, my, mx-lx, my-ly);
+  lx=mx; ly=my;
+  dot.style.opacity='1';
+  dot.style.left=e.clientX+'px';
+  dot.style.top=e.clientY+'px';
+});
+window.addEventListener('mouseleave', () => { lx=-1; ly=-1; dot.style.opacity='0'; });
+window.addEventListener('resize', init);
+
+init();
+loop();
+</script>
+</body>
+</html>
