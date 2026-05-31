@@ -43,7 +43,7 @@ export default function About() {
         }}
       />
 
-      {/* 2. Massive Centered Bottom Transparent Portrait Image */}
+      {/* 2. Massive Right-Aligned Bottom Transparent Portrait Image (45-50% Viewport Width) */}
       <img
         src="/images/bannertransparan.png"
         alt="About Portrait"
@@ -51,14 +51,12 @@ export default function About() {
         style={{
           position: 'absolute',
           bottom: '-10vh', // Anchors the portrait visually to the bottom viewport edge, grounding the subject
-          left: 0,
-          right: 0,
-          margin: '0 auto',
+          right: '6vw', // Positioned on the right side to prevent any typographical overlap
           width: 'auto', // Preserve natural aspect ratio without empty contain letterboxes
           height: '112vh', // Enlarge the scale to dominate and fill the bottom viewport area
           display: 'block',
           objectFit: 'contain',
-          objectPosition: 'bottom center',
+          objectPosition: 'bottom right',
           clipPath: 'inset(100% 0% 0% 0%)', // Crop reveal mask
           transform: 'translateY(120px)', // Initial spatial lift translate
           willChange: 'clip-path, transform',
@@ -106,76 +104,117 @@ export default function About() {
         />
       </div>
 
-      {/* 4. Editorial Neue Montreal Text (HI, I'M CHANIAGO) with Character Split */}
+      {/* 4. Editorial Neue Montreal Text Block (Lower-Left Quadrant, 30-35% Viewport Width) */}
       <div
         className="about-editorial-text"
         style={{
           position: 'absolute',
-          left: '10vw',
-          top: '30vh', // Positioned slightly upper-middle on the left side
+          left: '8vw',
+          bottom: '12vh', // Placed intentionally in the lower-left quadrant
+          width: 'clamp(380px, 32vw, 480px)', // Limit width to 380-480px (30-35% of viewport width)
           zIndex: 4,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
-          gap: '8px',
-          fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-          color: 'var(--color-text-1)',
           pointerEvents: 'none',
         }}
       >
-        {/* Line 1: HI, */}
-        <h2
-          className="about-text-line"
+        {/* Eyebrow */}
+        <span
+          className="about-eyebrow"
           style={{
-            fontSize: 'clamp(48px, 6.5vw, 92px)',
-            fontWeight: 800,
+            fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+            fontSize: '15px',
+            fontWeight: 600,
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            letterSpacing: '-0.04em',
-            lineHeight: 0.95,
-            margin: 0,
-            overflow: 'hidden',
+            color: 'var(--color-text-2)',
+            marginBottom: '16px',
+            opacity: 0,
+            transform: 'translateY(15px)',
+            willChange: 'opacity, transform',
+            display: 'block',
           }}
         >
-          {"HI,".split("").map((char, index) => (
-            <span
-              key={index}
-              className="about-char"
-              style={{
-                display: 'inline-block',
-                willChange: 'transform',
-              }}
-            >
-              {char}
-            </span>
-          ))}
-        </h2>
+          Fullstack Developer
+        </span>
 
-        {/* Line 2: I'M CHANIAGO */}
-        <h2
-          className="about-text-line"
+        {/* Headline (Hi, I'm Chaniago.) with Character Split */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '24px' }}>
+          {/* Line 1: Hi, */}
+          <h2
+            className="about-text-line"
+            style={{
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(72px, 5.5vw, 96px)',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '-0.045em',
+              lineHeight: 0.9,
+              margin: 0,
+              overflow: 'hidden',
+            }}
+          >
+            {"Hi,".split("").map((char, index) => (
+              <span
+                key={index}
+                className="about-char"
+                style={{
+                  display: 'inline-block',
+                  willChange: 'transform',
+                }}
+              >
+                {char}
+              </span>
+            ))}
+          </h2>
+
+          {/* Line 2: I'm Chaniago. */}
+          <h2
+            className="about-text-line"
+            style={{
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(72px, 5.5vw, 96px)',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '-0.045em',
+              lineHeight: 0.9,
+              margin: 0,
+              overflow: 'hidden',
+            }}
+          >
+            {"I'm Chaniago.".split("").map((char, index) => (
+              <span
+                key={index}
+                className="about-char"
+                style={{
+                  display: 'inline-block',
+                  willChange: 'transform',
+                }}
+              >
+                {char === " " ? "\u00A0" : char}
+              </span>
+            ))}
+          </h2>
+        </div>
+
+        {/* Subheadline / Description */}
+        <p
+          className="about-description"
           style={{
-            fontSize: 'clamp(48px, 6.5vw, 92px)',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '-0.04em',
-            lineHeight: 0.95,
+            fontFamily: 'var(--font-body), sans-serif',
+            fontSize: 'clamp(18px, 1.3vw, 22px)',
+            lineHeight: 1.45,
+            color: 'var(--color-text-2)',
+            maxWidth: '28ch',
             margin: 0,
-            overflow: 'hidden',
+            opacity: 0,
+            transform: 'translateY(20px)',
+            willChange: 'opacity, transform',
           }}
         >
-          {"I'M CHANIAGO".split("").map((char, index) => (
-            <span
-              key={index}
-              className="about-char"
-              style={{
-                display: 'inline-block',
-                willChange: 'transform',
-              }}
-            >
-              {char === " " ? "\u00A0" : char}
-            </span>
-          ))}
-        </h2>
+          Building thoughtful digital experiences through code, design, and AI.
+        </p>
       </div>
     </section>
   );

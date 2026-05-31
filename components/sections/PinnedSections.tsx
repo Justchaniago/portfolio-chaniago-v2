@@ -108,17 +108,45 @@ export default function PinnedSections() {
         0.78
       );
 
-      // Split text reveal for "HI, I'M CHANIAGO" character-by-character from bottom to top
+      // 1. Neue Montreal Eyebrow reveal (triggers at 0.50 progress)
+      tl.fromTo('.about-eyebrow',
+        {
+          opacity: 0,
+          y: 15,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          ease: 'power2.out',
+        },
+        0.50
+      );
+
+      // 2. Headline Character Stagger Cascade (triggers at 0.52 progress)
       tl.fromTo('.about-char',
         {
           yPercent: 115,
         },
         {
           yPercent: 0,
-          stagger: 0.015, // Highly responsive organic rapid-fire stagger cascade
+          stagger: 0.015, // Organic rapid-fire stagger cascade
           ease: 'power3.out',
         },
-        0.52 // Triggers much earlier as page morphs to white, making it highly visible
+        0.52
+      );
+
+      // 3. Subheadline / Description reveal (triggers at 0.62 progress)
+      tl.fromTo('.about-description',
+        {
+          opacity: 0,
+          y: 20,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          ease: 'power2.out',
+        },
+        0.62
       );
     });
 
