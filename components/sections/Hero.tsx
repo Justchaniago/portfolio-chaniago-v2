@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useFluidSim, FLUID_CONFIG } from '@/hooks/useFluidSim';
-import { gsap, ScrollTrigger } from '@/lib/gsap';
 
 // ── Timing tokens — edit untuk polish ────────────────────────
 const T = {
@@ -31,11 +30,8 @@ export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lxRef      = useRef(-1);
   const lyRef      = useRef(-1);
-  const line1Ref   = useRef<HTMLSpanElement>(null);
-  const line2Ref   = useRef<HTMLSpanElement>(null);
 
   const [on,       setOn]       = useState(false);
-  const [scroll,   setScroll]   = useState(0);
   const [hovered,  setHovered]  = useState(false);
   const [cursor,   setCursor]   = useState({ x: -100, y: -100 });
   const [cursorOn, setCursorOn] = useState(false);
@@ -64,37 +60,6 @@ export default function Hero() {
     }
   }, [loaded]);
 
-  // 2. Kinetic Text Split Scroll Animation (Line 1 right, Line 2 left)
-  useEffect(() => {
-    if (!loaded) return;
-
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const trigger = ScrollTrigger.create({
-        trigger: sectionRef.current,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1.2, // Synced with Lenis smooth-scroll lag
-        animation: gsap.timeline()
-          .to(line1Ref.current, { x: 180, ease: 'none' }, 0)
-          .to(line2Ref.current, { x: -180, ease: 'none' }, 0)
-      });
-
-      return () => trigger.kill();
-    }
-  }, [loaded]);
-
-  // Scroll dissolve
-  useEffect(() => {
-    function onScroll() {
-      const el = sectionRef.current;
-      if (!el) return;
-      const pct = Math.max(0, Math.min(1, -el.getBoundingClientRect().top / el.offsetHeight));
-      setScroll(pct);
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   // Mouse → fluid
   const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current;
@@ -122,41 +87,40 @@ export default function Hero() {
     lyRef.current = my;
   }, [disturb]);
 
+  const onMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    setCursor({ x: e.clientX, y: e.clientY });
+    setCursorOn(true);
+  }, []);
+
   const onMouseLeave = useCallback(() => {
     lxRef.current = -1;
-    lyRef.current = -1;
+    lyRef.current = -1; // Correctly reset lyRef coordinate to prevent ripples from freezing!
     setCursorOn(false);
     resetLastPos();
   }, [resetLastPos]);
-
-  // Scroll-driven values
-  function ramp(v: number, from: number, to: number) {
-    return Math.max(0, Math.min(1, (v - from) / (to - from)));
-  }
-  const metaOp = 1 - ramp(scroll, 0.00, 0.18);
-  const textOp = 1 - ramp(scroll, 0.38, 0.72);
-  const textSc = 1 - ramp(scroll, 0.15, 0.55) * 0.08;
-  const textY = scroll * -38;
-  const metaY = scroll * -22;
 
   return (
     <section
       ref={sectionRef}
       onMouseMove={onMouseMove}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      className="hero-section-container"
       style={{
-        position: 'relative',
+        position: 'absolute',
+        inset: 0,
         width: '100%',
-        height: '100svh',
-        minHeight: '600px',
+        height: '100%',
         background: '#060606',
         overflow: 'hidden',
         cursor: 'none',
+        zIndex: 2,
       }}
     >
       {/* Fluid canvas */}
       <canvas
         ref={canvasRef}
+        className="hero-fluid-canvas"
         aria-hidden="true"
         style={{
           position: 'absolute',
@@ -185,6 +149,7 @@ export default function Hero() {
 
       {/* Hero text */}
       <div
+        className="hero-text-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -193,8 +158,6 @@ export default function Hero() {
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 'clamp(32px, 6vw, 80px)',
-          transform: `translateY(${textY}px) scale(${textSc})`,
-          opacity: textOp,
           transformOrigin: 'center center',
           pointerEvents: 'none',
         }}
@@ -226,7 +189,7 @@ export default function Hero() {
         }}>
           {/* Line 1 */}
           <span
-            ref={line1Ref}
+            className="hero-line-1"
             style={{
               display: 'block',
               overflow: 'hidden',
@@ -245,7 +208,7 @@ export default function Hero() {
 
           {/* Line 2 */}
           <span
-            ref={line2Ref}
+            className="hero-line-2"
             style={{
               display: 'block',
               overflow: 'hidden',
@@ -280,22 +243,25 @@ export default function Hero() {
       </div>
 
       {/* Meta row */}
-      <div style={{
-        position: 'absolute',
-        bottom: 'clamp(28px, 4vw, 52px)',
-        left: 'clamp(32px, 6vw, 80px)',
-        right: 'clamp(32px, 6vw, 80px)',
-        zIndex: 4,
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        opacity: on ? metaOp : 0,
-        transform: `translateY(${on ? metaY : 20}px)`,
-        transition: on
-          ? `opacity ${T.dur}ms ease ${T.meta}ms, transform ${T.dur}ms ${T.ease} ${T.meta}ms`
-          : 'none',
-        pointerEvents: 'none',
-      }}>
+      <div
+        className="hero-meta-row"
+        style={{
+          position: 'absolute',
+          bottom: 'clamp(28px, 4vw, 52px)',
+          left: 'clamp(32px, 6vw, 80px)',
+          right: 'clamp(32px, 6vw, 80px)',
+          zIndex: 4,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          opacity: on ? 1 : 0,
+          transform: `translateY(${on ? 0 : 20}px)`,
+          transition: on
+            ? `opacity ${T.dur}ms ease ${T.meta}ms, transform ${T.dur}ms ${T.ease} ${T.meta}ms`
+            : 'none',
+          pointerEvents: 'none',
+        }}
+      >
         <div style={{ display: 'flex', gap: 'clamp(16px, 3vw, 40px)', alignItems: 'flex-end' }}>
           {[
             { label: 'Based in', value: COPY.location },
@@ -323,14 +289,17 @@ export default function Hero() {
         </div>
 
         {/* Scroll indicator */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          opacity: on ? 1 : 0,
-          transition: `opacity ${T.dur}ms ease ${T.scroll}ms`,
-        }}>
+        <div
+          className="hero-scroll-indicator"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            opacity: on ? 1 : 0,
+            transition: `opacity ${T.dur}ms ease ${T.scroll}ms`,
+          }}
+        >
           <span style={{
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: '8px',

@@ -22,7 +22,7 @@ const NAV_LINKS: NavLink[] = [
 ];
 
 const COLORS = {
-  curtain: '#E8E0D5',   // Putih Tulang (Bone White / Linen)
+  curtain: '#FFFFFF',   // Pure White
   accent: '#C9F0A8',   // Bright Phosphor Green
   accentDark: '#3F702A',   // Contrast Phosphor for readability on bone white
   bg: '#0A0A0A',   // Void Dark
@@ -62,7 +62,7 @@ function easeInOutExpo(t: number): number {
 function isBgLight(): boolean {
   if (typeof window === 'undefined') return false;
   const bg = window.getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
-  if (bg.includes('232') || bg.toLowerCase().includes('e8e0d5') || bg.includes('linen')) {
+  if (bg.includes('232') || bg.toLowerCase().includes('ffffff') || bg.toLowerCase().includes('white') || bg.toLowerCase().includes('e8e0d5') || bg.includes('linen')) {
     return true;
   }
   if (window.scrollY > window.innerHeight * 0.5) {
@@ -272,7 +272,7 @@ export default function MorphNav() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
-  const themeColorRef = useRef<string>('#E8E0D5');
+  const themeColorRef = useRef<string>('#FFFFFF');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -405,7 +405,7 @@ export default function MorphNav() {
 
     // Evaluate background to set theme before curtain opens
     const isLight = isBgLight();
-    const activeColor = isLight ? '#0A0A0A' : '#E8E0D5';
+    const activeColor = isLight ? '#0A0A0A' : '#FFFFFF';
     themeColorRef.current = activeColor;
     setMenuTheme(isLight ? 'dark-curtain' : 'light-curtain');
 
@@ -455,7 +455,7 @@ export default function MorphNav() {
         closeLines: '#888888',
       }
     : {
-        curtain: '#E8E0D5',
+        curtain: '#FFFFFF',
         text: '#0A0A0A',
         muted: 'rgba(10, 10, 10, 0.15)',
         accent: '#3F702A',

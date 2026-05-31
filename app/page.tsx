@@ -1,11 +1,10 @@
-import Hero from "@/components/sections/Hero";
-import About from "@/components/sections/About";
+import PinnedSections from "@/components/sections/PinnedSections";
 
 export default function Home() {
   return (
     <main className="w-full min-h-screen bg-void">
-      <Hero />
-      <About />
+      <PinnedSections />
     </main>
   );
 }
+
