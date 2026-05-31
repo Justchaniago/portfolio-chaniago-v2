@@ -48,8 +48,6 @@ export default function About() {
         src="/images/bannertransparan.png"
         alt="About Portrait"
         className="about-portrait-img"
-        data-cursor="image"
-        data-cursor-text="VIEW"
         style={{
           position: 'absolute',
           bottom: '-10vh', // Anchors the portrait visually to the bottom viewport edge, grounding the subject
@@ -63,7 +61,21 @@ export default function About() {
           transform: 'translateY(120px)', // Initial spatial lift translate
           willChange: 'clip-path, transform',
           zIndex: 2,
-          pointerEvents: 'auto', // Explicitly enable pointer events when section is visible
+        }}
+      />
+
+      {/* Precise Portrait Hover Trigger Zone (Prevents early hover activation over empty transparent pixels) */}
+      <div
+        data-cursor="image"
+        data-cursor-text="VIEW"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: 'clamp(280px, 24vw, 420px)',
+          height: '92vh',
+          zIndex: 10,
+          pointerEvents: 'auto',
         }}
       />
 

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type CursorState = 'default' | 'button' | 'image' | 'nav' | 'drag';
+type CursorState = 'default' | 'button' | 'image' | 'nav' | 'drag' | 'near-image';
 
 export default function CustomCursor() {
   const [mounted, setMounted] = useState(false);
@@ -12,12 +12,17 @@ export default function CustomCursor() {
   const [cursorState, setCursorState] = useState<CursorState>('default');
   const [cursorText, setCursorText] = useState('');
   
-  // Dynamic interaction and proximity states
+  // Dynamic interaction, click, and navbar proximity states
   const [isClicked, setIsClicked] = useState(false);
   const [isNearNav, setIsNearNav] = useState(false);
   const [navAngle, setNavAngle] = useState(-45); // default points up-right (↗)
   const [proximityProgress, setProximityProgress] = useState(0); // 0 (far) to 1.0 (hovering)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Proximity-based image targets tracking (VIEW, READ, TALK, COPY)
+  const [proximityHoverActive, setProximityHoverActive] = useState(false);
+  const [proximityState, setProximityState] = useState<CursorState>('default');
+  const [proximityText, setProximityText] = useState('');
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -55,13 +60,23 @@ export default function CustomCursor() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Use ref to keep track of active state across event callbacks to prevent stale state closures
+    let isHoverActive = false;
+
     const updatePosition = (e: MouseEvent) => {
       const open = document.body.classList.contains('menu-is-open');
 
-      // If the fullscreen menu is open, disable all proximity / magnetic behaviors
+      // ────────────────────────────────────────────────────────────────────────
+      // CASE A: Fullscreen Menu is open -> Bypass all proximity and magnetic arrows
+      // ────────────────────────────────────────────────────────────────────────
       if (open) {
         setIsNearNav(false);
         setProximityProgress(0);
+        setProximityHoverActive(false);
+        setProximityState('default');
+        setProximityText('');
+        isHoverActive = false;
+
         if (containerRef.current) {
           containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
         }
@@ -69,6 +84,87 @@ export default function CustomCursor() {
         return;
       }
 
+      // ────────────────────────────────────────────────────────────────────────
+      // CASE B: Image Target Proximity Checking (VIEW, READ, TALK, COPY)
+      // ────────────────────────────────────────────────────────────────────────
+      const imgTargets = document.querySelectorAll('[data-cursor="image"]');
+      let minImgDist = Infinity;
+      let closestImgTarget: HTMLElement | null = null;
+
+      for (let i = 0; i < imgTargets.length; i++) {
+        const target = imgTargets[i] as HTMLElement;
+        const rect = target.getBoundingClientRect();
+        // Distance to the boundary of the rectangular target bounds
+        const dx = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right);
+        const dy = Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < minImgDist) {
+          minImgDist = dist;
+          closestImgTarget = target;
+        }
+      }
+
+      if (closestImgTarget && minImgDist <= 40) {
+        const customText = closestImgTarget.getAttribute('data-cursor-text') || 'VIEW';
+        
+        // Hysteresis boundary algorithm:
+        // Zone 3 (Direct Hover) activates at <= 24px, deactivates at >= 36px
+        let nextActive = isHoverActive;
+        if (minImgDist <= 24) {
+          nextActive = true;
+        } else if (minImgDist >= 36) {
+          nextActive = false;
+        }
+
+        isHoverActive = nextActive;
+        setProximityHoverActive(nextActive);
+
+        if (nextActive) {
+          setProximityState('image');
+          setProximityText(customText);
+          setIsNearNav(false);
+
+          // Apply subtle magnetic visual pull toward the element's visual center
+          const rect = closestImgTarget.getBoundingClientRect();
+          const targetCenterX = rect.left + rect.width / 2;
+          const targetCenterY = rect.top + rect.height / 2;
+          const mdx = targetCenterX - e.clientX;
+          const mdy = targetCenterY - e.clientY;
+          
+          // Pull factor intensifies dynamically as the mouse gets closer
+          const pullFactor = 0.08 * (1.0 - minImgDist / 36);
+          const pullX = mdx * Math.max(0, pullFactor);
+          const pullY = mdy * Math.max(0, pullFactor);
+
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translate3d(${e.clientX + pullX}px, ${e.clientY + pullY}px, 0)`;
+          }
+          if (!visible) setVisible(true);
+          return; // skip further checks
+        } else {
+          // Zone 2 (Near Target): slight scale outline, no text
+          setProximityState('near-image');
+          setProximityText('');
+          setIsNearNav(false);
+
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+          }
+          if (!visible) setVisible(true);
+          return;
+        }
+      }
+
+      // If we got here, we are in Zone 1 (Outside Target) for image triggers
+      isHoverActive = false;
+      setProximityHoverActive(false);
+      setProximityState('default');
+      setProximityText('');
+
+      // ────────────────────────────────────────────────────────────────────────
+      // CASE C: Navbar Proximity & Dynamic Compass Alignment
+      // ────────────────────────────────────────────────────────────────────────
       const navEl = document.getElementById('morph-nav-container');
       if (navEl) {
         const rect = navEl.getBoundingClientRect();
@@ -79,12 +175,12 @@ export default function CustomCursor() {
         const dy = navY - e.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Highly intentional proximity radius sweet-spot (100px)
+        // Proximity threshold of 100px
         const radius = 100;
 
         if (dist < radius) {
           setIsNearNav(true);
-          // Ramps up smoothly from 0.0 (at 100px distance) to 1.0 (hovering center)
+          // Ramps up smoothly from 0.0 (at 100px) to 1.0 (hovering center)
           const progress = (radius - dist) / radius;
           setProximityProgress(progress);
 
@@ -92,7 +188,7 @@ export default function CustomCursor() {
           const angle = Math.atan2(dy, dx) * (180 / Math.PI);
           setNavAngle(angle);
 
-          // Subtle organic magnetic offset (up to 5px pull towards the target)
+          // Subtle organic magnetic offset (up to 5px pull towards trigger center)
           const pullX = dx * 0.08 * progress;
           const pullY = dy * 0.08 * progress;
 
@@ -149,7 +245,7 @@ export default function CustomCursor() {
     };
   }, []);
 
-  // 4. High-performance global event delegation for dynamic hover target morphing
+  // 4. High-performance global event delegation for standard hover target morphing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -161,6 +257,11 @@ export default function CustomCursor() {
       if (!target) {
         setCursorState('default');
         setCursorText('');
+        return;
+      }
+
+      // Ignore standard delegate overrides if the hovered item is an image proximity target
+      if (target.getAttribute('data-cursor') === 'image') {
         return;
       }
 
@@ -193,10 +294,14 @@ export default function CustomCursor() {
 
   if (!mounted) return null;
 
-  // Arrow state represents when explicitly hovered OR magnetically approaching the navbar (only if menu is closed)
-  const isArrow = !isMenuOpen && (cursorState === 'nav' || isNearNav);
+  // Proximity overrides standard delegated state for image targets
+  const activeState = proximityState !== 'default' ? proximityState : cursorState;
+  const activeText = proximityState !== 'default' ? proximityText : cursorText;
 
-  // Render cursor through a React Portal directly into document.body to isolate it on its own top-level layer
+  // Arrow state represents when explicitly hovered OR magnetically approaching the navbar (only if menu is closed)
+  const isArrow = !isMenuOpen && (activeState === 'nav' || isNearNav);
+
+  // Render cursor through a React Portal directly into document.body to isolate it on its own top-level context
   return createPortal(
     <>
       {/* Disable the standard OS cursor globally across all interactive elements */}
@@ -239,43 +344,51 @@ export default function CustomCursor() {
             // Geometric width/height morphing across all states
             width: isArrow
               ? 6 + 18 * proximityProgress // gradually expands from 6px to 24px shaft length
-              : cursorState === 'default'
+              : activeState === 'default'
               ? 6
-              : cursorState === 'button'
+              : activeState === 'near-image'
+              ? 20 // slight scale increase (outline circle)
+              : activeState === 'button'
               ? 48
-              : cursorState === 'image'
+              : activeState === 'image'
               ? 76
-              : cursorState === 'drag'
+              : activeState === 'drag'
               ? 68
               : 6,
             height: isArrow
               ? 6 - 4.5 * proximityProgress // gradually flattens from 6px to 1.5px shaft thickness
-              : cursorState === 'default'
+              : activeState === 'default'
               ? 6
-              : cursorState === 'button'
+              : activeState === 'near-image'
+              ? 20 // slight scale increase (outline circle)
+              : activeState === 'button'
               ? 48
-              : cursorState === 'image'
+              : activeState === 'image'
               ? 76
-              : cursorState === 'drag'
+              : activeState === 'drag'
               ? 68
               : 6,
             borderRadius: isArrow ? '1px' : '50%',
             // Remove border outline on Arrow/Dot state to keep pure minimalist strokes
             border: isArrow
               ? '0px solid transparent'
-              : cursorState === 'default'
+              : activeState === 'default'
               ? '0px solid rgba(255, 255, 255, 0)'
+              : activeState === 'near-image'
+              ? '1px solid rgba(255, 255, 255, 0.45)' // subtle outline
               : '1px solid rgba(255, 255, 255, 0.45)',
             // Dynamic backplate color
             backgroundColor: isArrow
               ? '#FFFFFF' // solid white shaft line
-              : cursorState === 'default'
+              : activeState === 'default'
               ? '#FFFFFF' // solid white dot
-              : cursorState === 'button'
+              : activeState === 'near-image'
               ? 'rgba(255, 255, 255, 0.05)'
-              : cursorState === 'image'
+              : activeState === 'button'
+              ? 'rgba(255, 255, 255, 0.05)'
+              : activeState === 'image'
               ? 'rgba(255, 255, 255, 0.15)'
-              : cursorState === 'drag'
+              : activeState === 'drag'
               ? 'rgba(255, 255, 255, 0.15)'
               : '#FFFFFF',
             // Magnetic alignment vector rotation (shaft orientation)
@@ -347,9 +460,9 @@ export default function CustomCursor() {
 
           {/* Centered Monospace Text Overlay (for image & drag states) */}
           <AnimatePresence mode="wait">
-            {!isArrow && (cursorState === 'image' || cursorState === 'drag') && (
+            {!isArrow && activeState === 'image' && (
               <motion.span
-                key={cursorText || 'drag'}
+                key={activeText || 'VIEW'}
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
@@ -366,7 +479,29 @@ export default function CustomCursor() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {cursorState === 'drag' ? 'DRAG' : (cursorText || 'VIEW')}
+                {activeText || 'VIEW'}
+              </motion.span>
+            )}
+            {!isArrow && activeState === 'drag' && (
+              <motion.span
+                key="drag-text"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#000000',
+                  textAlign: 'center',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                DRAG
               </motion.span>
             )}
           </AnimatePresence>
