@@ -12,10 +12,12 @@ export default function CustomCursor() {
   const [cursorState, setCursorState] = useState<CursorState>('default');
   const [cursorText, setCursorText] = useState('');
   
-  // Dynamic interaction states
+  // Dynamic interaction and proximity states
   const [isClicked, setIsClicked] = useState(false);
   const [isNearNav, setIsNearNav] = useState(false);
   const [navAngle, setNavAngle] = useState(-45); // default points up-right (↗)
+  const [proximityProgress, setProximityProgress] = useState(0); // 0 (far) to 1.0 (hovering)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -25,20 +27,48 @@ export default function CustomCursor() {
     return () => setMounted(false);
   }, []);
 
-  // 1. Direct hardware-level coordinates tracking + magnetic compass alignment math
+  // 1. MutationObserver to watch class changes on document.body and detect full-screen menu state
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkMenuState = () => {
+      const open = document.body.classList.contains('menu-is-open');
+      setIsMenuOpen(open);
+    };
+
+    checkMenuState();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          checkMenuState();
+        }
+      });
+    });
+
+    observer.observe(document.body, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // 2. Direct hardware-level coordinates tracking + proximity + magnetic pull math
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const updatePosition = (e: MouseEvent) => {
-      // Instantly position the outer wrapper to bypass React 1-frame latency
-      if (containerRef.current) {
-        containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-      }
-      if (!visible) {
-        setVisible(true);
+      const open = document.body.classList.contains('menu-is-open');
+
+      // If the fullscreen menu is open, disable all proximity / magnetic behaviors
+      if (open) {
+        setIsNearNav(false);
+        setProximityProgress(0);
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        }
+        if (!visible) setVisible(true);
+        return;
       }
 
-      // Magnetic navigation trigger alignment calculation
       const navEl = document.getElementById('morph-nav-container');
       if (navEl) {
         const rect = navEl.getBoundingClientRect();
@@ -49,17 +79,43 @@ export default function CustomCursor() {
         const dy = navY - e.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // If mouse is within 200px of the navbar trigger, enter alignment state
-        if (dist < 200) {
+        // Highly intentional proximity radius sweet-spot (100px)
+        const radius = 100;
+
+        if (dist < radius) {
           setIsNearNav(true);
-          // Angle points from cursor center directly to menu button center
+          // Ramps up smoothly from 0.0 (at 100px distance) to 1.0 (hovering center)
+          const progress = (radius - dist) / radius;
+          setProximityProgress(progress);
+
+          // Vector angle directly pointing from cursor to the menu capsule center
           const angle = Math.atan2(dy, dx) * (180 / Math.PI);
           setNavAngle(angle);
+
+          // Subtle organic magnetic offset (up to 5px pull towards the target)
+          const pullX = dx * 0.08 * progress;
+          const pullY = dy * 0.08 * progress;
+
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translate3d(${e.clientX + pullX}px, ${e.clientY + pullY}px, 0)`;
+          }
         } else {
           setIsNearNav(false);
+          setProximityProgress(0);
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+          }
         }
       } else {
         setIsNearNav(false);
+        setProximityProgress(0);
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        }
+      }
+
+      if (!visible) {
+        setVisible(true);
       }
     };
 
@@ -77,7 +133,7 @@ export default function CustomCursor() {
     };
   }, [visible]);
 
-  // 2. Global window click (press compression) tracking
+  // 3. Global window click tracking for micro press compression
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -93,7 +149,7 @@ export default function CustomCursor() {
     };
   }, []);
 
-  // 3. High-performance global event delegation for dynamic hover target morphing
+  // 4. High-performance global event delegation for dynamic hover target morphing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -137,10 +193,10 @@ export default function CustomCursor() {
 
   if (!mounted) return null;
 
-  // Arrow state represents when explicitly hovered OR magnetically approaching the navbar
-  const isArrow = cursorState === 'nav' || isNearNav;
+  // Arrow state represents when explicitly hovered OR magnetically approaching the navbar (only if menu is closed)
+  const isArrow = !isMenuOpen && (cursorState === 'nav' || isNearNav);
 
-  // Render cursor through a React Portal directly into document.body to isolate it on its own top-level context
+  // Render cursor through a React Portal directly into document.body to isolate it on its own top-level layer
   return createPortal(
     <>
       {/* Disable the standard OS cursor globally across all interactive elements */}
@@ -182,7 +238,7 @@ export default function CustomCursor() {
           animate={{
             // Geometric width/height morphing across all states
             width: isArrow
-              ? 24
+              ? 6 + 18 * proximityProgress // gradually expands from 6px to 24px shaft length
               : cursorState === 'default'
               ? 6
               : cursorState === 'button'
@@ -193,7 +249,7 @@ export default function CustomCursor() {
               ? 68
               : 6,
             height: isArrow
-              ? 1.5
+              ? 6 - 4.5 * proximityProgress // gradually flattens from 6px to 1.5px shaft thickness
               : cursorState === 'default'
               ? 6
               : cursorState === 'button'
@@ -224,11 +280,11 @@ export default function CustomCursor() {
               : '#FFFFFF',
             // Magnetic alignment vector rotation (shaft orientation)
             rotate: isArrow ? navAngle : 0,
-            // Micro-tactile click compression (scale 0.92 on click) and subtle hover expansion (scale 1.08)
+            // Proximity scale expansion (scale 1.08) and click compression (scale 0.92)
             scale: isArrow
               ? isClicked
                 ? 0.92
-                : 1.08
+                : 1.0 + 0.08 * proximityProgress
               : isClicked
               ? 0.88
               : 1.0,
@@ -254,9 +310,9 @@ export default function CustomCursor() {
               translateY: '-50%',
             }}
             animate={{
-              width: isArrow ? 9 : 0,
+              width: isArrow ? 9 * proximityProgress : 0,
               rotate: isArrow ? -45 : 0,
-              opacity: isArrow ? 1 : 0,
+              opacity: isArrow ? proximityProgress : 0,
             }}
             transition={{
               type: 'spring',
@@ -277,9 +333,9 @@ export default function CustomCursor() {
               translateY: '-50%',
             }}
             animate={{
-              width: isArrow ? 9 : 0,
+              width: isArrow ? 9 * proximityProgress : 0,
               rotate: isArrow ? 45 : 0,
-              opacity: isArrow ? 1 : 0,
+              opacity: isArrow ? proximityProgress : 0,
             }}
             transition={{
               type: 'spring',

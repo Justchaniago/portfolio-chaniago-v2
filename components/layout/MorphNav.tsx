@@ -162,6 +162,14 @@ export default function MorphNav() {
   }, [isReallyCollapsed]);
 
   useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('menu-is-open');
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
     window.addEventListener('resize', check);
@@ -308,6 +316,9 @@ export default function MorphNav() {
     setMenuTheme(isLight ? 'dark-curtain' : 'light-curtain');
 
     setNavState('opening');
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('menu-is-open');
+    }
     captureOrigin();
 
     const canvas = canvasRef.current;
@@ -325,6 +336,9 @@ export default function MorphNav() {
   const handleClose = useCallback(async () => {
     if (navState !== 'open') return;
     setNavState('closing');
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('menu-is-open');
+    }
 
     await hideItems();
 
@@ -703,7 +717,8 @@ export default function MorphNav() {
                   onClick={(e) => handleNavigationClick(e, link.href, true)}
                   onMouseEnter={() => setHoveredIdx(i)}
                   onMouseLeave={() => setHoveredIdx(null)}
-                  data-cursor="nav"
+                  data-cursor="image"
+                  data-cursor-text={i === 0 ? 'VIEW' : i === 1 ? 'READ' : 'TALK'}
                   style={{
                     display: 'flex',
                     alignItems: 'baseline',
@@ -829,6 +844,8 @@ export default function MorphNav() {
             </span>
             <a
               href="mailto:ferryruslyc@gmail.com"
+              data-cursor="image"
+              data-cursor-text="COPY"
               style={{
                 fontSize: '12px',
                 color: activeTheme.accent,
