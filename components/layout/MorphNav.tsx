@@ -460,6 +460,7 @@ export default function MorphNav() {
 
       {/* ── Unified Morphing Navigation Container ────────────────────────── */}
       <motion.div
+        id="morph-nav-container"
         animate={{
           left: isReallyCollapsed ? '100%' : '50%',
           x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,

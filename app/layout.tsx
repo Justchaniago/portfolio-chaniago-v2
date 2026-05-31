@@ -4,6 +4,7 @@ import "./globals.css";
 import LenisInit from "@/components/layout/LenisInit";
 import MorphNav from "@/components/layout/MorphNav";
 import LoaderWrapper from "@/components/layout/LoaderWrapper";
+import CustomCursor from "@/components/ui/CustomCursor";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-display",
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />
         <LenisInit />
+        <CustomCursor />
         <MorphNav />
         {children}
       </body>

@@ -380,44 +380,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Custom cursor — dot */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          background: '#C9F0A8',
-          pointerEvents: 'none',
-          zIndex: 9999,
-          opacity: cursorOn ? 0.9 : 0,
-          transform: `translate(${cursor.x - 4}px, ${cursor.y - 4}px)`,
-          transition: 'opacity 0.3s ease',
-          willChange: 'transform',
-        }}
-      />
-      {/* Custom cursor — ring (lags behind) */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '34px',
-          height: '34px',
-          borderRadius: '50%',
-          border: '0.5px solid rgba(201,240,168,0.3)',
-          pointerEvents: 'none',
-          zIndex: 9999,
-          opacity: cursorOn ? 1 : 0,
-          transform: `translate(${cursor.x - 17}px, ${cursor.y - 17}px)`,
-          transition: 'transform 0.1s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
-          willChange: 'transform',
-        }}
-      />
+
 
       <style>{`
         @keyframes scrollDot {
