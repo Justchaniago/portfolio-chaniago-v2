@@ -122,15 +122,18 @@ export default function PinnedSections() {
         0.50
       );
 
-      // 2. Headline Character Stagger Cascade (triggers at 0.52 progress)
+      // 2. Headline Character Stagger Cascade (Apple Keynote precision style)
       tl.fromTo('.about-char',
         {
-          yPercent: 115,
+          yPercent: 100, // Starts at translateY(100%) below its own baseline
+          opacity: 0,
         },
         {
           yPercent: 0,
-          stagger: 0.015, // Organic rapid-fire stagger cascade
-          ease: 'power3.out',
+          opacity: 1,
+          stagger: 0.025, // Character stagger: 0.02s - 0.04s
+          duration: 0.8, // Duration: 0.7s - 0.9s
+          ease: 'premiumBezier', // Custom premium cubic-bezier(0.22, 1, 0.36, 1)
         },
         0.52
       );

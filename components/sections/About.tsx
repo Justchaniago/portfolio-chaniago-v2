@@ -111,7 +111,7 @@ export default function About() {
           position: 'absolute',
           left: '8vw',
           bottom: '12vh', // Placed intentionally in the lower-left quadrant
-          width: 'clamp(380px, 32vw, 480px)', // Limit width to 380-480px (30-35% of viewport width)
+          width: 'clamp(460px, 42vw, 680px)', // Increased width to ensure plenty of breathing room for long lines
           zIndex: 4,
           display: 'flex',
           flexDirection: 'column',
@@ -153,6 +153,7 @@ export default function About() {
               lineHeight: 0.9,
               margin: 0,
               overflow: 'hidden',
+              whiteSpace: 'nowrap', // Force line to stay strictly on one line (no wrapping)
             }}
           >
             {"Hi,".split("").map((char, index) => (
@@ -181,6 +182,7 @@ export default function About() {
               lineHeight: 0.9,
               margin: 0,
               overflow: 'hidden',
+              whiteSpace: 'nowrap', // Force line to stay strictly on one line (no wrapping)
             }}
           >
             {"I'm Chaniago.".split("").map((char, index) => (
