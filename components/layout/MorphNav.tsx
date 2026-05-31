@@ -59,6 +59,18 @@ function easeInOutExpo(t: number): number {
     : (2 - Math.pow(2, -20 * t + 10)) / 2;
 }
 
+function isBgLight(): boolean {
+  if (typeof window === 'undefined') return false;
+  const bg = window.getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
+  if (bg.includes('232') || bg.toLowerCase().includes('e8e0d5') || bg.includes('linen')) {
+    return true;
+  }
+  if (window.scrollY > window.innerHeight * 0.5) {
+    return true;
+  }
+  return false;
+}
+
 // ─── Canvas draw — Phosphor liquid burst ─────────────────────────────────────
 //
 // Radial expand from trigger origin (top-right corner).
@@ -70,7 +82,8 @@ function drawLiquidBurst(
   W: number,
   H: number,
   progress: number,     // 0 = hidden, 1 = full coverage
-  origin: { x: number; y: number }
+  origin: { x: number; y: number },
+  curtainColor: string
 ): void {
   ctx.clearRect(0, 0, W, H);
   if (progress <= 0) return;
@@ -83,7 +96,7 @@ function drawLiquidBurst(
   const r = maxR * eased;
   const wobble = 38 * Math.sin(Math.PI * progress * 0.85); // envelope: 0→peak→0
 
-  ctx.fillStyle = COLORS.curtain;
+  ctx.fillStyle = curtainColor;
   ctx.beginPath();
 
   const STEPS = 120;
@@ -133,12 +146,16 @@ function animateValue(
 
 // ─── Trigger dot — dynamic morphing pill ─────────────────────────────────────
 
-function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabled: boolean; isOpen: boolean }) {
+function TriggerDot({ onClick, disabled, isOpen, menuTheme }: { onClick: () => void; disabled: boolean; isOpen: boolean; menuTheme: 'light-curtain' | 'dark-curtain' }) {
   const [hovered, setHovered] = useState(false);
 
-  // Dynamic contrast skinnings: follows CSS variables when closed (adapting on scroll), hardcoded dark on white overlay curtain when open
-  const activeColor = isOpen ? '#0A0A0A' : 'var(--color-text-1)';
-  const borderColor = isOpen ? 'rgba(10, 10, 10, 0.15)' : 'var(--color-border)';
+  // Dynamic contrast skinnings: follows CSS variables when closed (adapting on scroll), dynamic on dynamic curtain color when open
+  const activeColor = isOpen 
+    ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A') 
+    : 'var(--color-text-1)';
+  const borderColor = isOpen 
+    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(10, 10, 10, 0.15)') 
+    : 'var(--color-border)';
 
   const width = hovered ? '112px' : '44px';
 
@@ -155,7 +172,9 @@ function TriggerDot({ onClick, disabled, isOpen }: { onClick: () => void; disabl
         height: '44px',
         borderRadius: '22px', // Always 22px to keep it a perfect pill
         border: `1px solid ${borderColor}`,
-        background: isOpen ? 'rgba(10, 10, 10, 0.03)' : 'rgba(255, 255, 255, 0.05)',
+        background: isOpen 
+          ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(10, 10, 10, 0.03)')
+          : 'rgba(255, 255, 255, 0.05)',
         color: activeColor,
         cursor: disabled ? 'default' : 'pointer',
         transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease',
@@ -252,6 +271,8 @@ export default function MorphNav() {
   const [navState, setNavState] = useState<NavState>('closed');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
+  const themeColorRef = useRef<string>('#E8E0D5');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -381,6 +402,13 @@ export default function MorphNav() {
 
   const handleOpen = useCallback(async () => {
     if (navState !== 'closed') return;
+
+    // Evaluate background to set theme before curtain opens
+    const isLight = isBgLight();
+    const activeColor = isLight ? '#0A0A0A' : '#E8E0D5';
+    themeColorRef.current = activeColor;
+    setMenuTheme(isLight ? 'dark-curtain' : 'light-curtain');
+
     setNavState('opening');
     captureOrigin();
 
@@ -389,7 +417,7 @@ export default function MorphNav() {
     if (!canvas || !ctx) return;
 
     await animateValue(0, 1, DURATION.curtainOpen, (p) => {
-      drawLiquidBurst(ctx, canvas.width, canvas.height, p, originRef.current);
+      drawLiquidBurst(ctx, canvas.width, canvas.height, p, originRef.current, themeColorRef.current);
     });
 
     revealItems();
@@ -407,7 +435,7 @@ export default function MorphNav() {
     if (!canvas || !ctx) return;
 
     await animateValue(0, 1, DURATION.curtainClose, (p) => {
-      drawLiquidBurst(ctx, canvas.width, canvas.height, 1 - p, originRef.current);
+      drawLiquidBurst(ctx, canvas.width, canvas.height, 1 - p, originRef.current, themeColorRef.current);
     });
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -415,6 +443,26 @@ export default function MorphNav() {
   }, [navState]);
 
   const isAnimating = navState === 'opening' || navState === 'closing';
+
+  const activeTheme = menuTheme === 'dark-curtain'
+    ? {
+        curtain: '#0A0A0A',
+        text: '#FFFFFF',
+        muted: 'rgba(255, 255, 255, 0.15)',
+        accent: '#C9F0A8',
+        dim: '#888888',
+        border: 'rgba(255, 255, 255, 0.12)',
+        closeLines: '#888888',
+      }
+    : {
+        curtain: '#E8E0D5',
+        text: '#0A0A0A',
+        muted: 'rgba(10, 10, 10, 0.15)',
+        accent: '#3F702A',
+        dim: '#555555',
+        border: 'rgba(10, 10, 10, 0.12)',
+        closeLines: '#666666',
+      };
 
   return (
     <>
@@ -443,13 +491,13 @@ export default function MorphNav() {
             fontFamily: 'var(--font-display, Georgia, serif)',
             fontSize: '18px',
             fontWeight: 600,
-            color: '#FFFFFF',
+            color: 'var(--color-text-1)',
             letterSpacing: '-0.03em',
             textDecoration: 'none',
             pointerEvents: 'auto',
             zIndex: 1001,
             mixBlendMode: navState === 'open' ? 'difference' : 'normal',
-            transition: 'mix-blend-mode 0s',
+            transition: 'color 0.4s ease-out, mix-blend-mode 0s',
           }}
         >
           Ch.
@@ -471,6 +519,7 @@ export default function MorphNav() {
               onClick={navState === 'open' ? handleClose : handleOpen}
               disabled={isAnimating}
               isOpen={navState === 'open'}
+              menuTheme={menuTheme}
             />
           </div>
         </div>
@@ -528,7 +577,7 @@ export default function MorphNav() {
                 style={{
                   opacity: 0,
                   transform: 'translateY(52px)',
-                  borderTop: `0.5px solid rgba(10, 10, 10, 0.08)`,
+                  borderTop: `0.5px solid ${activeTheme.muted}`,
                   padding: '10px 0',
                 }}
               >
@@ -560,10 +609,10 @@ export default function MorphNav() {
                       fontSize: '11px',
                       letterSpacing: '0.08em',
                       color: hoveredIdx === i
-                        ? COLORS.accentDark
+                        ? activeTheme.accent
                         : hoveredIdx !== null
                           ? 'transparent'
-                          : 'rgba(10, 10, 10, 0.22)',
+                          : activeTheme.muted,
                       transition: `color 300ms ${EASING.number}, opacity 300ms ${EASING.number}`,
                       minWidth: '28px',
                       paddingBottom: '3px',
@@ -575,11 +624,11 @@ export default function MorphNav() {
 
                   {/* Label — clip-reveal overlay */}
                   <span style={{ position: 'relative', display: 'inline-block', overflow: 'hidden' }}>
-                    {/* Layer 1: default white text */}
+                    {/* Layer 1: default text */}
                     <span
                       style={{
                         display: 'block',
-                        color: hoveredIdx === i ? 'transparent' : COLORS.text,
+                        color: hoveredIdx === i ? 'transparent' : activeTheme.text,
                         fontFamily: 'var(--font-display, Georgia, serif)',
                         fontSize: isMobile ? 'clamp(36px, 10vw, 52px)' : 'clamp(44px, 7vw, 80px)',
                         fontWeight: 500,
@@ -594,13 +643,13 @@ export default function MorphNav() {
                     >
                       {link.label}
                     </span>
-                    {/* Layer 2: phosphor accent — clip-path reveal left→right */}
+                    {/* Layer 2: accent — clip-path reveal left→right */}
                     <span
                       style={{
                         position: 'absolute',
                         inset: 0,
                         display: 'block',
-                        color: COLORS.accentDark,
+                        color: activeTheme.accent,
                         fontFamily: 'var(--font-display, Georgia, serif)',
                         fontSize: isMobile ? 'clamp(36px, 10vw, 52px)' : 'clamp(44px, 7vw, 80px)',
                         fontWeight: 500,
@@ -622,7 +671,7 @@ export default function MorphNav() {
                     style={{
                       marginLeft: 'auto',
                       fontSize: '16px',
-                      color: COLORS.accentDark,
+                      color: activeTheme.accent,
                       opacity: hoveredIdx === i ? 1 : 0,
                       transform: hoveredIdx === i
                         ? 'translateX(0) translateY(-2px)'
@@ -661,7 +710,7 @@ export default function MorphNav() {
                 fontSize: '9px',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: 'rgba(10, 10, 10, 0.35)',
+                color: activeTheme.dim,
                 fontFamily: 'var(--font-body, sans-serif)',
               }}
             >
@@ -671,7 +720,7 @@ export default function MorphNav() {
               href="mailto:ferryruslyc@gmail.com"
               style={{
                 fontSize: '12px',
-                color: COLORS.accentDark,
+                color: activeTheme.accent,
                 textDecoration: 'none',
                 letterSpacing: '0.01em',
                 transition: 'opacity 0.2s',
@@ -690,21 +739,21 @@ export default function MorphNav() {
             disabled={isAnimating}
             aria-label="Close navigation"
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = COLORS.accentDark;
+              e.currentTarget.style.borderColor = activeTheme.accent;
               const lines = e.currentTarget.querySelectorAll('line');
-              lines.forEach(line => line.setAttribute('stroke', COLORS.accentDark));
+              lines.forEach(line => line.setAttribute('stroke', activeTheme.accent));
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(10, 10, 10, 0.12)';
+              e.currentTarget.style.borderColor = activeTheme.border;
               const lines = e.currentTarget.querySelectorAll('line');
-              lines.forEach(line => line.setAttribute('stroke', '#888'));
+              lines.forEach(line => line.setAttribute('stroke', activeTheme.closeLines));
             }}
             style={{
               all: 'unset',
               width: '44px',
               height: '44px',
               borderRadius: '50%',
-              border: '0.5px solid rgba(10, 10, 10, 0.12)',
+              border: `0.5px solid ${activeTheme.border}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -713,7 +762,7 @@ export default function MorphNav() {
               flexShrink: 0,
             }}
           >
-            <CloseIcon />
+            <CloseIcon stroke={activeTheme.closeLines} />
           </button>
         </div>
       </div>
@@ -730,7 +779,7 @@ export default function MorphNav() {
 
 // ─── Close icon ───────────────────────────────────────────────────────────────
 
-function CloseIcon() {
+function CloseIcon({ stroke }: { stroke: string }) {
   return (
     <svg
       width="14"
@@ -742,14 +791,14 @@ function CloseIcon() {
     >
       <line
         x1="1" y1="1" x2="13" y2="13"
-        stroke="#888"
+        stroke={stroke}
         strokeWidth="0.75"
         strokeLinecap="round"
         style={{ transition: 'stroke 0.25s ease' }}
       />
       <line
         x1="13" y1="1" x2="1" y2="13"
-        stroke="#888"
+        stroke={stroke}
         strokeWidth="0.75"
         strokeLinecap="round"
         style={{ transition: 'stroke 0.25s ease' }}
