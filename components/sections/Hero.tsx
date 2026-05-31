@@ -60,6 +60,55 @@ export default function Hero() {
     }
   }, [loaded]);
 
+  // Scroll → fluid ripples (soft dynamic disturbance based on scroll velocity and direction)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const dy = currentScrollY - lastScrollY;
+          lastScrollY = currentScrollY;
+
+          // Trigger ripples only if there is scroll movement and the hero section is in/near the viewport
+          if (Math.abs(dy) > 0.1 && currentScrollY < window.innerHeight * 1.2) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const W = canvas.width;
+              const H = canvas.height;
+
+              // Proportional scroll velocity (soft clamp to maintain highly curated minimal aesthetics)
+              const vy = Math.max(-6, Math.min(6, dy * 0.08));
+              const absVy = Math.abs(vy);
+
+              // Determine number of soft ripple points (1-3) based on scroll velocity
+              const numPoints = Math.min(3, Math.max(1, Math.round(absVy * 0.4)));
+
+              for (let i = 0; i < numPoints; i++) {
+                // Distribute ripples randomly across the simulation resolution grid
+                const rx = Math.random() * W;
+                const ry = Math.random() * H;
+
+                // Subtle horizontal speed, vertical speed matches the scrolling direction for a natural physical feel
+                const vx = (Math.random() - 0.5) * 1.0;
+                disturb(rx, ry, vx, vy * (0.7 + Math.random() * 0.5));
+              }
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [disturb]);
+
   // Mouse → fluid
   const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current;

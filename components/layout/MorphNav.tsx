@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -21,15 +22,6 @@ const NAV_LINKS: NavLink[] = [
   { num: '03', label: 'Contact', href: '/contact' },
 ];
 
-const COLORS = {
-  curtain: '#FFFFFF',   // Pure White
-  accent: '#C9F0A8',   // Bright Phosphor Green
-  accentDark: '#3F702A',   // Contrast Phosphor for readability on bone white
-  bg: '#0A0A0A',   // Void Dark
-  text: '#0A0A0A',   // Nav item text (dark on light curtain)
-  muted: '#c2b9ac',   // Muted divider tone matching bone white
-  dim: '#888888',   // Muted labels
-} as const;
 
 const DURATION = {
   curtainOpen: 1100,   // ms — curtain expand, paling berat
@@ -139,126 +131,11 @@ function animateValue(
     }
 
     rafId = requestAnimationFrame(tick);
-    // Expose cancel via returned promise (not needed here but safe pattern)
     void rafId;
   });
 }
 
-// ─── Trigger dot — dynamic morphing pill ─────────────────────────────────────
-
-function TriggerDot({ onClick, disabled, isOpen, menuTheme }: { onClick: () => void; disabled: boolean; isOpen: boolean; menuTheme: 'light-curtain' | 'dark-curtain' }) {
-  const [hovered, setHovered] = useState(false);
-
-  // Dynamic contrast skinnings: follows CSS variables when closed (adapting on scroll), dynamic on dynamic curtain color when open
-  const activeColor = isOpen 
-    ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A') 
-    : 'var(--color-text-1)';
-  const borderColor = isOpen 
-    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(10, 10, 10, 0.15)') 
-    : 'var(--color-border)';
-
-  const width = hovered ? '112px' : '44px';
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
-      style={{
-        boxSizing: 'border-box',
-        width: width,
-        height: '44px',
-        borderRadius: '22px', // Always 22px to keep it a perfect pill
-        border: `1px solid ${borderColor}`,
-        background: isOpen 
-          ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(10, 10, 10, 0.03)')
-          : 'rgba(255, 255, 255, 0.05)',
-        color: activeColor,
-        cursor: disabled ? 'default' : 'pointer',
-        transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease',
-        overflow: 'hidden',
-        position: 'relative',
-        outline: 'none',
-        pointerEvents: 'auto',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {/* Monospace label inside the morphing pill */}
-      <span
-        style={{
-          position: 'absolute',
-          left: '18px',
-          top: '50%',
-          fontFamily: 'var(--font-mono, monospace)',
-          fontSize: '10px',
-          fontWeight: 700,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-          color: activeColor,
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-10px)',
-          transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {isOpen ? 'CLOSE' : 'MENU'}
-      </span>
-
-      {/* Hamburger lines / Close cross SVG */}
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          right: '12px', // Centers perfectly in 44px circle (12px padding on both sides) and stays anchored on right in 112px pill!
-          transform: `translateY(-50%) ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}`,
-          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
-          flexShrink: 0,
-        }}
-      >
-        {/* Top line / Diagonal 1 */}
-        <line
-          x1="2"
-          y1="6"
-          x2="18"
-          y2="6"
-          stroke={activeColor}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          style={{
-            transformOrigin: '10px 10px',
-            transform: isOpen ? 'translateY(4px) rotate(45deg)' : 'translateY(0) rotate(0deg)',
-            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
-          }}
-        />
-        {/* Bottom line / Diagonal 2 */}
-        <line
-          x1="2"
-          y1="14"
-          x2="18"
-          y2="14"
-          stroke={activeColor}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          style={{
-            transformOrigin: '10px 10px',
-            transform: isOpen ? 'translateY(-4px) rotate(-45deg)' : 'translateY(0) rotate(0deg)',
-            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
-          }}
-        />
-      </svg>
-
-    </button>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Unified Morphing Navigation Container ───────────────────────────────────
 
 export default function MorphNav() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -266,13 +143,23 @@ export default function MorphNav() {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const footerRef = useRef<HTMLDivElement>(null);
   const originRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
 
   const [navState, setNavState] = useState<NavState>('closed');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeSection, setActiveSection] = useState<'work' | 'about' | 'contact'>('work');
+  const [hovered, setHovered] = useState(false);
   const themeColorRef = useRef<string>('#FFFFFF');
+
+  const isReallyCollapsed = isCollapsed || navState !== 'closed';
+
+  useEffect(() => {
+    if (!isReallyCollapsed) {
+      setHovered(false);
+    }
+  }, [isReallyCollapsed]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -304,6 +191,18 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
+  // Scroll tracking — isCollapsed + activeSection
+  useEffect(() => {
+    const handleScroll = () => {
+      const y = window.scrollY;
+      setIsCollapsed(y > 80);
+      setActiveSection(y < window.innerHeight * 0.8 ? 'work' : 'about');
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Keyboard close
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -313,16 +212,15 @@ export default function MorphNav() {
     return () => window.removeEventListener('keydown', onKey);
   }, [navState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Capture trigger origin before animation
+  // Capture trigger origin — FloatingCircle is always top: 12, right: 28, size: 44
   function captureOrigin() {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-    const rect = trigger.getBoundingClientRect();
     originRef.current = {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
+      x: window.innerWidth - 50, // right: 28px + half-width: 22px
+      y: 34,                      // top: 12px + half-height: 22px
     };
   }
+
+
 
   // Show overlay + stagger nav items in
   function revealItems() {
@@ -444,6 +342,57 @@ export default function MorphNav() {
 
   const isAnimating = navState === 'opening' || navState === 'closing';
 
+  // Unified navigation click handler
+  const handleNavigationClick = useCallback((e: React.MouseEvent, href: string, isFromOverlay: boolean = false) => {
+    e.preventDefault();
+    const lenis = (window as any).lenis;
+
+    // Handle closing the full-screen menu overlay first if clicked from inside the curtain menu
+    if (isFromOverlay && navState === 'open') {
+      handleClose();
+    }
+
+    if (href === '/work') {
+      if (lenis) {
+        lenis.scrollTo(0, { duration: 2.2, easing: easeInOutExpo });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else if (href === '/about') {
+      if (lenis) {
+        lenis.scrollTo('bottom', { duration: 2.6, easing: easeInOutExpo });
+      } else {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      }
+    } else if (href === '/contact') {
+      window.location.href = 'mailto:ferryruslyc@gmail.com';
+    }
+  }, [navState, handleClose]);
+
+  const getActiveState = (href: string) => {
+    if (href === '/work') {
+      return pathname === '/work' || (pathname === '/' && activeSection === 'work');
+    }
+    if (href === '/about') {
+      return pathname === '/about' || (pathname === '/' && activeSection === 'about');
+    }
+    if (href === '/contact') {
+      return pathname === '/contact';
+    }
+    return false;
+  };
+
+  const isOpen = navState === 'open';
+  const activeColor = isOpen
+    ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A')
+    : 'var(--color-text-1)';
+  const borderColor = isOpen
+    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(10, 10, 10, 0.15)')
+    : 'var(--color-border)';
+  const background = isOpen
+    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(10, 10, 10, 0.03)')
+    : 'var(--color-card-bg, rgba(255, 255, 255, 0.05))';
+
   const activeTheme = menuTheme === 'dark-curtain'
     ? {
         curtain: '#0A0A0A',
@@ -464,9 +413,15 @@ export default function MorphNav() {
         closeLines: '#666666',
       };
 
+  const morphTransition = {
+    type: 'tween' as const,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    duration: 0.45,
+  };
+
   return (
     <>
-      {/* ── Fixed nav shell — always visible ─────────────────────────────── */}
+      {/* ── Fixed nav shell — logo only ───────────────────────────────────── */}
       <nav
         aria-label="Main navigation"
         style={{
@@ -477,10 +432,9 @@ export default function MorphNav() {
           height: '68px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           padding: '0 28px',
           zIndex: 1000,
-          pointerEvents: 'none', // children opt back in
+          pointerEvents: 'none',
         }}
       >
         {/* Logo */}
@@ -502,28 +456,188 @@ export default function MorphNav() {
         >
           Ch.
         </a>
+      </nav>
 
-        {/* Trigger */}
-        <div
+      {/* ── Unified Morphing Navigation Container ────────────────────────── */}
+      <motion.div
+        animate={{
+          left: isReallyCollapsed ? '100%' : '50%',
+          x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,
+          width: isReallyCollapsed ? (hovered ? 112 : 44) : 260,
+        }}
+        transition={morphTransition}
+        onMouseEnter={() => isReallyCollapsed && setHovered(true)}
+        onMouseLeave={() => isReallyCollapsed && setHovered(false)}
+        onClick={isReallyCollapsed && !isAnimating ? (isOpen ? handleClose : handleOpen) : undefined}
+        role={isReallyCollapsed ? 'button' : undefined}
+        aria-label={isReallyCollapsed ? (isOpen ? 'Close navigation menu' : 'Open navigation menu') : undefined}
+        style={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          height: '44px',
+          borderRadius: '22px',
+          border: `1px solid ${borderColor}`,
+          background,
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          boxShadow: 'var(--color-card-shadow, 0 8px 32px rgba(10, 10, 10, 0.03))',
+          color: activeColor,
+          cursor: isReallyCollapsed && !isAnimating ? 'pointer' : 'default',
+          position: 'fixed',
+          top: '12px',
+          zIndex: 1001,
+          pointerEvents: 'auto',
+          overflow: 'hidden',
+          outline: 'none',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {/* Hero Pill Nav Links (Visible when NOT collapsed) */}
+        <motion.div
           style={{
+            position: 'absolute',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            pointerEvents: 'auto',
-            zIndex: 1001,
+            justifyContent: 'center',
+            gap: '16px',
+            width: '260px',
+            height: '100%',
+            left: '50%',
+            x: '-50%',
+            pointerEvents: isReallyCollapsed ? 'none' : 'auto',
           }}
+          animate={{
+            opacity: isReallyCollapsed ? 0 : 1,
+            scale: isReallyCollapsed ? 0.8 : 1,
+            y: isReallyCollapsed ? -10 : 0,
+          }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* We forward ref to inner button via wrapper */}
-          <div ref={triggerRef}>
-            <TriggerDot
-              onClick={navState === 'open' ? handleClose : handleOpen}
-              disabled={isAnimating}
-              isOpen={navState === 'open'}
-              menuTheme={menuTheme}
+          {NAV_LINKS.map((link, idx) => {
+            const active = getActiveState(link.href);
+            return (
+              <span key={link.href} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {idx > 0 && (
+                  <span
+                    style={{
+                      color: 'var(--color-text-3)',
+                      opacity: 0.3,
+                      userSelect: 'none',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '10px'
+                    }}
+                  >
+                    •
+                  </span>
+                )}
+                <a
+                  href={link.href}
+                  onClick={(e) => handleNavigationClick(e, link.href)}
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    color: 'var(--color-text-1)',
+                    opacity: active ? 1 : 0.4,
+                    transition: 'opacity 0.3s ease',
+                  }}
+                >
+                  {link.label}
+                </a>
+              </span>
+            );
+          })}
+        </motion.div>
+
+        {/* Floating Circle Content (Visible when collapsed) */}
+        <motion.div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            paddingRight: '12px',
+            width: '100%',
+            height: '100%',
+            pointerEvents: isReallyCollapsed ? 'auto' : 'none',
+          }}
+          animate={{
+            opacity: isReallyCollapsed ? 1 : 0,
+            scale: isReallyCollapsed ? 1 : 0.8,
+            y: isReallyCollapsed ? 0 : 10,
+          }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Monospace label inside the morphing button */}
+          <span
+            style={{
+              position: 'absolute',
+              left: '18px',
+              top: '50%',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '10px',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: activeColor,
+              opacity: (hovered && isReallyCollapsed) ? 1 : 0,
+              transform: (hovered && isReallyCollapsed) ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-10px)',
+              transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isOpen ? 'CLOSE' : 'MENU'}
+          </span>
+
+          {/* Hamburger lines / Close cross SVG */}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            style={{
+              transform: `rotate(${isOpen ? 180 : 0}deg)`,
+              transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+              flexShrink: 0,
+            }}
+          >
+            <line
+              x1="2"
+              y1="6"
+              x2="18"
+              y2="6"
+              stroke={activeColor}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              style={{
+                transformOrigin: '10px 10px',
+                transform: isOpen ? 'translateY(4px) rotate(45deg)' : 'translateY(0) rotate(0deg)',
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
+              }}
             />
-          </div>
-        </div>
-      </nav>
+            <line
+              x1="2"
+              y1="14"
+              x2="18"
+              y2="14"
+              stroke={activeColor}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              style={{
+                transformOrigin: '10px 10px',
+                transform: isOpen ? 'translateY(-4px) rotate(-45deg)' : 'translateY(0) rotate(0deg)',
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
+              }}
+            />
+          </svg>
+        </motion.div>
+      </motion.div>
 
       {/* ── Canvas — liquid morph surface (fixed, full-screen) ───────────── */}
       <canvas
@@ -583,14 +697,7 @@ export default function MorphNav() {
               >
                 <a
                   href={link.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleClose();
-                    // Give close animation time then navigate
-                    setTimeout(() => {
-                      window.location.href = link.href;
-                    }, DURATION.curtainClose + 100);
-                  }}
+                  onClick={(e) => handleNavigationClick(e, link.href, true)}
                   onMouseEnter={() => setHoveredIdx(i)}
                   onMouseLeave={() => setHoveredIdx(null)}
                   style={{
