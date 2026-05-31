@@ -225,12 +225,14 @@ export default function Hero() {
           margin: 0,
         }}>
           {/* Line 1 */}
-          <span style={{
-            display: 'block',
-            overflow: 'hidden',
-          }}>
+          <span
+            ref={line1Ref}
+            style={{
+              display: 'block',
+              overflow: 'hidden',
+            }}
+          >
             <span
-              ref={line1Ref}
               style={{
                 display: 'block',
                 transform: on ? 'translateY(0)' : 'translateY(105%)',
@@ -242,9 +244,14 @@ export default function Hero() {
           </span>
 
           {/* Line 2 */}
-          <span style={{ display: 'block', overflow: 'hidden' }}>
+          <span
+            ref={line2Ref}
+            style={{
+              display: 'block',
+              overflow: 'hidden',
+            }}
+          >
             <span
-              ref={line2Ref}
               style={{
                 display: 'block',
                 transform: on ? 'translateY(0)' : 'translateY(105%)',
