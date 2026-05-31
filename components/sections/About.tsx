@@ -66,24 +66,26 @@ export default function About() {
         }}
       />
 
-      {/* 3. Premium Atmospheric Glassmorphism Blur Overlay (In front, dissolving lower torso beautifully) */}
+      {/* 3. Premium Atmospheric Glassmorphism Curved Dome Overlay (In front, dissolving lower torso beautifully) */}
       <div
         className="about-glass-overlay"
         style={{
           position: 'absolute',
-          bottom: '-5vh',
-          left: 0,
-          right: 0,
-          margin: '0 auto',
-          width: '100%',
+          bottom: '-3vh',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '115vw',
           height: '42vh', // Covers lower torso while keeping face fully sharp
           zIndex: 3,
           pointerEvents: 'none',
-          backdropFilter: 'blur(55px)',
-          WebkitBackdropFilter: 'blur(55px)',
+          backdropFilter: 'blur(45px)',
+          WebkitBackdropFilter: 'blur(45px)',
+          borderRadius: '100% 100% 0 0 / 20% 20% 0 0', // Curved organic glass lens dome
+          borderTop: '0.85px solid rgba(255, 255, 255, 0.65)', // Refraction highlight edge catching light
+          boxShadow: 'inset 0 1px 20px rgba(255, 255, 255, 0.4), 0 -6px 30px rgba(0, 0, 0, 0.01)',
           // Perfect edge-free fade mask for the blur itself:
-          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 100%)',
+          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0) 100%)',
         }}
       >
         {/* Layered white diffusion inside the blur container to create frosted glass cloud texture */}
@@ -91,7 +93,7 @@ export default function About() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(circle at bottom center, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 80%)',
+            background: 'radial-gradient(circle at bottom center, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 80%)',
             mixBlendMode: 'overlay',
           }}
         />
@@ -99,7 +101,7 @@ export default function About() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to top, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 40%, rgba(255, 255, 255, 0) 100%)',
+            background: 'linear-gradient(to top, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 40%, rgba(255, 255, 255, 0) 100%)',
           }}
         />
       </div>
