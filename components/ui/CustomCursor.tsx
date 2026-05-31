@@ -1,253 +1,215 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type CursorState = 'default' | 'button' | 'image' | 'nav' | 'drag';
 
 export default function CustomCursor() {
-  const [opacity, setOpacity] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [navAngle, setNavAngle] = useState(0);
-  const [isNearNav, setIsNearNav] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [cursorState, setCursorState] = useState<CursorState>('default');
+  const [cursorText, setCursorText] = useState('');
+  
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Framer Motion's useMotionValue handles direct DOM translation updates,
-  // completely bypassing React's virtual DOM updates to achieve 100% absolute zero-lag,
-  // locked 120fps hardware-composited pointer precision.
-  const mouseX = useMotionValue(-100);
-  const mouseY = useMotionValue(-100);
+  // Set mounted flag to handle SSR safely
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    
-    // Direct hardware-level setter
-    mouseX.set(x);
-    mouseY.set(y);
-    setOpacity(1);
+  // 1. Direct hardware-level coordinates tracking with zero-latency updates
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    // Calculate distance and angle to navbar
-    const navEl = document.getElementById('morph-nav-container');
-    if (navEl) {
-      const rect = navEl.getBoundingClientRect();
-      const navX = rect.left + rect.width / 2;
-      const navY = rect.top + rect.height / 2;
-
-      const dx = navX - x;
-      const dy = navY - y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // Trigger navbar compass state if within 220px of the navbar
-      if (dist < 220) {
-        setIsNearNav(true);
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        setNavAngle(angle);
-      } else {
-        setIsNearNav(false);
+    const updatePosition = (e: MouseEvent) => {
+      // Instantly position the outer wrapper to prevent 1-frame re-render latency
+      if (containerRef.current) {
+        containerRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       }
-    } else {
-      setIsNearNav(false);
-    }
-  }, [mouseX, mouseY]);
+      if (!visible) {
+        setVisible(true);
+      }
+    };
 
-  const onMouseLeave = useCallback(() => setOpacity(0), []);
-  const onMouseEnter = useCallback(() => setOpacity(1), []);
+    const handleMouseLeave = () => setVisible(false);
+    const handleMouseEnter = () => setVisible(true);
 
+    window.addEventListener('mousemove', updatePosition, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseenter', handleMouseEnter);
+
+    return () => {
+      window.removeEventListener('mousemove', updatePosition);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseenter', handleMouseEnter);
+    };
+  }, [visible]);
+
+  // 2. High-performance global event delegation for dynamic hover target morphing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('mouseenter', onMouseEnter);
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest(
+        '[data-cursor], a, button, [role="button"], input, textarea, select'
+      );
 
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseleave', onMouseLeave);
-      document.removeEventListener('mouseenter', onMouseEnter);
-    };
-  }, [onMouseMove, onMouseLeave, onMouseEnter]);
+      if (!target) {
+        setCursorState('default');
+        setCursorText('');
+        return;
+      }
 
-  // Handle magnetic-like hovers on links and clickable elements
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+      const state = target.getAttribute('data-cursor') as CursorState | null;
+      const text = target.getAttribute('data-cursor-text') || '';
 
-    const handleMouseEnter = () => setIsHovered(true);
-    const handleMouseLeave = () => setIsHovered(false);
-
-    const addListeners = () => {
-      const targets = document.querySelectorAll('a, button, [role="button"], input, textarea, select');
-      targets.forEach((target) => {
-        target.addEventListener('mouseenter', handleMouseEnter);
-        target.addEventListener('mouseleave', handleMouseLeave);
-      });
+      if (state) {
+        setCursorState(state);
+        setCursorText(text);
+      } else {
+        // Fallback for standard clickable items
+        setCursorState('button');
+        setCursorText('');
+      }
     };
 
-    // Attach initial listeners
-    addListeners();
+    const handleMouseOut = () => {
+      setCursorState('default');
+      setCursorText('');
+    };
 
-    // Re-attach listeners when DOM changes to handle Next.js client routing/renders
-    const observer = new MutationObserver(addListeners);
-    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('mouseover', handleMouseOver);
+    window.addEventListener('mouseout', handleMouseOut);
 
     return () => {
-      observer.disconnect();
-      const targets = document.querySelectorAll('a, button, [role="button"], input, textarea, select');
-      targets.forEach((target) => {
-        target.removeEventListener('mouseenter', handleMouseEnter);
-        target.removeEventListener('mouseleave', handleMouseLeave);
-      });
+      window.removeEventListener('mouseover', handleMouseOver);
+      window.removeEventListener('mouseout', handleMouseOut);
     };
   }, []);
 
-  return (
+  if (!mounted) return null;
+
+  // Render cursor through a React Portal directly into document.body to isolate it on its own top-level context
+  return createPortal(
     <>
-      {/* Hide standard browser mouse globally */}
+      {/* Disable the standard OS cursor globally across all interactive elements */}
       <style dangerouslySetInnerHTML={{ __html: `
-        html, body, a, button, select, input, textarea, [role="button"] {
+        html, body, a, button, select, input, textarea, [role="button"], [data-cursor] {
           cursor: none !important;
         }
       `}} />
 
-      <motion.div
+      <div
+        ref={containerRef}
         aria-hidden="true"
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
-          borderRadius: '50%',
-          // 3D Volumetric Gradient Shading (creates a glowing physical phosphor glass bead)
-          background: 'radial-gradient(circle at 35% 35%, #F0FDF4 0%, #C9F0A8 55%, #9CD470 100%)',
-          // White light catcher highlight and bottom physical volumetric refraction shading
-          boxShadow: 'inset 0 2px 4px rgba(255, 255, 255, 0.7), inset 0 -3px 8px rgba(0, 0, 0, 0.16), 0 12px 36px rgba(0, 0, 0, 0.28)',
-          border: '1px solid rgba(255, 255, 255, 0.45)',
+          width: 0,
+          height: 0,
           pointerEvents: 'none',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          
-          // Zero-lag hardware translation coordinates
-          x: mouseX,
-          y: mouseY,
-          opacity: opacity,
-          
-          // Smoothly morph container size based on hover state (from 88px circle to 32px trigger bead)
-          width: isHovered ? 32 : 88,
-          height: isHovered ? 32 : 88,
-          // Offset translation by half-width/height to keep it perfectly centered around mouse coordinate
-          transform: `translate3d(-50%, -50%, 0)`,
-          
-          transformOrigin: 'center center',
-          transition: 'width 0.32s cubic-bezier(0.16, 1, 0.3, 1), height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease',
+          zIndex: 99999,
+          willChange: 'transform',
+          mixBlendMode: 'difference', // GPU-level dynamic color inversion
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <AnimatePresence mode="wait">
-          {isHovered ? (
-            // Clickable Hover State: Morphs into a highly polished, custom, sharp generic mouse arrow cursor
-            <motion.div
-              key="hover-state"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 20 20"
-                fill="none"
-                style={{ display: 'block', transform: 'translate(-1px, -1px)' }}
-              >
-                <polygon
-                  points="2,2 18,9 10,11 6,17"
-                  fill="#080c04" // Obsidian black arrow matching the theme
-                  stroke="#F0FDF4" // Glowing light highlights around the arrow
-                  strokeWidth="1.25"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </motion.div>
-          ) : isNearNav ? (
-            // Navbar Proximity State: Perfect 88px bead with dynamic compass arrow pointing to navbar
-            <motion.div
-              key="navbar-state"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.18 }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '8px',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: '#080c04', // Obsidian black for perfect legibility on the bright green bead
-                textAlign: 'center',
-                lineHeight: 1.1,
-                userSelect: 'none',
-              }}
-            >
-              {/* Compass Arrow pointing towards navbar */}
-              <div
+        {/* Morphing Shape - Visual center locked precisely via static x/y percentages */}
+        <motion.div
+          style={{
+            x: '-50%',
+            y: '-50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transformOrigin: 'center center',
+            backgroundColor: '#FFFFFF', // solid white inverts cleanly on difference mix-blend
+          }}
+          animate={{
+            width:
+              cursorState === 'default'
+                ? 6
+                : cursorState === 'button'
+                ? 48
+                : cursorState === 'image'
+                ? 76
+                : cursorState === 'nav'
+                ? 80
+                : cursorState === 'drag'
+                ? 68
+                : 6,
+            height:
+              cursorState === 'default'
+                ? 6
+                : cursorState === 'button'
+                ? 48
+                : cursorState === 'image'
+                ? 76
+                : cursorState === 'nav'
+                ? 32
+                : cursorState === 'drag'
+                ? 68
+                : 6,
+            borderRadius: cursorState === 'nav' ? '16px' : '50%',
+            border:
+              cursorState === 'default'
+                ? '0px solid rgba(255, 255, 255, 0)'
+                : '1px solid rgba(255, 255, 255, 0.45)',
+            // Transparent/minimal fill for rings, solid white for typography states to maximize contrast
+            backgroundColor:
+              cursorState === 'default'
+                ? '#FFFFFF'
+                : cursorState === 'button'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : cursorState === 'image'
+                ? 'rgba(255, 255, 255, 0.15)'
+                : cursorState === 'nav'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : cursorState === 'drag'
+                ? 'rgba(255, 255, 255, 0.15)'
+                : '#FFFFFF',
+          }}
+          // Dynamic, highly refined mechanical spring easing
+          transition={{
+            type: 'spring',
+            stiffness: 380,
+            damping: 30,
+            mass: 0.8,
+          }}
+        >
+          {/* Centered Monospace Text Overlay */}
+          <AnimatePresence mode="wait">
+            {(cursorState === 'image' || cursorState === 'drag') && (
+              <motion.span
+                key={cursorText || 'drag'}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
                 style={{
-                  width: '10px',
-                  height: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: `rotate(${navAngle + 90}deg)`,
-                  transition: 'transform 0.1s ease-out',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#000000', // pure black inverts automatically over difference background
+                  textAlign: 'center',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                  <polygon points="6,1 11,11 6,8 1,11" fill="#080c04" />
-                </svg>
-              </div>
-              <span>TO</span>
-              <span>NAVBAR</span>
-            </motion.div>
-          ) : (
-            // Default State: Perfect 88px bead with centered stacked "BRING ME AROUND" text
-            <motion.div
-              key="default-state"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.18 }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '2px',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '8px',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: '#080c04', // Obsidian black text on the green bead
-                textAlign: 'center',
-                lineHeight: 1.1,
-                userSelect: 'none',
-              }}
-            >
-              <span>BRING</span>
-              <span>ME</span>
-              <span>AROUND</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </>
+                {cursorState === 'drag' ? 'DRAG' : (cursorText || 'VIEW')}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </>,
+    document.body
   );
 }

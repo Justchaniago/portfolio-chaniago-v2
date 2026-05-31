@@ -461,6 +461,7 @@ export default function MorphNav() {
       {/* ── Unified Morphing Navigation Container ────────────────────────── */}
       <motion.div
         id="morph-nav-container"
+        data-cursor="nav"
         animate={{
           left: isReallyCollapsed ? '100%' : '50%',
           x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,
@@ -535,6 +536,7 @@ export default function MorphNav() {
                 <a
                   href={link.href}
                   onClick={(e) => handleNavigationClick(e, link.href)}
+                  data-cursor="nav"
                   style={{
                     fontFamily: 'var(--font-mono, monospace)',
                     fontSize: '10px',
@@ -701,6 +703,7 @@ export default function MorphNav() {
                   onClick={(e) => handleNavigationClick(e, link.href, true)}
                   onMouseEnter={() => setHoveredIdx(i)}
                   onMouseLeave={() => setHoveredIdx(null)}
+                  data-cursor="nav"
                   style={{
                     display: 'flex',
                     alignItems: 'baseline',

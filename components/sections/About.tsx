@@ -48,6 +48,8 @@ export default function About() {
         src="/images/bannertransparan.png"
         alt="About Portrait"
         className="about-portrait-img"
+        data-cursor="image"
+        data-cursor-text="VIEW"
         style={{
           position: 'absolute',
           bottom: '-10vh', // Anchors the portrait visually to the bottom viewport edge, grounding the subject
@@ -61,6 +63,7 @@ export default function About() {
           transform: 'translateY(120px)', // Initial spatial lift translate
           willChange: 'clip-path, transform',
           zIndex: 2,
+          pointerEvents: 'auto', // Explicitly enable pointer events when section is visible
         }}
       />
 
