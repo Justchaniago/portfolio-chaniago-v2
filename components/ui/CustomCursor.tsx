@@ -11,6 +11,7 @@ export default function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [cursorState, setCursorState] = useState<CursorState>('default');
   const [cursorText, setCursorText] = useState('');
+  const [isNativeZone, setIsNativeZone] = useState(false);
   
   // Dynamic interaction and closed navbar proximity states
   const [isClicked, setIsClicked] = useState(false);
@@ -119,10 +120,16 @@ export default function CustomCursor() {
       let node: Element | null = el;
       let newState: CursorState = 'default';
       let cursorTextVal = '';
+      let isNativeZoneVal = false;
 
       while (node && node !== document.body) {
-        // Priority 1: Explicit data-cursor attributes (view, image, nav, drag, default)
         const dc = node.getAttribute('data-cursor');
+        if (dc === 'native') {
+          isNativeZoneVal = true;
+          break;
+        }
+
+        // Priority 1: Explicit data-cursor attributes (view, image, nav, drag, default)
         if (dc) {
           if (dc === 'view' || dc === 'image') {
             newState = 'image';
@@ -167,6 +174,7 @@ export default function CustomCursor() {
       // Only trigger state updates on change to prevent React layout thrashing
       setCursorState((prev) => (prev !== newState ? newState : prev));
       setCursorText((prev) => (prev !== cursorTextVal ? cursorTextVal : prev));
+      setIsNativeZone(isNativeZoneVal);
     };
 
     const handleMouseLeave = () => setVisible(false);
@@ -212,6 +220,12 @@ export default function CustomCursor() {
         html, body, a, button, select, input, textarea, [role="button"], [data-cursor] {
           cursor: none !important;
         }
+        [data-cursor="native"], [data-cursor="native"] * {
+          cursor: auto !important;
+        }
+        a[data-cursor="native"], button[data-cursor="native"], [role="button"][data-cursor="native"] {
+          cursor: pointer !important;
+        }
       `}} />
 
       <div
@@ -227,7 +241,7 @@ export default function CustomCursor() {
           zIndex: 99999,
           willChange: 'transform',
           mixBlendMode: 'difference', // GPU-level dynamic color inversion
-          opacity: visible ? 1 : 0,
+          opacity: visible && !isNativeZone ? 1 : 0,
           transition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >

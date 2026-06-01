@@ -14,24 +14,27 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
   
   // Slide index state (0, 1, 2)
   const [activeIdx, setActiveIdx] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [prevActiveIdx, setPrevActiveIdx] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
   const [isTransitioning, setIsTransitioning] = useState(false);
   
-  // dragX in pixels, currentProgress in [-1, 1]
-  const [dragX, setDragX] = useState(0);
-  const [currentProgress, setCurrentProgress] = useState(0);
+  // Story Progression States
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isTouchHeld, setIsTouchHeld] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [isAutoplaySuspended, setIsAutoplaySuspended] = useState(false);
   
-  // Ref for tracking gesture variables during dragging
+  // Ref for tracking swipe gesture coordinates
   const gestureRef = useRef({
     startX: 0,
     startY: 0,
     startTime: 0,
     isPointerDown: false,
-    hasLockedDirection: false,
-    dragDirection: null as 'horizontal' | 'vertical' | null,
-    cardWidth: 0,
-    dragDistance: 0,
   });
+
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Select which pre-loaded premium monochrome/technical public image to use as fallback
   const fallbackImages = ['/images/project_aura.png', '/images/project_kuro.png', '/images/chaniago.jpg'];
@@ -39,29 +42,133 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
 
   const totalSlides = project.gallery ? project.gallery.length : 1;
 
-  // Pointer event handlers to support unified Mouse, Touch and Trackpad Drag gestures
-  const handlePointerDown = (e: React.PointerEvent<HTMLAnchorElement>) => {
+  // MutationObserver to bridge GSAP's direct DOM class/attribute animations into React state
+  useEffect(() => {
     const cardEl = cardRef.current;
     if (!cardEl) return;
 
-    // Check if the card is in its fully expanded fullscreen state
-    const rect = cardEl.getBoundingClientRect();
-    const isExpanded = rect.width >= window.innerWidth - 10;
+    const checkExpandedState = () => {
+      const isExpandedAttr = cardEl.getAttribute('data-expanded') === 'true';
+      setIsExpanded(isExpandedAttr);
+    };
+
+    // Run initial check
+    checkExpandedState();
+
+    // Listen for data-expanded mutations on cardEl
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-expanded') {
+          checkExpandedState();
+        }
+      });
+    });
+
+    observer.observe(cardEl, { attributes: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Autoplay progression loop using requestAnimationFrame for zero-jerk performance
+  useEffect(() => {
+    // Only run autoplay loop if card is expanded, not paused, not suspended, and not hovered/touch-held
+    const shouldProgress = isExpanded && !isPaused && !isAutoplaySuspended && !isHovered && !isTouchHeld;
+
+    if (!shouldProgress) return;
+
+    let animationFrameId: number;
+    let lastTime = performance.now();
+
+    const updateProgress = (now: number) => {
+      const deltaTime = now - lastTime;
+      lastTime = now;
+
+      setProgressPercent((prev) => {
+        const next = prev + (deltaTime / 5000) * 100; // 5000ms per slide
+        if (next >= 100) {
+          const nextIdx = (activeIdx + 1) % totalSlides;
+          
+          setSlideDirection('forward');
+          setPrevActiveIdx(activeIdx);
+          setActiveIdx(nextIdx);
+          setIsTransitioning(true);
+          
+          setTimeout(() => {
+            setIsTransitioning(false);
+          }, 800);
+
+          return 0;
+        }
+        return next;
+      });
+
+      animationFrameId = requestAnimationFrame(updateProgress);
+    };
+
+    animationFrameId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isExpanded, activeIdx, isPaused, isAutoplaySuspended, isHovered, isTouchHeld, totalSlides]);
+
+  // Safely clear timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Handle clean manual navigation (resets timer, morphs indicator, suspends autoplay 5s)
+  const handleManualSlideChange = (nextIdx: number) => {
+    if (nextIdx === activeIdx) return;
+
+    const dir = (nextIdx === 0 && activeIdx === totalSlides - 1)
+      ? 'forward'
+      : (nextIdx === totalSlides - 1 && activeIdx === 0)
+      ? 'backward'
+      : nextIdx > activeIdx
+      ? 'forward'
+      : 'backward';
+
+    setSlideDirection(dir);
+    setPrevActiveIdx(activeIdx);
+    setActiveIdx(nextIdx);
+    setProgressPercent(0);
+    setIsTransitioning(true);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 800);
+
+    // Suspend autoplay progression for 5 seconds to let user explore
+    setIsAutoplaySuspended(true);
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+    resumeTimeoutRef.current = setTimeout(() => {
+      setIsAutoplaySuspended(false);
+    }, 5000);
+  };
+
+  // Pointer event handlers to support horizontal swipe gesture recognition
+  const handlePointerDown = (e: React.PointerEvent<HTMLAnchorElement>) => {
     if (!isExpanded) return;
 
-    // Record starting coordinates
+    const cardEl = cardRef.current;
+    if (!cardEl) return;
+
     gestureRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       startTime: Date.now(),
       isPointerDown: true,
-      hasLockedDirection: false,
-      dragDirection: null,
-      cardWidth: rect.width,
-      dragDistance: 0,
     };
 
-    // Capture the pointer to receive events even outside the card boundary
     cardEl.setPointerCapture(e.pointerId);
   };
 
@@ -72,38 +179,9 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     const dx = e.clientX - gesture.startX;
     const dy = e.clientY - gesture.startY;
 
-    if (!gesture.hasLockedDirection) {
-      // Determine gesture intent after moving slightly (5px threshold)
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-        gesture.hasLockedDirection = true;
-        if (Math.abs(dx) > Math.abs(dy)) {
-          gesture.dragDirection = 'horizontal';
-          setIsDragging(true);
-        } else {
-          gesture.dragDirection = 'vertical';
-          // Release pointer capture so the browser can handle native vertical page scroll smoothly
-          cardRef.current?.releasePointerCapture(e.pointerId);
-        }
-      }
-      return;
-    }
-
-    if (gesture.dragDirection === 'horizontal') {
-      // Prevent browser default behavior like horizontal swipe-to-navigate
+    // Lock horizontal history gestures
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
       e.preventDefault();
-
-      let targetDx = dx;
-      
-      // Rubber-banding if dragging past boundaries
-      if (activeIdx === 0 && dx > 0) {
-        targetDx = dx * 0.3; // Dampen drag-right on slide 0
-      } else if (activeIdx === totalSlides - 1 && dx < 0) {
-        targetDx = dx * 0.3; // Dampen drag-left on last slide
-      }
-
-      gesture.dragDistance = Math.abs(targetDx);
-      setDragX(targetDx);
-      setCurrentProgress(targetDx / gesture.cardWidth);
     }
   };
 
@@ -112,52 +190,24 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     if (!gesture.isPointerDown) return;
 
     gesture.isPointerDown = false;
+    cardRef.current?.releasePointerCapture(e.pointerId);
 
-    if (gesture.dragDirection === 'horizontal') {
-      cardRef.current?.releasePointerCapture(e.pointerId);
-      setIsDragging(false);
+    const dx = e.clientX - gesture.startX;
+    const dy = e.clientY - gesture.startY;
+    const duration = Date.now() - gesture.startTime;
+    const velocity = dx / duration; // pixels per ms
 
-      const dx = e.clientX - gesture.startX;
-      const duration = Date.now() - gesture.startTime;
-      const velocity = dx / duration; // pixels per ms
-      const dragPercent = dx / gesture.cardWidth;
+    const isSwipe = Math.abs(dx) > 50 || Math.abs(velocity) > 0.3;
+    const isHorizontal = Math.abs(dx) > Math.abs(dy);
 
-      // Commit slide change if drag distance > 15% OR velocity is high enough (> 0.3 px/ms)
-      const threshold = 0.15;
-      const isSwipe = Math.abs(velocity) > 0.3;
-
+    if (isSwipe && isHorizontal) {
       let nextIdx = activeIdx;
-      if (dragPercent < -threshold || (isSwipe && velocity < 0)) {
-        if (activeIdx < totalSlides - 1) {
-          nextIdx = activeIdx + 1;
-        }
-      } else if (dragPercent > threshold || (isSwipe && velocity > 0)) {
-        if (activeIdx > 0) {
-          nextIdx = activeIdx - 1;
-        }
+      if (dx < 0) {
+        nextIdx = (activeIdx + 1) % totalSlides;
+      } else if (dx > 0) {
+        nextIdx = (activeIdx - 1 + totalSlides) % totalSlides;
       }
-
-      // Transition animation lifecycle
-      setIsTransitioning(true);
-      
-      // We calculate where currentProgress needs to go:
-      // If index changed: -1 (for index increment) or 1 (for index decrement)
-      // If canceled: 0
-      const targetProgress = nextIdx === activeIdx 
-        ? 0 
-        : nextIdx > activeIdx ? -1 : 1;
-
-      setCurrentProgress(targetProgress);
-      setDragX(0);
-
-      // Timeout to clean up transition states (duration matches the 850ms CSS ease)
-      const timeoutId = setTimeout(() => {
-        setActiveIdx(nextIdx);
-        setCurrentProgress(0);
-        setIsTransitioning(false);
-      }, 850);
-
-      return () => clearTimeout(timeoutId);
+      handleManualSlideChange(nextIdx);
     }
   };
 
@@ -166,206 +216,61 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     if (!gesture.isPointerDown) return;
 
     gesture.isPointerDown = false;
-    if (gesture.dragDirection === 'horizontal') {
-      cardRef.current?.releasePointerCapture(e.pointerId);
-    }
-    
-    // Reset to resting state on cancel
-    setIsDragging(false);
-    setIsTransitioning(true);
-    setCurrentProgress(0);
-    setDragX(0);
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 850);
+    cardRef.current?.releasePointerCapture(e.pointerId);
   };
 
-  // Determine standard slide positioning based on activeIdx, dragProgress, and dragging states
+  // V3 Always-Mounted Cross-Layer Cinematic Transitions with Apple Depth
+  // Outgoing image exits left/right and scales down slightly (scale: 1 -> 0.985)
+  // Incoming image enters left/right and scales down (scale: 1.015 -> 1.0)
   const getSlideStyle = (imgIdx: number) => {
-    const dp = currentProgress; // value in [-1, 1], negative means dragging to next (right-to-left)
-    const transitionStyle = isTransitioning
-      ? 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1), opacity 850ms cubic-bezier(0.22, 1, 0.36, 1), filter 850ms cubic-bezier(0.22, 1, 0.36, 1)'
-      : 'none';
+    const transition = 'transform 800ms cubic-bezier(0.22, 1, 0.36, 1), opacity 800ms cubic-bezier(0.22, 1, 0.36, 1)';
 
-    // Static rest style when not dragging or transitioning
-    if (!isDragging && !isTransitioning) {
-      if (imgIdx === activeIdx) {
+    if (!isExpanded) {
+      // Collapsed poster mode (Only Slide 0 visible, rest are transparent fallback sizes)
+      if (imgIdx === 0) {
         return {
-          wrapper: {
-            transform: 'translateX(0%) scale(1)',
-            opacity: 1,
-            filter: 'blur(0px)',
-            zIndex: 2,
-            transition: 'none',
-          },
-          image: {
-            transform: 'translate(-50%, -50%) translateX(0%) scale(1.0)',
-            transition: 'none',
-          }
-        };
-      } else if (imgIdx === activeIdx + 1) {
-        return {
-          wrapper: {
-            transform: 'translateX(100%) scale(1.04)',
-            opacity: 0,
-            filter: 'blur(4px)',
-            zIndex: 1,
-            transition: 'none',
-          },
-          image: {
-            transform: 'translate(-50%, -50%) translateX(30%) scale(1.04)',
-            transition: 'none',
-          }
-        };
-      } else if (imgIdx === activeIdx - 1) {
-        return {
-          wrapper: {
-            transform: 'translateX(-100%) scale(1.04)',
-            opacity: 0,
-            filter: 'blur(4px)',
-            zIndex: 1,
-            transition: 'none',
-          },
-          image: {
-            transform: 'translate(-50%, -50%) translateX(-30%) scale(1.04)',
-            transition: 'none',
-          }
+          opacity: 1,
+          transform: 'translateX(0%) scale(1.12)',
+          zIndex: 2,
+          transition: 'transform 1200ms cubic-bezier(0.22, 1, 0.36, 1)',
         };
       } else {
         return {
-          wrapper: {
-            transform: imgIdx > activeIdx ? 'translateX(100%) scale(1.04)' : 'translateX(-100%) scale(1.04)',
-            opacity: 0,
-            filter: 'blur(4px)',
-            zIndex: 0,
-            transition: 'none',
-          },
-          image: {
-            transform: imgIdx > activeIdx 
-              ? 'translate(-50%, -50%) translateX(30%) scale(1.04)' 
-              : 'translate(-50%, -50%) translateX(-30%) scale(1.04)',
-            transition: 'none',
-          }
+          opacity: 0,
+          transform: 'translateX(100%) scale(1.015)',
+          zIndex: 1,
+          transition: 'none',
         };
       }
     }
 
-    // Active dragging or transition interpolation state
-    if (dp < 0) {
-      // Swiping to next slide (entering from right to left)
-      const p = -dp; // normalized progress in [0, 1]
-      
-      if (imgIdx === activeIdx) {
-        return {
-          wrapper: {
-            transform: `translateX(${p * -12}%) scale(${1 - p * 0.04})`,
-            opacity: 1 - p * 0.5,
-            filter: `blur(${p * 4}px)`,
-            zIndex: 1,
-            transition: transitionStyle,
-          },
-          image: {
-            transform: `translate(-50%, -50%) translateX(${p * -18}%) scale(1.0)`,
-            transition: transitionStyle,
-          }
-        };
-      } else if (imgIdx === activeIdx + 1) {
-        return {
-          wrapper: {
-            transform: `translateX(${(1 - p) * 100}%) scale(${1.04 - p * 0.04})`,
-            opacity: p,
-            filter: `blur(${(1 - p) * 4}px)`,
-            zIndex: 2,
-            transition: transitionStyle,
-          },
-          image: {
-            transform: `translate(-50%, -50%) translateX(${(1 - p) * 30}%) scale(${1.04 - p * 0.04})`,
-            transition: transitionStyle,
-          }
-        };
-      } else {
-        return {
-          wrapper: {
-            transform: 'translateX(100%) scale(1.04)',
-            opacity: 0,
-            filter: 'blur(4px)',
-            zIndex: 0,
-            transition: 'none',
-          },
-          image: {
-            transform: 'translate(-50%, -50%) translateX(30%) scale(1.04)',
-            transition: 'none',
-          }
-        };
-      }
+    // Expanded story viewer mode
+    if (imgIdx === activeIdx) {
+      return {
+        opacity: 1,
+        transform: 'translateX(0%) scale(1.0)',
+        zIndex: 2,
+        transition,
+      };
+    } else if (imgIdx === prevActiveIdx) {
+      return {
+        opacity: 0.99, // Keep visible but slightly translucent during transition
+        transform: slideDirection === 'forward' 
+          ? 'translateX(-100%) scale(0.985)' 
+          : 'translateX(100%) scale(0.985)',
+        zIndex: 1,
+        transition,
+      };
     } else {
-      // Swiping to previous slide (entering from left to right)
-      const p = dp; // normalized progress in [0, 1]
-
-      if (imgIdx === activeIdx) {
-        return {
-          wrapper: {
-            transform: `translateX(${p * 12}%) scale(${1 - p * 0.04})`,
-            opacity: 1 - p * 0.5,
-            filter: `blur(${p * 4}px)`,
-            zIndex: 1,
-            transition: transitionStyle,
-          },
-          image: {
-            transform: `translate(-50%, -50%) translateX(${p * 18}%) scale(1.0)`,
-            transition: transitionStyle,
-          }
-        };
-      } else if (imgIdx === activeIdx - 1) {
-        return {
-          wrapper: {
-            transform: `translateX(${(p - 1) * 100}%) scale(${1.04 - p * 0.04})`,
-            opacity: p,
-            filter: `blur(${(1 - p) * 4}px)`,
-            zIndex: 2,
-            transition: transitionStyle,
-          },
-          image: {
-            transform: `translate(-50%, -50%) translateX(${(p - 1) * 30}%) scale(${1.04 - p * 0.04})`,
-            transition: transitionStyle,
-          }
-        };
-      } else {
-        return {
-          wrapper: {
-            transform: 'translateX(-100%) scale(1.04)',
-            opacity: 0,
-            filter: 'blur(4px)',
-            zIndex: 0,
-            transition: 'none',
-          },
-          image: {
-            transform: 'translate(-50%, -50%) translateX(-30%) scale(1.04)',
-            transition: 'none',
-          }
-        };
-      }
+      return {
+        opacity: 0,
+        transform: slideDirection === 'forward' 
+          ? 'translateX(100%) scale(1.015)' 
+          : 'translateX(-100%) scale(1.015)',
+        zIndex: 0,
+        transition: 'none', // Reset position immediately without animation
+      };
     }
-  };
-
-  // Continuous Liquid Progress Indicator Calculations
-  const continuousIdx = activeIdx - currentProgress;
-  const capsuleLeft = Math.min(48, Math.max(0, continuousIdx * 24));
-  const fraction = continuousIdx % 1;
-  const dist = 0.5 - Math.abs(0.5 - Math.abs(fraction));
-  const capsuleWidth = 24 + dist * 16;
-
-  // Continuous Counter Opacity & Blur Calculations
-  const getCounterStyle = (numIdx: number) => {
-    const diff = Math.abs(continuousIdx - numIdx);
-    const opacity = Math.max(0, 0.85 - diff * 0.85);
-    const blur = diff * 4;
-    return {
-      opacity,
-      filter: blur > 0 ? `blur(${blur}px)` : 'none',
-      transition: isTransitioning ? 'opacity 850ms cubic-bezier(0.22, 1, 0.36, 1), filter 850ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
-    };
   };
 
   return (
@@ -373,23 +278,8 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
       ref={cardRef}
       href={`/work/${project.slug}`}
       onClick={(e) => {
-        // If the user was dragging horizontally, block click navigation entirely!
-        if (gestureRef.current.dragDirection === 'horizontal' && gestureRef.current.dragDistance > 5) {
-          e.preventDefault();
-          return;
-        }
-
-        const cardEl = cardRef.current;
-        if (cardEl) {
-          const rect = cardEl.getBoundingClientRect();
-          const isExpanded = rect.width >= window.innerWidth - 10;
-          // If the card is collapsed, clicks should never navigate.
-          // They only expand the card via PinnedSections timeline.
-          if (!isExpanded) {
-            e.preventDefault();
-            return;
-          }
-        }
+        // Enforce absolute click lockouts to prevent card navigation at all times.
+        e.preventDefault();
       }}
       className={`project-card-container project-card-container-${project.id}`}
       data-cursor="image"
@@ -398,15 +288,79 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onTouchStart={() => setIsTouchHeld(true)}
+      onTouchEnd={() => setIsTouchHeld(false)}
       style={{
         display: 'block',
         textDecoration: 'none',
         pointerEvents: 'auto',
-        touchAction: 'pan-y', // Lock touch-drag to vertical scroll natively unless captured horizontally
+        touchAction: 'pan-y', // Native smooth vertical scroll, gesture locking captures horizontal
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
     >
+      {/* Dedicated CTA Case Study Button (Visible when fully expanded, isolates events and forces native precision cursor) */}
+      <div
+        data-cursor="native"
+        style={{
+          position: 'absolute',
+          top: '48px',
+          right: '48px',
+          zIndex: 101,
+          opacity: isExpanded ? 1 : 0,
+          pointerEvents: isExpanded ? 'auto' : 'none',
+          transform: isExpanded ? 'translateY(0px)' : 'translateY(-20px)',
+          transition: 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerMove={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = `/work/${project.slug}`;
+        }}
+      >
+        <button
+          style={{
+            fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            color: '#FFFFFF',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            padding: '12px 24px',
+            borderRadius: '9999px',
+            cursor: 'pointer',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.3s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#FFFFFF';
+            e.currentTarget.style.color = '#0A0A0A';
+            e.currentTarget.style.transform = 'scale(1.03)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+            e.currentTarget.style.color = '#FFFFFF';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          View Case Study
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
       {/* 1. Subtle noise overlay for editorial technical texture */}
       <div
         aria-hidden="true"
@@ -435,7 +389,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
         }}
       />
 
-      {/* 3. Portals / Image container */}
+      {/* 3. Portals / Image container (All images remain mounted to ensure zero blank frames) */}
       <div
         className={`project-image-wrapper-${project.id}`}
         style={{
@@ -464,12 +418,11 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
                 height: '100%',
                 overflow: 'hidden',
                 borderRadius: 'inherit',
-                transform: slideStyle.wrapper.transform,
-                opacity: slideStyle.wrapper.opacity,
-                filter: slideStyle.wrapper.filter,
-                zIndex: slideStyle.wrapper.zIndex,
-                transition: slideStyle.wrapper.transition,
-                willChange: 'transform, opacity, filter',
+                transform: slideStyle.transform,
+                opacity: slideStyle.opacity,
+                zIndex: slideStyle.zIndex,
+                transition: slideStyle.transition,
+                willChange: 'transform, opacity',
               }}
             >
               <img
@@ -486,8 +439,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  transform: slideStyle.image.transform,
-                  transition: slideStyle.image.transition,
+                  transform: 'translate(-50%, -50%)',
                   willChange: 'transform',
                 }}
               />
@@ -509,9 +461,19 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
         />
       </div>
 
-      {/* 5. FLOATING GALLERY CONTROL PILL (Morphs & emerges from GSAP in PinnedSections) */}
+      {/* 5. FLOATING GALLERY CONTROL PILL (Morphs & emerges from GSAP in PinnedSections, forces native precision cursor) */}
       <div
         className={`project-gallery-pill project-gallery-pill-${project.id}`}
+        data-cursor="native"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerMove={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         style={{
           position: 'absolute',
           bottom: '48px',
@@ -541,95 +503,114 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '128px',
+            justifyContent: 'center',
+            width: '144px',
             opacity: 0,
             pointerEvents: 'none',
           }}
         >
-          {/* Left Counter Stack (Tactile cross-fades linked to drag progress) */}
-          <div style={{ position: 'relative', width: '16px', height: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span 
-              className={`pill-counter-num-${project.id}-0`} 
-              style={{ 
-                position: 'absolute', 
-                fontFamily: 'var(--font-mono, monospace)', 
-                fontSize: '11px', 
-                fontWeight: 600, 
-                color: '#FFFFFF',
-                ...getCounterStyle(0),
-              }}
-            >
-              01
-            </span>
-            <span 
-              className={`pill-counter-num-${project.id}-1`} 
-              style={{ 
-                position: 'absolute', 
-                fontFamily: 'var(--font-mono, monospace)', 
-                fontSize: '11px', 
-                fontWeight: 600, 
-                color: '#FFFFFF',
-                ...getCounterStyle(1),
-              }}
-            >
-              02
-            </span>
-            <span 
-              className={`pill-counter-num-${project.id}-2`} 
-              style={{ 
-                position: 'absolute', 
-                fontFamily: 'var(--font-mono, monospace)', 
-                fontSize: '11px', 
-                fontWeight: 600, 
-                color: '#FFFFFF',
-                ...getCounterStyle(2),
-              }}
-            >
-              03
-            </span>
-          </div>
-
-          {/* Center Progress Rail */}
+          {/* Left: V3 Segmented Story Indicators (Smooth width morph transitions) */}
           <div
             style={{
-              position: 'relative',
-              width: '72px',
-              height: '4px',
-              borderRadius: '2px',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
               display: 'flex',
               alignItems: 'center',
+              gap: '8px',
             }}
           >
-            {/* Liquid Progress Capsule Scrubber */}
-            <div
-              className={`pill-progress-capsule-${project.id}`}
-              style={{
-                position: 'absolute',
-                left: `${capsuleLeft}px`,
-                width: `${capsuleWidth}px`,
-                height: '4px',
-                borderRadius: '2px',
-                backgroundColor: '#FFFFFF',
-                willChange: 'left, width',
-                transition: isTransitioning ? 'left 850ms cubic-bezier(0.22, 1, 0.36, 1), width 850ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
-              }}
-            />
+            {project.gallery && project.gallery.map((_, imgIdx) => {
+              const isActive = imgIdx === activeIdx;
+              const isCompleted = imgIdx < activeIdx;
+
+              // Indicators morph sizes smoothly (8px -> 48px) and style states over 400ms using premium spring-like easing
+              const morphStyle = {
+                position: 'relative' as const,
+                width: isActive ? '48px' : '8px',
+                height: '8px',
+                borderRadius: '999px',
+                backgroundColor: isCompleted ? '#FFFFFF' : isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                border: isActive || isCompleted ? 'none' : '1.5px solid rgba(255, 255, 255, 0.4)',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'width 400ms cubic-bezier(0.25, 1, 0.5, 1), background-color 400ms cubic-bezier(0.25, 1, 0.5, 1), border-color 400ms cubic-bezier(0.25, 1, 0.5, 1), opacity 400ms cubic-bezier(0.25, 1, 0.5, 1)',
+              };
+
+              return (
+                <div
+                  key={imgIdx}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleManualSlideChange(imgIdx);
+                  }}
+                  style={morphStyle}
+                >
+                  {/* High-Performance composite-only Progress fill inside the morphed active capsule */}
+                  {isActive && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        height: '100%',
+                        width: '100%',
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '999px',
+                        transform: `scaleX(${progressPercent / 100})`,
+                        transformOrigin: 'left',
+                        willChange: 'transform',
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Right Total Counter */}
-          <span
+          {/* Right: Circular Glass Play/Pause Control (Isolates click and pointer propagation) */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsPaused((prev) => !prev);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             style={{
-              fontFamily: 'var(--font-mono, monospace)',
-              fontSize: '11px',
-              fontWeight: 600,
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
               color: '#FFFFFF',
-              opacity: 0.5,
+              outline: 'none',
+              marginLeft: '20px',
+              transition: 'all 0.3s ease',
+              padding: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            03
-          </span>
+            {isPaused ? (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5V19L19 12L8 5Z" fill="#FFFFFF"/>
+              </svg>
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="#FFFFFF"/>
+              </svg>
+            )}
+          </button>
         </div>
       </div>
     </a>

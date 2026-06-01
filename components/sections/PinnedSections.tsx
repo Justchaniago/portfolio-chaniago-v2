@@ -33,6 +33,32 @@ export default function PinnedSections() {
           start: 'top top',
           end: 'bottom bottom',
           scrub: 1.2,
+          snap: {
+            snapTo: (progress) => {
+              const dur = tl.duration();
+              if (!dur) return progress;
+              const time = progress * dur;
+              
+              for (let idx = 0; idx < projects.length; idx++) {
+                const start = 6.0 + idx * 8.0;
+                const morphStart = start + 4.2;
+                const morphEnd = start + 5.4;
+                
+                // Magnetic Snap: if expansion progress reaches >= 85% completion (start + 5.22)
+                if (time >= start + 5.15 && time < morphEnd) {
+                  return morphEnd / dur;
+                }
+                
+                // Reverse Snap: if collapsing progress reaches <= 15% remaining (start + 4.38)
+                if (time > morphStart && time <= start + 4.45) {
+                  return morphStart / dur;
+                }
+              }
+              return progress;
+            },
+            duration: { min: 0.5, max: 0.8 },
+            ease: 'power2.out',
+          },
           onUpdate: (self) => {
             const progress = self.progress;
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
@@ -135,6 +161,7 @@ export default function PinnedSections() {
           borderRadius: cardRadius,
           opacity: 1,
           pointerEvents: 'none',
+          attr: { 'data-expanded': 'false' },
         }, 0);
         tl.set(`.project-image-wrapper-${project.id}`, {
           borderRadius: cardRadius,
@@ -328,7 +355,7 @@ export default function PinnedSections() {
         // =========================================================================
         // --- EXTRA: FLOATING GALLERY CONTROL PILL EMERGENCE ---
         // =========================================================================
-        // 1. Orb Emergence (translates up, fades in, and blurs in)
+        // 1. Orb Emergence (starts after 150ms pause at start + 5.55)
         tl.to(`.project-gallery-pill-${project.id}`, {
           opacity: 1,
           y: 0,
@@ -336,22 +363,25 @@ export default function PinnedSections() {
           filter: 'blur(0px)',
           duration: 0.6,
           ease: 'premiumBezier',
-        }, start + 5.2);
+        }, start + 5.55);
 
-        // 2. Shape Morph to Pill (width expands to 180px)
+        // 2. Shape Morph to Pill (starts at start + 5.95)
         tl.to(`.project-gallery-pill-${project.id}`, {
           width: '180px',
           duration: 0.7,
           ease: 'premiumBezier',
-        }, start + 5.6);
+        }, start + 5.95);
 
-        // 3. Staggered Content Reveal inside the Pill
+        // 3. Staggered Content Reveal inside the Pill (starts at start + 6.35)
         tl.to(`.pill-content-${project.id}`, {
           opacity: 1,
           pointerEvents: 'auto',
           duration: 0.4,
           ease: 'power2.out',
-        }, start + 6.0);
+        }, start + 6.35);
+
+        // Toggle state attribute signaling card has fully landed to trigger autoplay loop
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 6.35);
 
         // The horizontal project gallery interactions (dragging, parallax slides, live capsule and counters)
         // are now entirely handled via high-performance horizontal pointer gestures in ProjectCard.tsx,
@@ -384,6 +414,9 @@ export default function PinnedSections() {
             ease: 'power2.inOut',
           }, start + 8.5);
         }
+
+        // Reset data-expanded state to halt autoplay timers immediately upon exit initiation
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false' } }, start + 8.3);
 
         // --- CONTROL PILL POWER DOWN (COLLAPSE REVERSAL) ---
         // 1. Staggered content inside the pill fades out
