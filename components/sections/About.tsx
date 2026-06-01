@@ -64,7 +64,7 @@ export default function About() {
         }}
       />
 
-      {/* 2b. Massive Left-Aligned Bottom Transparent Portrait Image (Sub-section pose morph) */}
+      {/* 2b. Massive Left-Aligned Bottom Transparent Portrait Image (Sub-section pose morph - Shifted 11vw left for spacious breathing room) */}
       <img
         src="/images/bannertransparanleft.png"
         alt="About Portrait Left"
@@ -72,7 +72,7 @@ export default function About() {
         style={{
           position: 'absolute',
           bottom: '-10vh',
-          left: '0vw',
+          left: '-11vw', // Shifted left by ~210px for spacious breathing room and gap
           width: 'auto',
           height: '123vh',
           display: 'block',
@@ -86,6 +86,7 @@ export default function About() {
 
       {/* Precise Portrait Hover Trigger Zone (Prevents early hover activation over empty transparent pixels) */}
       <div
+        className="about-portrait-trigger"
         data-cursor="image"
         data-cursor-text="VIEW"
         style={{
@@ -254,40 +255,79 @@ export default function About() {
         </p>
       </div>
 
-      {/* 5. New Sub-section Editorial Grid (Placed on the right, progressive reveals) */}
+      {/* 5. New Sub-section Editorial Grid (Placed on the right quadrant, progressive reveals) */}
       <div
         className="about-sub-content"
         style={{
           position: 'absolute',
           right: '8vw', // Placed on the right quadrant
-          bottom: '12vh',
+          bottom: '24vh', // Shifted upward by ~120px (from 12vh to 24vh) to allow section reveals earlier
           width: 'clamp(440px, 40vw, 640px)',
           zIndex: 4,
           display: 'flex',
           flexDirection: 'column',
-          gap: '4vh',
+          gap: '2.5vh', // Spacing reduced from 4vh to 2.5vh to tighten relationships
           opacity: 0, // Animated via GSAP timeline
           willChange: 'opacity, transform',
           pointerEvents: 'none',
         }}
       >
-        {/* Eyebrow */}
-        <span
+        {/* Header Row: Title & Integrated Contextual VIEW Action on the same axis */}
+        <div
           className="sub-section-eyebrow"
           style={{
-            fontFamily: 'var(--font-mono, monospace)',
-            fontSize: '9px',
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-2, #444444)',
-            opacity: 0.45,
-            display: 'block',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
             willChange: 'opacity, transform',
           }}
         >
-          02 — Deep Dive Focus
-        </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '11px', // Increased size for visual authority
+              fontWeight: 800, // Stronger weight
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-1, #0A0A0A)', // Better visual contrast
+              opacity: 0.85,
+            }}
+          >
+            02 — Deep Dive Focus
+          </span>
+          
+          {/* Integrated Contextual VIEW Action Belongs to Section Header */}
+          <span
+            data-cursor="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+                window.scrollTo({
+                  top: scrollHeight * 0.74,
+                  behavior: 'smooth'
+                });
+              }
+            }}
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '9px',
+              fontWeight: 800,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-1, #0A0A0A)',
+              opacity: 0.75,
+              border: '0.85px solid var(--color-border, rgba(10, 10, 10, 0.15))',
+              padding: '3px 10px',
+              borderRadius: '100px',
+              background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+            }}
+          >
+            VIEW
+          </span>
+        </div>
 
         {/* Current Focus Grid */}
         <div
@@ -295,7 +335,7 @@ export default function About() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
             willChange: 'opacity, transform',
           }}
         >
@@ -303,11 +343,11 @@ export default function About() {
             style={{
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: '8px',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
+              fontWeight: 800, // Stronger label weight
+              letterSpacing: '0.12em', // Improved uppercase tracking
               textTransform: 'uppercase',
-              color: 'var(--color-text-2, #444444)',
-              opacity: 0.3,
+              color: 'var(--color-text-1, #0A0A0A)',
+              opacity: 0.55, // Improved visual contrast
             }}
           >
             Current Focus
@@ -338,8 +378,8 @@ export default function About() {
                 <div
                   style={{
                     fontFamily: 'var(--font-mono, monospace)',
-                    fontSize: '10px',
-                    fontWeight: 700,
+                    fontSize: '11px', // Increased size
+                    fontWeight: 800, // Stronger weight for distinct cards title
                     color: 'var(--color-text-1, #0A0A0A)',
                     letterSpacing: '0.02em',
                   }}
@@ -351,7 +391,7 @@ export default function About() {
                     fontFamily: 'var(--font-body, sans-serif)',
                     fontSize: '9px',
                     color: 'var(--color-text-2, #444444)',
-                    opacity: 0.75,
+                    opacity: 0.60, // Lower weight description supports title scanability
                     marginTop: '2px',
                   }}
                 >
@@ -368,7 +408,7 @@ export default function About() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
             willChange: 'opacity, transform',
           }}
         >
@@ -376,11 +416,11 @@ export default function About() {
             style={{
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: '8px',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
+              fontWeight: 800, // Stronger weight
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--color-text-2, #444444)',
-              opacity: 0.3,
+              color: 'var(--color-text-1, #0A0A0A)',
+              opacity: 0.55, // Improved contrast
             }}
           >
             Selected Metrics
@@ -428,7 +468,7 @@ export default function About() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
             willChange: 'opacity, transform',
           }}
         >
@@ -436,11 +476,11 @@ export default function About() {
             style={{
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: '8px',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
+              fontWeight: 800, // Stronger weight
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--color-text-2, #444444)',
-              opacity: 0.3,
+              color: 'var(--color-text-1, #0A0A0A)',
+              opacity: 0.55, // Improved contrast
             }}
           >
             Core Stack

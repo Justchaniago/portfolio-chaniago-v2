@@ -31,11 +31,11 @@ export default function PinnedSections() {
 
             // 3-Stage dynamic pointerEvents update gates to isolate sections precisely
             if (heroEl && aboutEl && workEl) {
-              if (progress < 0.35) {
+              if (progress < 0.20) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.35 && progress < 0.76) {
+              } else if (progress >= 0.20 && progress < 0.73) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
                 workEl.style.pointerEvents = 'none';
@@ -88,7 +88,7 @@ export default function PinnedSections() {
       }, 0);
 
       // =========================================================================
-      // --- PHASE 2: Global Theme Variable Morphing & About Biography Reveals (Timeline 0.15 -> 1.10) ---
+      // --- PHASE 2: Global Theme Variable Morphing & About Biography Reveals (Timeline 0.15 -> 2.75) ---
       // =========================================================================
       tl.to('html', {
         '--color-bg': '#FFFFFF',
@@ -119,10 +119,10 @@ export default function PinnedSections() {
         0.45
       );
 
-      // 1. Neue Montreal Eyebrow reveal (triggers at 0.80 progress)
+      // 1. Neue Montreal Eyebrow reveal
       tl.fromTo('.about-eyebrow',
         { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, ease: 'power2.out' },
+        { opacity: 1, y: 0, ease: 'power2.out', duration: 0.4 },
         0.80
       );
 
@@ -136,18 +136,18 @@ export default function PinnedSections() {
           duration: 0.8,
           ease: 'premiumBezier',
         },
-        0.82
+        0.85
       );
 
       // 3. Subheadline / Description reveal
       tl.fromTo('.about-description',
         { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, ease: 'power2.out' },
-        1.05
+        { opacity: 1, y: 0, ease: 'power2.out', duration: 0.5 },
+        1.25
       );
 
       // =========================================================================
-      // --- PHASE 3: NEW SUB-SECTION TRANSITION & PORTRAIT CROSS-FADE SLIDE (Timeline 1.10 -> 2.20) ---
+      // --- PHASE 3: NEW SUB-SECTION TRANSITION & PORTRAIT CROSS-FADE SLIDE (Timeline 2.75 -> 4.85) ---
       // =========================================================================
       // Initial state setup for left-aligned portrait and sub-content grids
       gsap.set('.about-portrait-left-img', {
@@ -166,7 +166,13 @@ export default function PinnedSections() {
         y: -80,
         duration: 0.6,
         ease: 'power2.inOut',
-      }, 1.10);
+      }, 2.75);
+
+      // Disable hover trigger zone for right portrait in Phase 3
+      tl.to('.about-portrait-trigger', {
+        pointerEvents: 'none',
+        duration: 0.1,
+      }, 2.75);
 
       // 2. Coordinated Portrait Cross-Fade Slide (0.8s duration)
       // Right-aligned portrait slides left and fades out
@@ -175,7 +181,7 @@ export default function PinnedSections() {
         opacity: 0,
         duration: 0.8,
         ease: 'power2.inOut',
-      }, 1.20);
+      }, 2.85);
 
       // Left-aligned portrait slides left and fades in synchronously
       tl.to('.about-portrait-left-img', {
@@ -183,45 +189,46 @@ export default function PinnedSections() {
         opacity: 1,
         duration: 0.8,
         ease: 'power2.inOut',
-      }, 1.20);
+      }, 2.85);
 
-      // 3. Progressive Right-Side Sub-section Content Reveals
+      // 3. Progressive Right-Side Sub-section Content Reveals and enable pointerEvents
       tl.to('.about-sub-content', {
         opacity: 1,
+        pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 1.30);
+      }, 2.95);
 
       tl.to('.sub-section-eyebrow', {
         opacity: 1,
         y: 0,
         duration: 0.4,
         ease: 'power2.out',
-      }, 1.40);
+      }, 3.05);
 
       tl.to('.sub-section-focus', {
         opacity: 1,
         y: 0,
         duration: 0.5,
         ease: 'power2.out',
-      }, 1.50);
+      }, 3.15);
 
       tl.to('.sub-section-metrics', {
         opacity: 1,
         y: 0,
         duration: 0.5,
         ease: 'power2.out',
-      }, 1.70);
+      }, 3.35);
 
       tl.to('.sub-section-stack', {
         opacity: 1,
         y: 0,
         duration: 0.5,
         ease: 'power2.out',
-      }, 1.90);
+      }, 3.55);
 
       // =========================================================================
-      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 2.20 onwards) ---
+      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 4.85 onwards) ---
       // =========================================================================
       // Left-aligned portrait fades and sinks downwards
       tl.to('.about-portrait-left-img', {
@@ -229,47 +236,48 @@ export default function PinnedSections() {
         yPercent: 12,
         duration: 0.8,
         ease: 'power2.in',
-      }, 2.20);
+      }, 4.85);
 
-      // Right-side sub-section content fades and slides upwards
+      // Right-side sub-section content fades, slides upwards, and disables pointerEvents
       tl.to('.about-sub-content', {
         opacity: 0,
+        pointerEvents: 'none',
         y: -40,
         duration: 0.6,
         ease: 'power2.in',
-      }, 2.20);
+      }, 4.85);
 
       // Glass dome overlay fades out
       tl.to('.about-glass-overlay', {
         opacity: 0,
         duration: 0.6,
         ease: 'power1.inOut',
-      }, 2.20);
+      }, 4.85);
 
       // Work section container emerges
       tl.to('.work-section-container', {
         opacity: 1,
         duration: 0.4,
         ease: 'none',
-      }, 2.6);
+      }, 5.15);
 
       // Selected Works cards stagger up
       tl.fromTo('.work-header',
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-        2.8
+        5.35
       );
 
       tl.fromTo('.work-card-1',
         { opacity: 0, y: 40, scale: 0.96 },
         { opacity: 1, y: 24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
-        3.0
+        5.55
       );
 
       tl.fromTo('.work-card-2',
         { opacity: 0, y: 10, scale: 0.96 },
         { opacity: 1, y: -24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
-        3.2
+        5.75
       );
     });
 
