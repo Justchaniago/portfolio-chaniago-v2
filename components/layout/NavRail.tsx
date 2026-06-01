@@ -5,9 +5,9 @@ import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 const SECTIONS = [
   { id: 'hero', label: 'Hero', num: '01', progress: 0.0 },
-  { id: 'about', label: 'About', num: '02', progress: 0.38 },
-  { id: 'work', label: 'Work', num: '03', progress: 0.72 },
-  { id: 'contact', label: 'Contact', num: '04', progress: 0.92 },
+  { id: 'about', label: 'About', num: '02', progress: 0.11 },
+  { id: 'work', label: 'Work', num: '03', progress: 0.58 },
+  { id: 'contact', label: 'Contact', num: '04', progress: 0.98 },
 ];
 
 const SECTION_GAP = 56; // gap in pixels between dots
@@ -49,30 +49,30 @@ export default function NavRail() {
     if (typeof window === 'undefined') return;
 
     const getPreciseY = (progress: number) => {
-      if (progress <= 0.08) {
+      if (progress <= 0.04) {
         return 0; // lock to Dot 1 (Hero)
       }
-      if (progress > 0.08 && progress < 0.20) {
+      if (progress > 0.04 && progress < 0.08) {
         // interpolate between Dot 1 (0px) and Dot 2 (56px)
-        const t = (progress - 0.08) / (0.20 - 0.08);
+        const t = (progress - 0.04) / (0.08 - 0.04);
         const ease = t * t * (3 - 2 * t);
         return ease * 56;
       }
-      if (progress >= 0.20 && progress <= 0.52) {
+      if (progress >= 0.08 && progress <= 0.18) {
         return 56; // lock to Dot 2 (About)
       }
-      if (progress > 0.52 && progress < 0.65) {
+      if (progress > 0.18 && progress < 0.26) {
         // interpolate between Dot 2 (56px) and Dot 3 (112px)
-        const t = (progress - 0.52) / (0.65 - 0.52);
+        const t = (progress - 0.18) / (0.26 - 0.18);
         const ease = t * t * (3 - 2 * t);
         return 56 + ease * 56;
       }
-      if (progress >= 0.65 && progress <= 0.78) {
+      if (progress >= 0.26 && progress <= 0.88) {
         return 112; // lock to Dot 3 (Work)
       }
-      if (progress > 0.78 && progress < 0.88) {
+      if (progress > 0.88 && progress < 0.94) {
         // interpolate between Dot 3 (112px) and Dot 4 (168px)
-        const t = (progress - 0.78) / (0.88 - 0.78);
+        const t = (progress - 0.88) / (0.94 - 0.88);
         const ease = t * t * (3 - 2 * t);
         return 112 + ease * 56;
       }
@@ -87,11 +87,11 @@ export default function NavRail() {
 
       // Map progress thresholds to section indices (using midpoints of the transitions for perfect sync)
       let activeIdx = 0;
-      if (progress >= 0.14 && progress < 0.585) {
+      if (progress >= 0.06 && progress < 0.22) {
         activeIdx = 1; // About
-      } else if (progress >= 0.585 && progress < 0.83) {
+      } else if (progress >= 0.22 && progress < 0.93) {
         activeIdx = 2; // Work
-      } else if (progress >= 0.83) {
+      } else if (progress >= 0.93) {
         activeIdx = 3; // Contact
       }
 

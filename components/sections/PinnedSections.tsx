@@ -4,8 +4,10 @@ import { useEffect, useRef } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
+import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
+import { projects } from '@/data/projects';
 
 export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,6 +19,14 @@ export default function PinnedSections() {
       const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (isReduced) return;
 
+      // Calculate responsive project card geometry on initialization
+      const isMobile = window.innerWidth <= 768;
+      const cardTop = isMobile ? '22vh' : '15vh';
+      const cardLeft = isMobile ? '6vw' : '7.5vw';
+      const cardWidth = isMobile ? '88vw' : '85vw';
+      const cardHeight = isMobile ? '56vh' : '70vh';
+      const cardRadius = isMobile ? '32px' : '48px';
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
@@ -27,20 +37,29 @@ export default function PinnedSections() {
             const progress = self.progress;
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
             const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
+            const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
             const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
 
-            if (heroEl && aboutEl && contactEl) {
-              if (progress < 0.15) {
+            if (heroEl && aboutEl && workEl && contactEl) {
+              if (progress < 0.008) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
+                workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.15 && progress < 0.85) {
+              } else if (progress >= 0.008 && progress < 0.211) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
+                workEl.style.pointerEvents = 'none';
+                contactEl.style.pointerEvents = 'none';
+              } else if (progress >= 0.211 && progress < 0.948) {
+                heroEl.style.pointerEvents = 'none';
+                aboutEl.style.pointerEvents = 'none';
+                workEl.style.pointerEvents = 'auto';
                 contactEl.style.pointerEvents = 'none';
               } else {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'none';
+                workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'auto';
               }
             }
@@ -99,14 +118,57 @@ export default function PinnedSections() {
       // =========================================================================
       // --- PHASE 3: About sub-section + portrait cross-fade (2.75 -> 4.85) ---
       // =========================================================================
-      gsap.set('.about-portrait-left-img', { xPercent: 50, opacity: 0 });
-      gsap.set('.about-sub-content', { opacity: 0 });
-      gsap.set('.sub-section-eyebrow, .sub-section-focus, .sub-section-metrics, .sub-section-stack', {
+      tl.set('.about-portrait-left-img', { xPercent: 50, opacity: 0 }, 0);
+      tl.set('.about-sub-content', { opacity: 0 }, 0);
+      tl.set('.sub-section-eyebrow, .sub-section-focus, .sub-section-metrics, .sub-section-stack', {
         opacity: 0,
         y: 24,
+      }, 0);
+      // Work and Contact initial hidden states
+      tl.set('.work-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
+      projects.forEach((project) => {
+        tl.set(`.project-card-container-${project.id}`, {
+          top: '100vh',
+          left: cardLeft,
+          width: cardWidth,
+          height: cardHeight,
+          borderRadius: cardRadius,
+          opacity: 1,
+          pointerEvents: 'none',
+        }, 0);
+        tl.set(`.project-image-wrapper-${project.id}`, {
+          borderRadius: cardRadius,
+          yPercent: -15,
+        }, 0);
+        tl.set(`.project-image-${project.id}`, {
+          scale: 1.12,
+        }, 0);
+        tl.set(`.project-intro-block-${project.id}`, {
+          opacity: 0,
+          y: 0,
+        }, 0);
+        tl.set(`.project-intro-eyebrow-${project.id}`, {
+          opacity: 0,
+          y: 30,
+          filter: 'blur(8px)',
+        }, 0);
+        tl.set(`.project-intro-title-${project.id}`, {
+          opacity: 0,
+          y: 40,
+          filter: 'blur(12px)',
+        }, 0);
+        tl.set(`.project-intro-line-${project.id}`, {
+          opacity: 0,
+          scaleX: 0,
+        }, 0);
+        tl.set(`.project-intro-desc-${project.id}`, {
+          opacity: 0,
+          y: 30,
+          filter: 'blur(8px)',
+        }, 0);
       });
-      gsap.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' });
-      gsap.set('.contact-content-wrapper', { opacity: 0, y: 30 });
+      tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
+      tl.set('.contact-content-wrapper', { opacity: 0, y: 30 }, 0);
 
       tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.6, ease: 'power2.inOut' }, 2.75);
       tl.to('.about-portrait-trigger', { pointerEvents: 'none', duration: 0.1 }, 2.75);
@@ -119,25 +181,208 @@ export default function PinnedSections() {
       tl.to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.55);
 
       // =========================================================================
-      // --- PHASE 4: About exit + Contact reveal (4.85 -> 5.95) ---
+      // --- PHASE 4: About exit + Work Intro reveal (4.85 -> 6.0) ---
       // =========================================================================
       tl.to('.about-portrait-left-img', { opacity: 0, yPercent: 12, duration: 0.8, ease: 'power2.in' }, 4.85);
       tl.to('.about-sub-content', { opacity: 0, pointerEvents: 'none', y: -40, duration: 0.6, ease: 'power2.in' }, 4.85);
       tl.to('.about-glass-overlay', { opacity: 0, duration: 0.6, ease: 'power1.inOut' }, 4.85);
 
+      // Enable visibility for Work intro container
+      tl.to('.work-section-container', { opacity: 1, pointerEvents: 'auto', duration: 0.4, ease: 'none' }, 5.0);
+
+      // Reveal the large "MY WORK" masked editorial typography
+      tl.fromTo('.work-intro-char',
+        { yPercent: 100, opacity: 0, filter: 'blur(12px)' },
+        { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.05, duration: 0.8, ease: 'premiumBezier' },
+        5.1
+      );
+
+      // Brief pause and then fade out the title to let the projects emerge
+      tl.to('.work-intro-container', { opacity: 0, duration: 0.4, ease: 'power2.inOut' }, 5.7);
+
+      // =========================================================================
+      // =========================================================================
+      // --- PHASE 5: Dynamic Projects Portal Morph Loop (6.0 -> 26.0) ---
+      // =========================================================================
+      projects.forEach((project, idx) => {
+        const start = 6.0 + idx * 6.4;
+
+        // =========================================================================
+        // --- PHASE 01: PROJECT TYPOGRAPHY INTRODUCTION ---
+        // =========================================================================
+        // Masked reveal, upward translate, blur resolve, and scaleX horizontal divider emergence
+        tl.to(`.project-intro-block-${project.id}`, { opacity: 1, pointerEvents: 'auto', duration: 0.1 }, start);
+
+        tl.to(`.project-intro-eyebrow-${project.id}`, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.8,
+          ease: 'premiumBezier',
+        }, start + 0.15);
+
+        tl.to(`.project-intro-title-${project.id}`, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.9,
+          ease: 'premiumBezier',
+        }, start + 0.25);
+
+        tl.to(`.project-intro-line-${project.id}`, {
+          opacity: 1,
+          scaleX: 1,
+          duration: 0.6,
+          ease: 'power2.out',
+        }, start + 0.4);
+
+        tl.to(`.project-intro-desc-${project.id}`, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.8,
+          ease: 'premiumBezier',
+        }, start + 0.55);
+
+        // --- PAUSE TYPOGRAPHY INTRODUCTION (0.8s) ---
+        // start + 1.2 to start + 2.0. Allow user to read and build anticipation.
+
+        // --- TYPOGRAPHY INTRODUCTION EXIT ---
+        // Typography slides up cleanly and fades out to make space for the emergent card
+        tl.to(`.project-intro-block-${project.id}`, {
+          opacity: 0,
+          y: -50,
+          filter: 'blur(12px)',
+          duration: 0.6,
+          ease: 'power2.in',
+          pointerEvents: 'none',
+        }, start + 2.0);
+
+        // =========================================================================
+        // --- PHASE 02: IMAGE-ONLY PROJECT CARD ENTRY ---
+        // =========================================================================
+        // Card slides upward smoothly from below (100vh) to centered height (cardTop)
+        tl.fromTo(`.project-card-container-${project.id}`,
+          { top: '100vh', borderRadius: cardRadius },
+          {
+            top: cardTop,
+            borderRadius: cardRadius,
+            pointerEvents: 'auto',
+            duration: 1.2,
+            ease: 'power2.out',
+          },
+          start + 2.2
+        );
+
+        // Inner image parallax during entry
+        tl.fromTo(`.project-image-wrapper-${project.id}`,
+          { yPercent: -15, borderRadius: cardRadius },
+          { yPercent: 0, borderRadius: cardRadius, duration: 1.2, ease: 'power2.out' },
+          start + 2.2
+        );
+
+        // --- CARD RESTING STATE (POSTER PHASE) ---
+        // Hold/Pause centered card (with rounded corners) as a visual poster.
+        // start + 3.4 to start + 4.2 (duration: 0.8s). No text visible, image dominant.
+
+        // =========================================================================
+        // --- PHASE 03: ONE-WAY MORPH EXPANSION ---
+        // =========================================================================
+        // Card expands in width, height, position, and border radius to fullscreen
+        tl.to(`.project-card-container-${project.id}`, {
+          width: '100vw',
+          height: '100vh',
+          top: '0vh',
+          left: '0vw',
+          borderRadius: '0px',
+          duration: 1.2,
+          ease: 'premiumBezier',
+        }, start + 4.2);
+
+        tl.to(`.project-image-wrapper-${project.id}`, {
+          borderRadius: '0px',
+          duration: 1.2,
+          ease: 'premiumBezier',
+        }, start + 4.2);
+
+        // Inner image scales down slightly for morph depth
+        tl.to(`.project-image-${project.id}`, {
+          scale: 1.0,
+          duration: 1.2,
+          ease: 'premiumBezier',
+        }, start + 4.2);
+
+        // Dynamically transition all visual variables on html for NavRail & MorphNav to white/dark mode (instant toggle)
+        tl.to('html', {
+          '--color-bg': '#FFFFFF',
+          '--color-text-1': '#FFFFFF',
+          '--color-text-2': '#888888',
+          '--color-border': 'rgba(255, 255, 255, 0.15)',
+          '--color-card-bg': 'rgba(255, 255, 255, 0.08)',
+          duration: 0.1,
+          ease: 'none',
+        }, start + 4.2);
+
+        // --- IMMERSIVE PROJECT EXPERIENCE (VISUAL PAUSE) ---
+        // Hold fullscreen image-only stage to allow visual breathing room.
+        // start + 5.4 to start + 6.4 (duration: 1.0s). Pristine visual, no text or overlay.
+
+        // =========================================================================
+        // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT ---
+        // =========================================================================
+        // Once the project reaches expanded state, it is a one-way journey. 
+        // It never collapses back to card state. It simply slides straight UP off-screen.
+        if (idx < projects.length - 1) {
+          // Slide the entire expanded fullscreen card straight UP off-screen
+          tl.to(`.project-card-container-${project.id}`, {
+            top: '-100vh',
+            duration: 1.0,
+            ease: 'premiumBezier',
+          }, start + 6.4);
+        } else {
+          // For the LAST project, slide straight up off-screen
+          tl.to(`.project-card-container-${project.id}`, {
+            top: '-100vh',
+            duration: 1.0,
+            ease: 'premiumBezier',
+          }, start + 6.4);
+
+          // Fade out the entire Work section container to reveal Contact underneath
+          tl.to('.work-section-container', {
+            opacity: 0,
+            duration: 0.6,
+            ease: 'power2.inOut',
+          }, start + 6.6);
+        }
+
+        // Smoothly transition variables back to light mode as card exits off-screen (instant toggle)
+        tl.to('html', {
+          '--color-bg': '#FFFFFF',
+          '--color-text-1': '#0A0A0A',
+          '--color-text-2': '#444444',
+          '--color-border': 'rgba(10, 10, 10, 0.15)',
+          '--color-card-bg': 'rgba(255, 255, 255, 0.35)',
+          duration: 0.1,
+          ease: 'none',
+        }, start + 6.4);
+      });
+
+      // =========================================================================
+      // --- PHASE 6: Work Exit + Contact reveal (25.6 -> 27.0) ---
+      // =========================================================================
       tl.to('.contact-section-container', {
         opacity: 1,
         pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 5.15);
+      }, 25.6);
 
       tl.to('.contact-content-wrapper', {
         opacity: 1,
         y: 0,
         duration: 0.6,
         ease: 'power2.out',
-      }, 5.35);
+      }, 25.8);
     });
 
     return () => {
@@ -162,7 +407,7 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '450vh',
+        height: '1200vh',
       }}
     >
       <NavRail />
@@ -179,6 +424,7 @@ export default function PinnedSections() {
       >
         <Hero />
         <About />
+        <ProjectShowcase />
         <Contact />
       </div>
     </div>

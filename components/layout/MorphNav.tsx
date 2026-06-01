@@ -208,12 +208,12 @@ export default function MorphNav() {
 
       setIsCollapsed(y > 80);
       
-      if (progress < 0.38) {
-        setActiveSection('work');
-      } else if (progress >= 0.38 && progress < 0.72) {
+      if (progress < 0.22) {
         setActiveSection('about');
-      } else {
+      } else if (progress >= 0.22 && progress < 0.93) {
         setActiveSection('work');
+      } else {
+        setActiveSection('contact');
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -378,21 +378,28 @@ export default function MorphNav() {
 
     if (href === '/work') {
       if (lenis) {
-        // Scrolls to the Work phase at the bottom of the timeline
-        lenis.scrollTo('bottom', { duration: 2.6, easing: easeInOutExpo });
+        // Scrolls to the Work focal center
+        const targetScroll = document.documentElement.scrollHeight * 0.58;
+        lenis.scrollTo(targetScroll, { duration: 2.6, easing: easeInOutExpo });
       } else {
-        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        window.scrollTo({ top: document.documentElement.scrollHeight * 0.58, behavior: 'smooth' });
       }
     } else if (href === '/about') {
       if (lenis) {
-        // Scrolls to the About full reveal phase in the middle of the timeline (50% depth)
-        const targetScroll = document.documentElement.scrollHeight * 0.50;
+        // Scrolls to the About full reveal phase
+        const targetScroll = document.documentElement.scrollHeight * 0.11;
         lenis.scrollTo(targetScroll, { duration: 2.2, easing: easeInOutExpo });
       } else {
-        window.scrollTo({ top: document.documentElement.scrollHeight * 0.50, behavior: 'smooth' });
+        window.scrollTo({ top: document.documentElement.scrollHeight * 0.11, behavior: 'smooth' });
       }
     } else if (href === '/contact') {
-      window.location.href = 'mailto:ferryruslyc@gmail.com';
+      if (lenis) {
+        // Scrolls to Contact section
+        const targetScroll = document.documentElement.scrollHeight * 0.98;
+        lenis.scrollTo(targetScroll, { duration: 2.2, easing: easeInOutExpo });
+      } else {
+        window.scrollTo({ top: document.documentElement.scrollHeight * 0.98, behavior: 'smooth' });
+      }
     }
   }, [navState, handleClose]);
 
@@ -404,7 +411,7 @@ export default function MorphNav() {
       return pathname === '/about' || (pathname === '/' && activeSection === 'about');
     }
     if (href === '/contact') {
-      return pathname === '/contact';
+      return pathname === '/contact' || (pathname === '/' && activeSection === 'contact');
     }
     return false;
   };

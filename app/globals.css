@@ -184,3 +184,42 @@ body {
     border-radius: 42% 58% 35% 65% / 55% 45% 55% 45%;
   }
 }
+
+/* Responsive Project Card starting states & layout values */
+.project-card-container {
+  position: absolute;
+  top: 15vh;
+  left: 7.5vw;
+  width: 85vw;
+  height: 70vh;
+  border-radius: 48px;
+  overflow: hidden;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  background-color: var(--color-card-bg, #F9F9F9);
+  border: 1px solid var(--color-border, rgba(10, 10, 10, 0.04));
+  
+  /* Soft 4-layered ambient occlusion shadow for physical depth (sufficient but not excessive) */
+  box-shadow: 
+    0 1px 2px rgba(10, 10, 10, 0.01),          /* 1. Contact Ambient Occlusion: ultra-sharp edge shadow */
+    0 8px 16px -4px rgba(10, 10, 10, 0.03),     /* 2. Mid Shadow: soft medium separation shadow */
+    0 24px 48px -12px rgba(10, 10, 10, 0.05),   /* 3. Large Soft Shadow: wide organic ambient diffusion */
+    0 0 0 1px rgba(10, 10, 10, 0.02);           /* 4. Fine outer containment border */
+  
+  will-change: width, height, top, left, border-radius, opacity, box-shadow;
+  
+  /* Safari / Webkit overflow-radius rendering bugfix */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+}
+
+@media (max-width: 768px) {
+  .project-card-container {
+    top: 22vh;
+    left: 6vw;
+    width: 88vw;
+    height: 56vh;
+    border-radius: 32px;
+  }
+}
