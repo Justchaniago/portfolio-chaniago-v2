@@ -1,0 +1,289 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+
+const SECTIONS = [
+  { id: 'hero', label: 'Hero', num: '01', progress: 0.0 },
+  { id: 'about', label: 'About', num: '02', progress: 0.38 },
+  { id: 'work', label: 'Work', num: '03', progress: 0.72 },
+  { id: 'contact', label: 'Contact', num: '04', progress: 0.92 },
+];
+
+const SECTION_GAP = 56; // gap in pixels between dots
+
+export default function NavRail() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [mouseY, setMouseY] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Framer Motion values for spring-driven active indicator
+  const y = useMotionValue(0);
+  const scaleY = useMotionValue(1);
+  const scaleX = useMotionValue(1);
+
+  // Crisp mechanical spring configuration (Apple-level design feel)
+  const springY = useSpring(y, { stiffness: 350, damping: 30, mass: 0.8 });
+  const springScaleY = useSpring(scaleY, { stiffness: 450, damping: 25 });
+  const springScaleX = useSpring(scaleX, { stiffness: 450, damping: 25 });
+
+  // Handle velocity-based stretching into a capsule during movements
+  useEffect(() => {
+    let lastY = 0;
+    const unsubscribe = springY.on('change', (latest) => {
+      const diff = Math.abs(latest - lastY);
+      // Capsule stretch: taller scaleY, slightly squeezed scaleX
+      scaleY.set(1 + Math.min(diff * 0.12, 1.6));
+      scaleX.set(1 - Math.min(diff * 0.06, 0.35));
+      lastY = latest;
+    });
+    return () => unsubscribe();
+  }, [springY, scaleY, scaleX]);
+
+  // Track window scroll and determine current active index
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight <= 0) return;
+
+      const progress = window.scrollY / scrollHeight;
+
+      // Map progress thresholds to section indices
+      let activeIdx = 0;
+      if (progress >= 0.15 && progress < 0.58) {
+        activeIdx = 1; // About
+      } else if (progress >= 0.58 && progress < 0.82) {
+        activeIdx = 2; // Work
+      } else if (progress >= 0.82) {
+        activeIdx = 3; // Contact
+      }
+
+      setActiveIndex(activeIdx);
+
+      // Dynamically fill the progress rail
+      const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
+      if (fillLine) {
+        fillLine.style.transform = `scaleY(${progress})`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial call to set correct initial state
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Update target vertical position, factoring in dynamic magnetic mouse pulling
+  useEffect(() => {
+    const baseTargetY = activeIndex * SECTION_GAP;
+    if (mouseY !== null) {
+      // Subtle magnetic pull towards the cursor (pulls 25% of the distance)
+      const diff = mouseY - baseTargetY;
+      y.set(baseTargetY + diff * 0.25);
+    } else {
+      y.set(baseTargetY);
+    }
+  }, [activeIndex, mouseY, y]);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    // Calculate cursor Y position relative to the center vertical axis of dots
+    const relativeY = e.clientY - rect.top - 48; // offset top counter block
+    setMouseY(relativeY);
+  };
+
+  const handleMouseLeave = () => {
+    setMouseY(null);
+    setHovered(false);
+  };
+
+  const handleSectionClick = (progressVal: number) => {
+    if (typeof window === 'undefined') return;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    window.scrollTo({
+      top: scrollHeight * progressVal,
+      behavior: 'smooth',
+    });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setHovered(true)}
+      className="nav-rail-container"
+      style={{
+        position: 'fixed',
+        right: '3.5vw',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '24px',
+        padding: '20px 10px',
+        pointerEvents: 'auto', // Receives hover triggers
+      }}
+    >
+      {/* 1. Counter Display (Monochrome & Mono) */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          height: '24px',
+        }}
+      >
+        <span
+          className="nav-rail-counter-num"
+          style={{
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: '11px',
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            color: 'var(--color-text-1, #0A0A0A)',
+            transition: 'color 0.4s ease',
+          }}
+        >
+          {SECTIONS[activeIndex].num}
+        </span>
+      </div>
+
+      {/* 2. Scroll Progress Rail */}
+      <div
+        style={{
+          position: 'relative',
+          height: `${SECTION_GAP * 3}px`,
+          width: '24px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+        }}
+      >
+        {/* Baseline Rail stroke */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            width: '1px',
+            background: 'var(--color-border, rgba(10, 10, 10, 0.1))',
+            transition: 'background 0.4s ease',
+          }}
+        />
+
+        {/* Dynamic Progress Fill overlay */}
+        <div
+          className="nav-rail-fill"
+          style={{
+            position: 'absolute',
+            top: 0,
+            width: '1px',
+            height: '100%',
+            background: 'var(--color-text-1, #0A0A0A)',
+            transformOrigin: 'top center',
+            transform: 'scaleY(0)',
+            transition: 'background 0.4s ease',
+            willChange: 'transform',
+          }}
+        />
+
+        {/* Section Dots / Label Row Wrappers */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            zIndex: 2,
+          }}
+        >
+          {SECTIONS.map((section, idx) => (
+            <div
+              key={section.id}
+              onClick={() => handleSectionClick(section.progress)}
+              data-cursor="button"
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              {/* Elegant Fading/Blurring Label */}
+              <span
+                className={`nav-rail-label ${activeIndex === idx ? 'active' : ''}`}
+                style={{
+                  position: 'absolute',
+                  right: '28px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '8px',
+                  fontWeight: 800,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-text-1, #0A0A0A)',
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  opacity: hovered ? (activeIndex === idx ? 0.85 : 0.4) : 0,
+                  filter: hovered ? 'blur(0px)' : 'blur(8px)',
+                  transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease',
+                  willChange: 'opacity, filter',
+                }}
+              >
+                {section.label}
+              </span>
+
+              {/* Fixed Tiny Dot Mark */}
+              <div
+                className={`nav-rail-dot ${activeIndex === idx ? 'active' : ''}`}
+                style={{
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '50%',
+                  background: 'var(--color-text-1, #0A0A0A)',
+                  opacity: activeIndex === idx ? 0 : 0.25,
+                  transition: 'opacity 0.3s ease, background 0.4s ease',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* 3. Snappy Spring Morphing Active Indicator */}
+        <motion.div
+          className="nav-rail-active-indicator"
+          style={{
+            position: 'absolute',
+            top: '-3px', // centers 10px indicator precisely over dots (16px vertical zone offset)
+            width: '6px',
+            height: '6px',
+            borderRadius: '100px',
+            background: 'var(--color-text-1, #0A0A0A)',
+            zIndex: 3,
+            pointerEvents: 'none',
+            y: springY,
+            scaleY: springScaleY,
+            scaleX: springScaleX,
+            transformOrigin: 'center center',
+            transition: 'background 0.4s ease',
+          }}
+        />
+      </div>
+    </div>
+  );
+}

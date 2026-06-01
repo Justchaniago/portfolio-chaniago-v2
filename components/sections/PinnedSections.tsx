@@ -5,6 +5,8 @@ import { gsap, ScrollTrigger } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
 import Work from './Work';
+import Contact from './Contact';
+import NavRail from '../layout/NavRail';
 
 export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,21 +30,30 @@ export default function PinnedSections() {
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
             const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
             const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
+            const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
 
-            // 3-Stage dynamic pointerEvents update gates to isolate sections precisely
-            if (heroEl && aboutEl && workEl) {
-              if (progress < 0.20) {
+            // 4-Stage dynamic pointerEvents update gates to isolate sections precisely
+            if (heroEl && aboutEl && workEl && contactEl) {
+              if (progress < 0.15) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.20 && progress < 0.73) {
+                contactEl.style.pointerEvents = 'none';
+              } else if (progress >= 0.15 && progress < 0.58) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
                 workEl.style.pointerEvents = 'none';
-              } else {
+                contactEl.style.pointerEvents = 'none';
+              } else if (progress >= 0.58 && progress < 0.82) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'auto';
+                contactEl.style.pointerEvents = 'none';
+              } else {
+                heroEl.style.pointerEvents = 'none';
+                aboutEl.style.pointerEvents = 'none';
+                workEl.style.pointerEvents = 'none';
+                contactEl.style.pointerEvents = 'auto';
               }
             }
           },
@@ -159,6 +170,8 @@ export default function PinnedSections() {
         opacity: 0,
         y: 24,
       });
+      gsap.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' });
+      gsap.set('.contact-content-wrapper', { opacity: 0, y: 30 });
 
       // 1. Fade out and slide up the initial About biography text block
       tl.to('.about-editorial-text', {
@@ -228,7 +241,7 @@ export default function PinnedSections() {
       }, 3.55);
 
       // =========================================================================
-      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 4.85 onwards) ---
+      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 4.85 -> 6.65) ---
       // =========================================================================
       // Left-aligned portrait fades and sinks downwards
       tl.to('.about-portrait-left-img', {
@@ -279,6 +292,33 @@ export default function PinnedSections() {
         { opacity: 1, y: -24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
         5.75
       );
+
+      // =========================================================================
+      // --- PHASE 5: CURATED WORKS TO CONTACT STAGGER REVEAL (Timeline 6.65 onwards) ---
+      // =========================================================================
+      // Work section container fades out and sinks
+      tl.to('.work-section-container', {
+        opacity: 0,
+        y: -40,
+        duration: 0.6,
+        ease: 'power2.inOut',
+      }, 6.65);
+
+      // Contact section container emerges and enables pointerEvents
+      tl.to('.contact-section-container', {
+        opacity: 1,
+        pointerEvents: 'auto',
+        duration: 0.4,
+        ease: 'none',
+      }, 6.95);
+
+      // Contact content reveals and slides up
+      tl.to('.contact-content-wrapper', {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+      }, 7.15);
     });
 
     return () => {
@@ -303,9 +343,11 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '500vh', // Expanded scroll budget for multi-phase scrub
+        height: '600vh', // Expanded scroll budget for multi-phase scrub with Contact section
       }}
     >
+      <NavRail />
+
       {/* Sticky base container locking viewport */}
       <div
         style={{
@@ -320,6 +362,7 @@ export default function PinnedSections() {
         <Hero />
         <About />
         <Work />
+        <Contact />
       </div>
     </div>
   );
