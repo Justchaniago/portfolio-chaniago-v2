@@ -1,25 +1,29 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Project } from '@/data/projects';
+import { gsap } from '@/lib/gsap';
 
 interface ProjectCardProps {
   project: Project;
   index: number;
-  total: number;
 }
 
-export default function ProjectCard({ project, index, total }: ProjectCardProps) {
-  const cardRef = useRef<HTMLAnchorElement>(null);
+export default function ProjectCard({ project, index }: ProjectCardProps) {
+  const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
+  const pillContentRef = useRef<HTMLDivElement>(null);
   
   // Slide index state (0, 1, 2)
   const [activeIdx, setActiveIdx] = useState(0);
   const [prevActiveIdx, setPrevActiveIdx] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
-  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Story Progression States
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMorphComplete, setIsMorphComplete] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchHeld, setIsTouchHeld] = useState(false);
@@ -35,6 +39,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
   });
 
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wasExpandedRef = useRef(false);
 
   // Select which pre-loaded premium monochrome/technical public image to use as fallback
   const fallbackImages = ['/images/project_aura.png', '/images/project_kuro.png', '/images/chaniago.jpg'];
@@ -50,15 +55,19 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     const checkExpandedState = () => {
       const isExpandedAttr = cardEl.getAttribute('data-expanded') === 'true';
       setIsExpanded(isExpandedAttr);
+
+      const isMorphCompleteAttr = cardEl.getAttribute('data-morph-complete') === 'true';
+      setIsMorphComplete(isMorphCompleteAttr);
     };
 
     // Run initial check
     checkExpandedState();
 
-    // Listen for data-expanded mutations on cardEl
+    // Listen for data-expanded and data-morph-complete mutations on cardEl
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-expanded') {
+        if (mutation.type === 'attributes' && 
+            (mutation.attributeName === 'data-expanded' || mutation.attributeName === 'data-morph-complete')) {
           checkExpandedState();
         }
       });
@@ -71,10 +80,162 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     };
   }, []);
 
+  useEffect(() => {
+    if (isExpanded && !wasExpandedRef.current) {
+      setPrevActiveIdx(activeIdx); // Lock prevActiveIdx to activeIdx to avoid horizontal transition glitches on expand
+      setSlideDirection('forward');
+      setProgressPercent(0);
+      setIsPaused(false);
+      setIsAutoplaySuspended(false);
+      setIsMorphComplete(false);
+    }
+
+    if (!isExpanded && wasExpandedRef.current) {
+      setProgressPercent(0);
+      setIsPaused(false);
+      setIsAutoplaySuspended(false);
+      setIsMorphComplete(false);
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
+    }
+
+    wasExpandedRef.current = isExpanded;
+  }, [isExpanded, activeIdx]);
+
+  // Debounced IntersectionObserver to auto-reset project slide index to 0 when card leaves the viewport (<10% visibility).
+  // Uses a 600ms debounce to prevent premature resets during quick collapse→re-expand snap transitions.
+  const resetDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const cardEl = cardRef.current;
+    if (!cardEl) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio < 0.1) {
+          // Start debounce: only reset after card has been off-screen for 600ms
+          if (!resetDebounceRef.current) {
+            resetDebounceRef.current = setTimeout(() => {
+              setActiveIdx(0);
+              setPrevActiveIdx(0);
+              setProgressPercent(0);
+              setIsPaused(false);
+              setIsAutoplaySuspended(false);
+              resetDebounceRef.current = null;
+            }, 600);
+          }
+        } else {
+          // Card is visible again — cancel any pending reset to preserve active slide state
+          if (resetDebounceRef.current) {
+            clearTimeout(resetDebounceRef.current);
+            resetDebounceRef.current = null;
+          }
+        }
+      },
+      {
+        threshold: [0.0, 0.1, 0.2],
+      }
+    );
+
+    observer.observe(cardEl);
+
+    return () => {
+      observer.disconnect();
+      if (resetDebounceRef.current) {
+        clearTimeout(resetDebounceRef.current);
+      }
+    };
+  }, []);
+
+  // Decoupled One-Shot GSAP Emergence, Morph, and Staggered Content transition
+  useEffect(() => {
+    if (!pillRef.current || !pillContentRef.current) return;
+
+    if (isExpanded) {
+      // Create a dedicated animation context for the timeline
+      const ctx = gsap.context(() => {
+        const entryTimeline = gsap.timeline({
+          onComplete: () => {
+            setIsMorphComplete(true);
+          }
+        });
+
+        // 1. Reset start state (52px circular orb, translateY 80px below viewport, blurred)
+        gsap.set(pillRef.current, {
+          width: '52px',
+          y: 80,
+          opacity: 0,
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+        });
+        gsap.set(pillContentRef.current, {
+          opacity: 0,
+          pointerEvents: 'none',
+        });
+
+        // 2. Orb Emergence: slide up and fade in over 600ms
+        entryTimeline.to(pillRef.current, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          pointerEvents: 'auto',
+          duration: 0.6,
+          ease: 'premiumBezier',
+        });
+
+        // 3. 120ms pause, then Morph stretches horizontally to 190px over 450ms
+        entryTimeline.to(pillRef.current, {
+          width: '190px',
+          duration: 0.45,
+          ease: 'premiumBezier',
+        }, '+=0.12');
+
+        // 4. 150ms delay, then Dots fade in over 300ms
+        entryTimeline.to(pillContentRef.current, {
+          opacity: 1,
+          pointerEvents: 'auto',
+          duration: 0.3,
+          ease: 'power2.out',
+        }, '+=0.15');
+      });
+
+      return () => ctx.revert();
+    } else {
+      // Exit sequence triggered immediately on collapse
+      setIsMorphComplete(false);
+
+      const ctx = gsap.context(() => {
+        const exitTimeline = gsap.timeline();
+
+        // 1. Fade out content quickly (200ms)
+        exitTimeline.to(pillContentRef.current, {
+          opacity: 0,
+          pointerEvents: 'none',
+          duration: 0.2,
+        });
+
+        // 2. Reset pill: shrink back to 52px orb, slide down to 80px, and blur/fade out (400ms)
+        exitTimeline.to(pillRef.current, {
+          width: '52px',
+          y: 80,
+          opacity: 0,
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+          duration: 0.4,
+          ease: 'premiumBezier',
+        }, '-=0.15');
+      });
+
+      return () => ctx.revert();
+    }
+  }, [isExpanded]);
+
   // Autoplay progression loop using requestAnimationFrame for zero-jerk performance
   useEffect(() => {
-    // Only run autoplay loop if card is expanded, not paused, not suspended, and not hovered/touch-held
-    const shouldProgress = isExpanded && !isPaused && !isAutoplaySuspended && !isHovered && !isTouchHeld;
+    // Only run autoplay loop if card is expanded, morph is complete, not paused, not suspended, and not hovered/touch-held
+    const shouldProgress = isExpanded && isMorphComplete && !isPaused && !isAutoplaySuspended && !isHovered && !isTouchHeld;
 
     if (!shouldProgress) return;
 
@@ -93,11 +254,6 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
           setSlideDirection('forward');
           setPrevActiveIdx(activeIdx);
           setActiveIdx(nextIdx);
-          setIsTransitioning(true);
-          
-          setTimeout(() => {
-            setIsTransitioning(false);
-          }, 800);
 
           return 0;
         }
@@ -112,13 +268,16 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isExpanded, activeIdx, isPaused, isAutoplaySuspended, isHovered, isTouchHeld, totalSlides]);
+  }, [isExpanded, isMorphComplete, activeIdx, isPaused, isAutoplaySuspended, isHovered, isTouchHeld, totalSlides]);
 
   // Safely clear timeouts on unmount
   useEffect(() => {
     return () => {
       if (resumeTimeoutRef.current) {
         clearTimeout(resumeTimeoutRef.current);
+      }
+      if (resetDebounceRef.current) {
+        clearTimeout(resetDebounceRef.current);
       }
     };
   }, []);
@@ -139,11 +298,6 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     setPrevActiveIdx(activeIdx);
     setActiveIdx(nextIdx);
     setProgressPercent(0);
-    setIsTransitioning(true);
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 800);
 
     // Suspend autoplay progression for 5 seconds to let user explore
     setIsAutoplaySuspended(true);
@@ -156,45 +310,51 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
   };
 
   // Pointer event handlers to support horizontal swipe gesture recognition
-  const handlePointerDown = (e: React.PointerEvent<HTMLAnchorElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isExpanded) return;
-
-    const cardEl = cardRef.current;
-    if (!cardEl) return;
 
     gestureRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      startTime: Date.now(),
+      startTime: e.timeStamp,
       isPointerDown: true,
     };
-
-    cardEl.setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture.isPointerDown) return;
 
     const dx = e.clientX - gesture.startX;
     const dy = e.clientY - gesture.startY;
 
-    // Lock horizontal history gestures
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-      e.preventDefault();
+    // Verify gesture intent once a minimal threshold is crossed (10px)
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal swiping intent verified: capture pointer & prevent default browser history swiping
+        e.currentTarget.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      } else {
+        // Vertical scrolling intent verified: discard pointer capture immediately and let browser handle native vertical page scroll
+        gesture.isPointerDown = false;
+      }
     }
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLAnchorElement>) => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture.isPointerDown) return;
 
+    // Safely check and release pointer capture if horizontal swiping was active
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+
     gesture.isPointerDown = false;
-    cardRef.current?.releasePointerCapture(e.pointerId);
 
     const dx = e.clientX - gesture.startX;
     const dy = e.clientY - gesture.startY;
-    const duration = Date.now() - gesture.startTime;
+    const duration = Math.max(e.timeStamp - gesture.startTime, 1);
     const velocity = dx / duration; // pixels per ms
 
     const isSwipe = Math.abs(dx) > 50 || Math.abs(velocity) > 0.3;
@@ -211,12 +371,15 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     }
   };
 
-  const handlePointerCancel = (e: React.PointerEvent<HTMLAnchorElement>) => {
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture.isPointerDown) return;
 
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+
     gesture.isPointerDown = false;
-    cardRef.current?.releasePointerCapture(e.pointerId);
   };
 
   // V3 Always-Mounted Cross-Layer Cinematic Transitions with Apple Depth
@@ -226,11 +389,12 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
     const transition = 'transform 800ms cubic-bezier(0.22, 1, 0.36, 1), opacity 800ms cubic-bezier(0.22, 1, 0.36, 1)';
 
     if (!isExpanded) {
-      // Collapsed poster mode (Only Slide 0 visible, rest are transparent fallback sizes)
-      if (imgIdx === 0) {
+      // Collapsed poster mode. The image zoom is owned by GSAP, so React does not
+      // re-apply transform scale during progress re-renders.
+      if (imgIdx === activeIdx) {
         return {
           opacity: 1,
-          transform: 'translateX(0%) scale(1.12)',
+          transform: 'translateX(0%) scale(1)',
           zIndex: 2,
           transition: 'transform 1200ms cubic-bezier(0.22, 1, 0.36, 1)',
         };
@@ -274,16 +438,12 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
   };
 
   return (
-    <a
+    <div
       ref={cardRef}
-      href={`/work/${project.slug}`}
-      onClick={(e) => {
-        // Enforce absolute click lockouts to prevent card navigation at all times.
-        e.preventDefault();
-      }}
       className={`project-card-container project-card-container-${project.id}`}
       data-cursor="image"
       data-cursor-text="CASE STUDY"
+      aria-label={`${project.title} project gallery`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -293,7 +453,6 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
       style={{
         display: 'block',
         textDecoration: 'none',
-        pointerEvents: 'auto',
         touchAction: 'pan-y', // Native smooth vertical scroll, gesture locking captures horizontal
         userSelect: 'none',
         WebkitUserSelect: 'none',
@@ -318,12 +477,12 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
         onPointerMove={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
         onClick={(e) => {
-          e.preventDefault();
           e.stopPropagation();
-          window.location.href = `/work/${project.slug}`;
+          router.push(`/work/${project.slug}`);
         }}
       >
         <button
+          type="button"
           style={{
             fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
             fontSize: '13px',
@@ -391,7 +550,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
 
       {/* 3. Portals / Image container (All images remain mounted to ensure zero blank frames) */}
       <div
-        className={`project-image-wrapper-${project.id}`}
+        className={`project-image-frame project-image-wrapper-${project.id}`}
         style={{
           position: 'absolute',
           inset: 0,
@@ -399,7 +558,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
           height: '100%',
           overflow: 'hidden',
           borderRadius: 'inherit',
-          willChange: 'transform',
+          willChange: 'transform, border-radius',
           WebkitMaskImage: '-webkit-radial-gradient(white, black)',
           maskImage: 'radial-gradient(white, black)',
         }}
@@ -463,6 +622,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
 
       {/* 5. FLOATING GALLERY CONTROL PILL (Morphs & emerges from GSAP in PinnedSections, forces native precision cursor) */}
       <div
+        ref={pillRef}
         className={`project-gallery-pill project-gallery-pill-${project.id}`}
         data-cursor="native"
         onMouseEnter={() => setIsHovered(true)}
@@ -471,61 +631,48 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
         onPointerMove={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
         onClick={(e) => {
-          e.preventDefault();
           e.stopPropagation();
         }}
         style={{
           position: 'absolute',
-          bottom: '48px',
+          bottom: 'var(--pill-bottom, 40px)',
           left: '50%',
-          transform: 'translateX(-50%) translateY(32px) scale(0.8)',
-          width: '56px',
-          height: '56px',
+          height: '52px',
           borderRadius: '9999px',
           backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
-          opacity: 0,
-          pointerEvents: 'none',
           overflow: 'hidden',
-          filter: 'blur(8px)',
         }}
       >
         {/* Staggered Content inside the Pill */}
         <div
+          ref={pillContentRef}
           className={`pill-content pill-content-${project.id}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '144px',
-            opacity: 0,
-            pointerEvents: 'none',
-          }}
         >
           {/* Left: V3 Segmented Story Indicators (Smooth width morph transitions) */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
             }}
           >
             {project.gallery && project.gallery.map((_, imgIdx) => {
               const isActive = imgIdx === activeIdx;
               const isCompleted = imgIdx < activeIdx;
 
-              // Indicators morph sizes smoothly (8px -> 48px) and style states over 400ms using premium spring-like easing
+              // Indicators morph sizes smoothly (6px -> 20px) and style states over 400ms using premium spring-like easing
               const morphStyle = {
                 position: 'relative' as const,
-                width: isActive ? '48px' : '8px',
-                height: '8px',
+                width: isActive ? '20px' : '6px',
+                height: '6px',
                 borderRadius: '999px',
                 backgroundColor: isCompleted ? '#FFFFFF' : isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 border: isActive || isCompleted ? 'none' : '1.5px solid rgba(255, 255, 255, 0.4)',
@@ -588,7 +735,7 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
               cursor: 'pointer',
               color: '#FFFFFF',
               outline: 'none',
-              marginLeft: '20px',
+              marginLeft: '14px',
               transition: 'all 0.3s ease',
               padding: 0,
             }}
@@ -613,6 +760,6 @@ export default function ProjectCard({ project, index, total }: ProjectCardProps)
           </button>
         </div>
       </div>
-    </a>
+    </div>
   );
 }

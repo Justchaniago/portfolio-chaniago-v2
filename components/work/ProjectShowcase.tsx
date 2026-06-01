@@ -130,7 +130,6 @@ export default function ProjectShowcase() {
             <ProjectCard
               project={project}
               index={idx}
-              total={projects.length}
             />
           </div>
         ))}

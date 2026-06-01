@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { gsap } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
 import ProjectShowcase from '../work/ProjectShowcase';
@@ -34,10 +34,11 @@ export default function PinnedSections() {
           end: 'bottom bottom',
           scrub: 0.6, // Faster catch-up to Lenis scroll to avoid double smoothing lag
           snap: {
-            snapTo: (progress) => {
+            snapTo: (progress, self) => {
               const dur = tl.duration();
               if (!dur) return progress;
               const time = progress * dur;
+              const isScrollingUp = self && self.direction < 0;
 
               // 1. Hero Zone
               if (time >= 0 && time < 0.8) {
@@ -53,6 +54,9 @@ export default function PinnedSections() {
               }
               // 4. Work Masked Title ("Our Work" reveal)
               if (time >= 4.5 && time < 8.0) {
+                if (isScrollingUp) {
+                  return 3.8 / dur; // Snap back to About Sub-Section
+                }
                 if (time < 7.6) {
                   return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
                 } else {
@@ -70,42 +74,68 @@ export default function PinnedSections() {
                 const exitStart = start + 8.5;
                 const nextStart = start + 9.5;
 
-                // Inside Project Intro Zone
-                if (time >= start && time < start + 2.0) {
-                  return introMid / dur;
-                }
-                
-                // Inside Poster Resting Zone
-                if (time >= start + 2.0 && time < morphStart) {
-                  return posterRest / dur;
-                }
-
-                // Inside Morph Expansion Zone (Magnetic Snapping threshold)
-                if (time >= morphStart && time < start + 5.2) {
-                  if (time < morphThreshold) {
-                    return posterRest / dur; // Snap back to Poster
+                // Inside the current project slot
+                if (time >= start && time < nextStart) {
+                  if (isScrollingUp) {
+                    // If past the morph threshold (expanded or deep into morph), collapse to poster rest first.
+                    // This preserves the active slide index and provides seamless visual continuity
+                    // between the card preview and the expanded gallery.
+                    if (time >= morphThreshold) {
+                      return posterRest / dur;
+                    }
+                    // Before morph threshold (poster/intro zone): snap to previous section
+                    if (idx > 0) {
+                      const prevRest = 8.0 + (idx - 1) * 9.5 + 6.75;
+                      return prevRest / dur;
+                    } else {
+                      return 6.5 / dur; // Snap back to "Our Work" reveal
+                    }
                   } else {
-                    return (start + 6.75) / dur; // Snap forward to Expanded Gallery
-                  }
-                }
+                    // Scrolling DOWN: standard snapping logic
+                    
+                    // Inside Project Intro Zone
+                    if (time >= start && time < start + 2.0) {
+                      return introMid / dur;
+                    }
+                    
+                    // Inside Poster Resting Zone
+                    if (time >= start + 2.0 && time < morphStart) {
+                      return posterRest / dur;
+                    }
 
-                // Inside Expanded Gallery Landing Zone
-                if (time >= start + 5.2 && time < exitStart) {
-                  return (start + 6.75) / dur;
-                }
+                    // Inside Morph Expansion Zone (Magnetic Snapping threshold)
+                    if (time >= morphStart && time < start + 5.2) {
+                      if (time < morphThreshold) {
+                        return posterRest / dur; // Snap back to Poster
+                      } else {
+                        return (start + 6.75) / dur; // Snap forward to Expanded Gallery
+                      }
+                    }
 
-                // Inside Project Exit Handoff Zone
-                if (time >= exitStart && time < nextStart) {
-                  // For the last project, snap to the Contact reveal
-                  if (idx === projects.length - 1) {
-                    return 37.0 / dur;
+                    // Inside Expanded Gallery Landing Zone
+                    if (time >= start + 5.2 && time < exitStart) {
+                      return (start + 6.75) / dur;
+                    }
+
+                    // Inside Project Exit Handoff Zone
+                    if (time >= exitStart && time < nextStart) {
+                      // For the last project, snap to the Contact reveal
+                      if (idx === projects.length - 1) {
+                        return 37.0 / dur;
+                      }
+                      return nextStart / dur;
+                    }
                   }
-                  return nextStart / dur;
                 }
               }
 
               // 6. Contact Zone
               if (time >= 36.5) {
+                if (isScrollingUp) {
+                  // Scrolling UP from Contact snaps back to the last project resting state
+                  const lastProjectRest = 8.0 + (projects.length - 1) * 9.5 + 6.75;
+                  return lastProjectRest / dur;
+                }
                 return 37.0 / dur;
               }
 
@@ -229,7 +259,7 @@ export default function PinnedSections() {
           borderRadius: cardRadius,
           yPercent: -15,
         }, 0);
-        tl.set(`.project-image-${project.id}`, {
+        tl.set(`.project-slide-wrapper-${project.id}-0`, {
           scale: 1.12,
         }, 0);
         tl.set(`.project-intro-block-${project.id}`, {
@@ -254,6 +284,16 @@ export default function PinnedSections() {
           opacity: 0,
           y: 30,
           filter: 'blur(8px)',
+        }, 0);
+        tl.set(`.project-gallery-pill-${project.id}`, {
+          opacity: 0,
+          y: 80,
+          xPercent: -50,
+          scale: 1.0,
+          width: '52px',
+          height: '52px',
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
         }, 0);
       });
       tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
@@ -410,8 +450,9 @@ export default function PinnedSections() {
           ease: 'premiumBezier',
         }, start + 4.4);
 
-        // Inner image scales down slightly for morph depth
-        tl.to(`.project-image-${project.id}-0`, {
+        // The active slide scales down slightly for morph depth while the img keeps
+        // its centering transform untouched.
+        tl.to(`.project-slide-wrapper-${project.id}-0`, {
           scale: 1.0,
           duration: 1.2,
           ease: 'premiumBezier',
@@ -431,37 +472,13 @@ export default function PinnedSections() {
         // =========================================================================
         // --- EXTRA: FLOATING GALLERY CONTROL PILL EMERGENCE (V3 Landing Sequence) ---
         // =========================================================================
-        // 1. Orb Emergence (starts after 150ms pause at start + 5.75)
-        tl.to(`.project-gallery-pill-${project.id}`, {
-          opacity: 1,
-          y: 0,
-          scale: 1.0,
-          filter: 'blur(0px)',
-          duration: 0.6,
-          ease: 'premiumBezier',
-        }, start + 5.75);
-
-        // 2. Shape Morph to Pill (starts at start + 6.35)
-        tl.to(`.project-gallery-pill-${project.id}`, {
-          width: '180px',
-          duration: 0.7,
-          ease: 'premiumBezier',
-        }, start + 6.35);
-
-        // 3. Staggered Content Reveal inside the Pill (starts at start + 6.75)
-        tl.to(`.pill-content-${project.id}`, {
-          opacity: 1,
-          pointerEvents: 'auto',
-          duration: 0.4,
-          ease: 'power2.out',
-        }, start + 6.75);
-
-        // Toggle state attribute signaling card has fully landed to trigger autoplay loop
-        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 6.75);
+        // Toggle state after the fullscreen morph has landed, before the gallery controls appear.
+        // This keeps React's gallery state aligned with the visual state without interrupting the morph.
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 5.50);
 
         // The horizontal project gallery interactions (dragging, parallax slides, live capsule and counters)
-        // are now entirely handled via high-performance horizontal pointer gestures in ProjectCard.tsx,
-        // leaving the vertical wheel/touch scroll completely unobstructed.
+        // are now entirely handled via high-performance horizontal pointer gestures and a stable, one-shot
+        // GSAP entry/exit sequence in ProjectCard.tsx, leaving the vertical scroll completely unobstructed.
 
         // =========================================================================
         // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT & PILL POWER DOWN (Exit Sequence) ---
@@ -469,27 +486,12 @@ export default function PinnedSections() {
         // Halt autoplay progression immediately
         tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false' } }, start + 8.5);
 
-        // Fade gallery controls instantly on exit
-        tl.to(`.pill-content-${project.id}`, {
-          opacity: 0,
-          pointerEvents: 'none',
-          duration: 0.3,
-        }, start + 8.5);
-
-        tl.to(`.project-gallery-pill-${project.id}`, {
-          opacity: 0,
-          y: 32,
-          scale: 0.8,
-          filter: 'blur(8px)',
-          duration: 0.5,
-          ease: 'premiumBezier',
-        }, start + 8.5);
-
         // Slide the entire expanded fullscreen card straight UP off-screen using hardware-accelerated y-translate
         if (idx < projects.length - 1) {
           tl.to(`.project-card-container-${project.id}`, {
             y: '-100vh',
             opacity: 0,
+            pointerEvents: 'none',
             duration: 1.0,
             ease: 'premiumBezier',
           }, start + 8.5);
@@ -498,6 +500,7 @@ export default function PinnedSections() {
           tl.to(`.project-card-container-${project.id}`, {
             y: '-100vh',
             opacity: 0,
+            pointerEvents: 'none',
             duration: 1.0,
             ease: 'premiumBezier',
           }, start + 8.5);
