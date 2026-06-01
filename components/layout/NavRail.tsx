@@ -41,9 +41,43 @@ export default function NavRail() {
     return () => unsubscribe();
   }, [springY, scaleY, scaleX]);
 
+  const baseTargetYRef = useRef(0);
+  const mouseYRef = useRef<number | null>(null);
+
   // Track window scroll and determine current active index
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    const getPreciseY = (progress: number) => {
+      if (progress <= 0.08) {
+        return 0; // lock to Dot 1 (Hero)
+      }
+      if (progress > 0.08 && progress < 0.20) {
+        // interpolate between Dot 1 (0px) and Dot 2 (56px)
+        const t = (progress - 0.08) / (0.20 - 0.08);
+        const ease = t * t * (3 - 2 * t);
+        return ease * 56;
+      }
+      if (progress >= 0.20 && progress <= 0.52) {
+        return 56; // lock to Dot 2 (About)
+      }
+      if (progress > 0.52 && progress < 0.65) {
+        // interpolate between Dot 2 (56px) and Dot 3 (112px)
+        const t = (progress - 0.52) / (0.65 - 0.52);
+        const ease = t * t * (3 - 2 * t);
+        return 56 + ease * 56;
+      }
+      if (progress >= 0.65 && progress <= 0.78) {
+        return 112; // lock to Dot 3 (Work)
+      }
+      if (progress > 0.78 && progress < 0.88) {
+        // interpolate between Dot 3 (112px) and Dot 4 (168px)
+        const t = (progress - 0.78) / (0.88 - 0.78);
+        const ease = t * t * (3 - 2 * t);
+        return 112 + ease * 56;
+      }
+      return 168; // lock to Dot 4 (Contact)
+    };
 
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -51,17 +85,28 @@ export default function NavRail() {
 
       const progress = window.scrollY / scrollHeight;
 
-      // Map progress thresholds to section indices
+      // Map progress thresholds to section indices (using midpoints of the transitions for perfect sync)
       let activeIdx = 0;
-      if (progress >= 0.15 && progress < 0.58) {
+      if (progress >= 0.14 && progress < 0.585) {
         activeIdx = 1; // About
-      } else if (progress >= 0.58 && progress < 0.82) {
+      } else if (progress >= 0.585 && progress < 0.83) {
         activeIdx = 2; // Work
-      } else if (progress >= 0.82) {
+      } else if (progress >= 0.83) {
         activeIdx = 3; // Contact
       }
 
       setActiveIndex(activeIdx);
+
+      const targetY = getPreciseY(progress);
+      baseTargetYRef.current = targetY;
+
+      // Update position factoring in mouse hover ref status
+      if (mouseYRef.current !== null) {
+        const diff = mouseYRef.current - targetY;
+        y.set(targetY + diff * 0.25);
+      } else {
+        y.set(targetY);
+      }
 
       // Dynamically fill the progress rail
       const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
@@ -75,19 +120,7 @@ export default function NavRail() {
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Update target vertical position, factoring in dynamic magnetic mouse pulling
-  useEffect(() => {
-    const baseTargetY = activeIndex * SECTION_GAP;
-    if (mouseY !== null) {
-      // Subtle magnetic pull towards the cursor (pulls 25% of the distance)
-      const diff = mouseY - baseTargetY;
-      y.set(baseTargetY + diff * 0.25);
-    } else {
-      y.set(baseTargetY);
-    }
-  }, [activeIndex, mouseY, y]);
+  }, [y]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
@@ -95,11 +128,21 @@ export default function NavRail() {
     // Calculate cursor Y position relative to the center vertical axis of dots
     const relativeY = e.clientY - rect.top - 48; // offset top counter block
     setMouseY(relativeY);
+    mouseYRef.current = relativeY;
+
+    // Trigger y update with magnetic pull
+    const baseTargetY = baseTargetYRef.current;
+    const diff = relativeY - baseTargetY;
+    y.set(baseTargetY + diff * 0.25);
   };
 
   const handleMouseLeave = () => {
     setMouseY(null);
+    mouseYRef.current = null;
     setHovered(false);
+
+    // Restore exact scroll-driven target Y position
+    y.set(baseTargetYRef.current);
   };
 
   const handleSectionClick = (progressVal: number) => {
