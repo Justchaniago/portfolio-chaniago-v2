@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
-import Work from './Work';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
 
@@ -18,7 +17,6 @@ export default function PinnedSections() {
       const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (isReduced) return;
 
-      // 2. Create master synchronized ScrollTrigger timeline
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
@@ -29,30 +27,20 @@ export default function PinnedSections() {
             const progress = self.progress;
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
             const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
-            const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
             const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
 
-            // 4-Stage dynamic pointerEvents update gates to isolate sections precisely
-            if (heroEl && aboutEl && workEl && contactEl) {
+            if (heroEl && aboutEl && contactEl) {
               if (progress < 0.15) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.15 && progress < 0.58) {
+              } else if (progress >= 0.15 && progress < 0.85) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
-                workEl.style.pointerEvents = 'none';
-                contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.58 && progress < 0.82) {
-                heroEl.style.pointerEvents = 'none';
-                aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'auto';
                 contactEl.style.pointerEvents = 'none';
               } else {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'auto';
               }
             }
@@ -61,45 +49,17 @@ export default function PinnedSections() {
       });
 
       // =========================================================================
-      // --- PHASE 1: Hero elements fade & shift out (Timeline 0.0 -> 0.8) ---
+      // --- PHASE 1: Hero fade & shift out (0.0 -> 0.15) ---
       // =========================================================================
-      tl.to('.hero-text-content', {
-        opacity: 0,
-        y: -60,
-        scale: 0.94,
-        ease: 'power1.out',
-      }, 0);
-
-      tl.to('.hero-meta-row', {
-        opacity: 0,
-        y: -30,
-        ease: 'power1.out',
-      }, 0);
-
-      tl.to('.hero-fluid-canvas', {
-        opacity: 0,
-        ease: 'power1.out',
-      }, 0);
-
-      // Fade out the entire hero section container to reveal the About section underneath
-      tl.to('.hero-section-container', {
-        opacity: 0,
-        ease: 'power1.inOut',
-      }, 0.15);
-
-      // Tagline splits: target the outer blocks to bypass CSS transition conflict
-      tl.to('.hero-line-1', {
-        x: 220,
-        ease: 'power2.out',
-      }, 0);
-
-      tl.to('.hero-line-2', {
-        x: -220,
-        ease: 'power2.out',
-      }, 0);
+      tl.to('.hero-text-content', { opacity: 0, y: -60, scale: 0.94, ease: 'power1.out' }, 0);
+      tl.to('.hero-meta-row', { opacity: 0, y: -30, ease: 'power1.out' }, 0);
+      tl.to('.hero-fluid-canvas', { opacity: 0, ease: 'power1.out' }, 0);
+      tl.to('.hero-section-container', { opacity: 0, ease: 'power1.inOut' }, 0.15);
+      tl.to('.hero-line-1', { x: 220, ease: 'power2.out' }, 0);
+      tl.to('.hero-line-2', { x: -220, ease: 'power2.out' }, 0);
 
       // =========================================================================
-      // --- PHASE 2: Global Theme Variable Morphing & About Biography Reveals (Timeline 0.15 -> 2.75) ---
+      // --- PHASE 2: Theme morph + About biography reveals (0.15 -> 2.75) ---
       // =========================================================================
       tl.to('html', {
         '--color-bg': '#FFFFFF',
@@ -115,42 +75,21 @@ export default function PinnedSections() {
         ease: 'none',
       }, 0.15);
 
-      // Premium Clip-Path Mask Unveil + Spatial Parallax Rise of the native HD cutout portrait
       tl.fromTo('.about-portrait-img',
-        {
-          clipPath: 'inset(100% 0% 0% 0%)',
-          y: 120,
-        },
-        {
-          clipPath: 'inset(0% 0% 0% 0%)',
-          y: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-        },
+        { clipPath: 'inset(100% 0% 0% 0%)', y: 120 },
+        { clipPath: 'inset(0% 0% 0% 0%)', y: 0, duration: 0.8, ease: 'power2.out' },
         0.45
       );
-
-      // 1. Neue Montreal Eyebrow reveal
       tl.fromTo('.about-eyebrow',
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, ease: 'power2.out', duration: 0.4 },
         0.80
       );
-
-      // 2. Headline Character Stagger Cascade
       tl.fromTo('.about-char',
         { yPercent: 100, opacity: 0 },
-        {
-          yPercent: 0,
-          opacity: 1,
-          stagger: 0.025,
-          duration: 0.8,
-          ease: 'premiumBezier',
-        },
+        { yPercent: 0, opacity: 1, stagger: 0.025, duration: 0.8, ease: 'premiumBezier' },
         0.85
       );
-
-      // 3. Subheadline / Description reveal
       tl.fromTo('.about-description',
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, ease: 'power2.out', duration: 0.5 },
@@ -158,13 +97,9 @@ export default function PinnedSections() {
       );
 
       // =========================================================================
-      // --- PHASE 3: NEW SUB-SECTION TRANSITION & PORTRAIT CROSS-FADE SLIDE (Timeline 2.75 -> 4.85) ---
+      // --- PHASE 3: About sub-section + portrait cross-fade (2.75 -> 4.85) ---
       // =========================================================================
-      // Initial state setup for left-aligned portrait and sub-content grids
-      gsap.set('.about-portrait-left-img', {
-        xPercent: 50, // Shifted right initially to slide in smoothly leftwards
-        opacity: 0,
-      });
+      gsap.set('.about-portrait-left-img', { xPercent: 50, opacity: 0 });
       gsap.set('.about-sub-content', { opacity: 0 });
       gsap.set('.sub-section-eyebrow, .sub-section-focus, .sub-section-metrics, .sub-section-stack', {
         opacity: 0,
@@ -173,152 +108,36 @@ export default function PinnedSections() {
       gsap.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' });
       gsap.set('.contact-content-wrapper', { opacity: 0, y: 30 });
 
-      // 1. Fade out and slide up the initial About biography text block
-      tl.to('.about-editorial-text', {
-        opacity: 0,
-        y: -80,
-        duration: 0.6,
-        ease: 'power2.inOut',
-      }, 2.75);
-
-      // Disable hover trigger zone for right portrait in Phase 3
-      tl.to('.about-portrait-trigger', {
-        pointerEvents: 'none',
-        duration: 0.1,
-      }, 2.75);
-
-      // 2. Coordinated Portrait Cross-Fade Slide (0.8s duration)
-      // Right-aligned portrait slides left and fades out
-      tl.to('.about-portrait-img', {
-        xPercent: -50,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power2.inOut',
-      }, 2.85);
-
-      // Left-aligned portrait slides left and fades in synchronously
-      tl.to('.about-portrait-left-img', {
-        xPercent: 0,
-        opacity: 1,
-        duration: 0.8,
-        ease: 'power2.inOut',
-      }, 2.85);
-
-      // 3. Progressive Right-Side Sub-section Content Reveals and enable pointerEvents
-      tl.to('.about-sub-content', {
-        opacity: 1,
-        pointerEvents: 'auto',
-        duration: 0.4,
-        ease: 'none',
-      }, 2.95);
-
-      tl.to('.sub-section-eyebrow', {
-        opacity: 1,
-        y: 0,
-        duration: 0.4,
-        ease: 'power2.out',
-      }, 3.05);
-
-      tl.to('.sub-section-focus', {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, 3.15);
-
-      tl.to('.sub-section-metrics', {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, 3.35);
-
-      tl.to('.sub-section-stack', {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, 3.55);
+      tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.6, ease: 'power2.inOut' }, 2.75);
+      tl.to('.about-portrait-trigger', { pointerEvents: 'none', duration: 0.1 }, 2.75);
+      tl.to('.about-portrait-img', { xPercent: -50, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, 2.85);
+      tl.to('.about-portrait-left-img', { xPercent: 0, opacity: 1, duration: 0.8, ease: 'power2.inOut' }, 2.85);
+      tl.to('.about-sub-content', { opacity: 1, pointerEvents: 'auto', duration: 0.4, ease: 'none' }, 2.95);
+      tl.to('.sub-section-eyebrow', { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, 3.05);
+      tl.to('.sub-section-focus', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.15);
+      tl.to('.sub-section-metrics', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.35);
+      tl.to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.55);
 
       // =========================================================================
-      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 4.85 -> 6.65) ---
+      // --- PHASE 4: About exit + Contact reveal (4.85 -> 5.95) ---
       // =========================================================================
-      // Left-aligned portrait fades and sinks downwards
-      tl.to('.about-portrait-left-img', {
-        opacity: 0,
-        yPercent: 12,
-        duration: 0.8,
-        ease: 'power2.in',
-      }, 4.85);
+      tl.to('.about-portrait-left-img', { opacity: 0, yPercent: 12, duration: 0.8, ease: 'power2.in' }, 4.85);
+      tl.to('.about-sub-content', { opacity: 0, pointerEvents: 'none', y: -40, duration: 0.6, ease: 'power2.in' }, 4.85);
+      tl.to('.about-glass-overlay', { opacity: 0, duration: 0.6, ease: 'power1.inOut' }, 4.85);
 
-      // Right-side sub-section content fades, slides upwards, and disables pointerEvents
-      tl.to('.about-sub-content', {
-        opacity: 0,
-        pointerEvents: 'none',
-        y: -40,
-        duration: 0.6,
-        ease: 'power2.in',
-      }, 4.85);
-
-      // Glass dome overlay fades out
-      tl.to('.about-glass-overlay', {
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power1.inOut',
-      }, 4.85);
-
-      // Work section container emerges
-      tl.to('.work-section-container', {
-        opacity: 1,
-        duration: 0.4,
-        ease: 'none',
-      }, 5.15);
-
-      // Selected Works cards stagger up
-      tl.fromTo('.work-header',
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-        5.35
-      );
-
-      tl.fromTo('.work-card-1',
-        { opacity: 0, y: 40, scale: 0.96 },
-        { opacity: 1, y: 24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
-        5.55
-      );
-
-      tl.fromTo('.work-card-2',
-        { opacity: 0, y: 10, scale: 0.96 },
-        { opacity: 1, y: -24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
-        5.75
-      );
-
-      // =========================================================================
-      // --- PHASE 5: CURATED WORKS TO CONTACT STAGGER REVEAL (Timeline 6.65 onwards) ---
-      // =========================================================================
-      // Work section container fades out and sinks
-      tl.to('.work-section-container', {
-        opacity: 0,
-        y: -40,
-        duration: 0.6,
-        ease: 'power2.inOut',
-      }, 6.65);
-
-      // Contact section container emerges and enables pointerEvents
       tl.to('.contact-section-container', {
         opacity: 1,
         pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 6.95);
+      }, 5.15);
 
-      // Contact content reveals and slides up
       tl.to('.contact-content-wrapper', {
         opacity: 1,
         y: 0,
         duration: 0.6,
         ease: 'power2.out',
-      }, 7.15);
+      }, 5.35);
     });
 
     return () => {
@@ -343,12 +162,11 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '600vh', // Expanded scroll budget for multi-phase scrub with Contact section
+        height: '450vh',
       }}
     >
       <NavRail />
 
-      {/* Sticky base container locking viewport */}
       <div
         style={{
           position: 'sticky',
@@ -361,7 +179,6 @@ export default function PinnedSections() {
       >
         <Hero />
         <About />
-        <Work />
         <Contact />
       </div>
     </div>
