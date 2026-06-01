@@ -41,21 +41,31 @@ export default function PinnedSections() {
               const isScrollingUp = self && self.direction < 0;
 
               // 1. Hero Zone
-              if (time >= 0 && time < 0.8) {
+              if (time >= 0 && time < 0.35) {
                 return 0.0 / dur;
               }
-              // 2. About Bio Zone
-              if (time >= 0.8 && time < 2.3) {
-                return 1.5 / dur;
-              }
-              // 3. About Sub-Section (Metrics/Stack)
-              if (time >= 2.3 && time < 4.5) {
-                return 3.8 / dur;
+              // 2 & 3. About Section Snapping with Hysteresis (State 01: Hero Intro vs State 02: Deep Dive Focus)
+              if (time >= 0.35 && time < 4.5) {
+                if (isScrollingUp) {
+                  // Leave State 02 at 18% progress of About section (approx 1.0)
+                  if (time >= 1.0) {
+                    return 4.0 / dur; // Stable State 02 resting point (82%)
+                  } else {
+                    return 1.45 / dur; // Stable State 01 resting point
+                  }
+                } else {
+                  // Enter State 02 when approaching transition window (starts 72% / approx 3.53)
+                  if (time < 3.53) {
+                    return 1.45 / dur; // Stable State 01 resting point
+                  } else {
+                    return 4.0 / dur; // Snap decisively into State 02 (82%)
+                  }
+                }
               }
               // 4. Work Masked Title ("Our Work" reveal)
               if (time >= 4.5 && time < 8.0) {
                 if (isScrollingUp) {
-                  return 3.8 / dur; // Snap back to About Sub-Section
+                  return 4.0 / dur; // Snap back to About State 02
                 }
                 if (time < 7.6) {
                   return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
@@ -121,9 +131,9 @@ export default function PinnedSections() {
                     if (time >= exitStart && time < nextStart) {
                       // For the last project, snap to the Contact reveal
                       if (idx === projects.length - 1) {
-                        return 37.0 / dur;
+                        return 37.6 / dur;
                       }
-                      return nextStart / dur;
+                      return (nextStart + 1.4) / dur;
                     }
                   }
                 }
@@ -136,7 +146,7 @@ export default function PinnedSections() {
                   const lastProjectRest = 8.0 + (projects.length - 1) * 9.5 + 6.75;
                   return lastProjectRest / dur;
                 }
-                return 37.0 / dur;
+                return 37.6 / dur;
               }
 
               return progress;
@@ -253,7 +263,7 @@ export default function PinnedSections() {
           y: '100vh', // Start translated down for hardware-accelerated composite-only animations
           opacity: 0,
           pointerEvents: 'none',
-          attr: { 'data-expanded': 'false' },
+          attr: { 'data-expanded': 'false', 'data-exiting': 'false' },
         }, 0);
         tl.set(`.project-image-wrapper-${project.id}`, {
           borderRadius: cardRadius,
@@ -299,15 +309,16 @@ export default function PinnedSections() {
       tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
       tl.set('.contact-content-wrapper', { opacity: 0, y: 30 }, 0);
 
-      tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.6, ease: 'power2.inOut' }, 2.75);
-      tl.to('.about-portrait-trigger', { pointerEvents: 'none', duration: 0.1 }, 2.75);
-      tl.to('.about-portrait-img', { xPercent: -50, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, 2.85);
-      tl.to('.about-portrait-left-img', { xPercent: 0, opacity: 1, duration: 0.8, ease: 'power2.inOut' }, 2.85);
-      tl.to('.about-sub-content', { opacity: 1, pointerEvents: 'auto', duration: 0.4, ease: 'none' }, 2.95);
-      tl.to('.sub-section-eyebrow', { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, 3.05);
-      tl.to('.sub-section-focus', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.15);
-      tl.to('.sub-section-metrics', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.35);
-      tl.to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.55);
+      // Transition from State 01 to State 02 (happens in transition window 3.53 -> 4.0)
+      tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.3, ease: 'power2.inOut' }, 3.53);
+      tl.to('.about-portrait-trigger', { pointerEvents: 'none', duration: 0.1 }, 3.53);
+      tl.to('.about-portrait-img', { xPercent: -50, opacity: 0, duration: 0.4, ease: 'power2.inOut' }, 3.53);
+      tl.to('.about-portrait-left-img', { xPercent: 0, opacity: 1, duration: 0.4, ease: 'power2.inOut' }, 3.53);
+      tl.to('.about-sub-content', { opacity: 1, pointerEvents: 'auto', duration: 0.3, ease: 'none' }, 3.65);
+      tl.to('.sub-section-eyebrow', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 3.70);
+      tl.to('.sub-section-focus', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 3.75);
+      tl.to('.sub-section-metrics', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 3.80);
+      tl.to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 3.80);
 
       // =========================================================================
       // --- PHASE 4: About exit + "Our Work" Cinematic Transition (4.85 -> 8.0) ---
@@ -474,7 +485,7 @@ export default function PinnedSections() {
         // =========================================================================
         // Toggle state after the fullscreen morph has landed, before the gallery controls appear.
         // This keeps React's gallery state aligned with the visual state without interrupting the morph.
-        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 5.50);
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true', 'data-exiting': 'false' } }, start + 5.50);
 
         // The horizontal project gallery interactions (dragging, parallax slides, live capsule and counters)
         // are now entirely handled via high-performance horizontal pointer gestures and a stable, one-shot
@@ -484,25 +495,23 @@ export default function PinnedSections() {
         // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT & PILL POWER DOWN (Exit Sequence) ---
         // =========================================================================
         // Halt autoplay progression immediately
-        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false' } }, start + 8.5);
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false', 'data-exiting': 'true' } }, start + 8.5);
 
-        // Slide the entire expanded fullscreen card straight UP off-screen using hardware-accelerated y-translate
+        // Smoothly slide the entire expanded fullscreen card straight UP off-screen
         if (idx < projects.length - 1) {
           tl.to(`.project-card-container-${project.id}`, {
             y: '-100vh',
-            opacity: 0,
             pointerEvents: 'none',
             duration: 1.0,
-            ease: 'premiumBezier',
+            ease: 'power3.inOut',
           }, start + 8.5);
         } else {
-          // For the LAST project, slide straight up off-screen
+          // For the LAST project, smooth exit before Contact section
           tl.to(`.project-card-container-${project.id}`, {
             y: '-100vh',
-            opacity: 0,
             pointerEvents: 'none',
             duration: 1.0,
-            ease: 'premiumBezier',
+            ease: 'power3.inOut',
           }, start + 8.5);
 
           // Fade out the entire Work section container to reveal Contact underneath

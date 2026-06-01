@@ -236,11 +236,11 @@ export default function MorphNav() {
     return () => window.removeEventListener('keydown', onKey);
   }, [navState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Capture trigger origin — collapsed circle sits bottom-center, bottom: 32px, size: 44
+  // Capture trigger origin — FloatingCircle is always top: 12, right: 28, size: 44
   function captureOrigin() {
     originRef.current = {
-      x: window.innerWidth / 2,   // horizontal center
-      y: window.innerHeight - 54, // bottom: 32px + half-height: 22px
+      x: window.innerWidth - 50, // right: 28px + half-width: 22px
+      y: 34,                      // top: 12px + half-height: 22px
     };
   }
 
@@ -503,10 +503,9 @@ export default function MorphNav() {
         id="morph-nav-container"
         data-cursor="nav"
         animate={{
-          left: '50%',
-          x: isReallyCollapsed ? (hovered ? -56 : -22) : -130,
+          left: isReallyCollapsed ? '100%' : '50%',
+          x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,
           width: isReallyCollapsed ? (hovered ? 112 : 44) : 260,
-          top: isReallyCollapsed ? windowHeight - 76 : 12,
         }}
         transition={morphTransition}
         onMouseEnter={() => isReallyCollapsed && setHovered(true)}
@@ -528,6 +527,7 @@ export default function MorphNav() {
           color: activeColor,
           cursor: isReallyCollapsed && !isAnimating ? 'pointer' : 'default',
           position: 'fixed',
+          top: '12px',
           zIndex: 1001,
           pointerEvents: 'auto',
           overflow: 'hidden',

@@ -23,6 +23,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
   
   // Story Progression States
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [isMorphComplete, setIsMorphComplete] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -58,16 +59,21 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
       const isMorphCompleteAttr = cardEl.getAttribute('data-morph-complete') === 'true';
       setIsMorphComplete(isMorphCompleteAttr);
+
+      const isExitingAttr = cardEl.getAttribute('data-exiting') === 'true';
+      setIsExiting(isExitingAttr);
     };
 
     // Run initial check
     checkExpandedState();
 
-    // Listen for data-expanded and data-morph-complete mutations on cardEl
+    // Listen for data-expanded, data-morph-complete, and data-exiting mutations on cardEl
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && 
-            (mutation.attributeName === 'data-expanded' || mutation.attributeName === 'data-morph-complete')) {
+            (mutation.attributeName === 'data-expanded' || 
+             mutation.attributeName === 'data-morph-complete' ||
+             mutation.attributeName === 'data-exiting')) {
           checkExpandedState();
         }
       });
@@ -206,6 +212,12 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       // Exit sequence triggered immediately on collapse
       setIsMorphComplete(false);
 
+      if (isExiting) {
+        // If exiting to next project, DO NOT fade/shrink/slide down the pill.
+        // It stays fully visible and morph-complete, sliding up with the parent container.
+        return;
+      }
+
       const ctx = gsap.context(() => {
         const exitTimeline = gsap.timeline();
 
@@ -230,7 +242,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
       return () => ctx.revert();
     }
-  }, [isExpanded]);
+  }, [isExpanded, isExiting]);
 
   // Autoplay progression loop using requestAnimationFrame for zero-jerk performance
   useEffect(() => {
@@ -463,12 +475,12 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         data-cursor="native"
         style={{
           position: 'absolute',
-          top: '48px',
-          right: '48px',
+          top: '68px',
+          right: '28px',
           zIndex: 101,
-          opacity: isExpanded ? 1 : 0,
+          opacity: (isExpanded || isExiting) ? 1 : 0,
           pointerEvents: isExpanded ? 'auto' : 'none',
-          transform: isExpanded ? 'translateY(0px)' : 'translateY(-20px)',
+          transform: (isExpanded || isExiting) ? 'translateY(0px)' : 'translateY(-20px)',
           transition: 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
         onMouseEnter={() => setIsHovered(true)}
