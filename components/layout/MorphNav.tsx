@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getActiveSectionIndex } from '@/lib/motion';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ export default function MorphNav() {
   const [isMobile, setIsMobile] = useState(false);
   const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState<'work' | 'about' | 'contact'>('work');
+  const [activeSection, setActiveSection] = useState<'hero' | 'work' | 'about' | 'contact'>('hero');
   const [hovered, setHovered] = useState(false);
   const [windowHeight, setWindowHeight] = useState(() =>
     typeof window !== 'undefined' ? window.innerHeight : 800
@@ -214,13 +215,12 @@ export default function MorphNav() {
 
       setIsCollapsed(y > 80);
       
-      if (progress < 0.17) {
-        setActiveSection('about');
-      } else if (progress >= 0.17 && progress < 0.94) {
-        setActiveSection('work');
-      } else {
-        setActiveSection('contact');
-      }
+      const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
+      setActiveSection((prev) => {
+        const prevIdx = SECTION_IDS.indexOf(prev);
+        const nextIdx = getActiveSectionIndex(progress, prevIdx === -1 ? 0 : prevIdx);
+        return SECTION_IDS[nextIdx];
+      });
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -382,30 +382,26 @@ export default function MorphNav() {
       handleClose();
     }
 
-    if (href === '/work') {
-      if (lenis) {
-        // Scrolls to the Work focal center
-        const targetScroll = document.documentElement.scrollHeight * 0.58;
-        lenis.scrollTo(targetScroll, { duration: 2.6, easing: easeInOutExpo });
-      } else {
-        window.scrollTo({ top: document.documentElement.scrollHeight * 0.58, behavior: 'smooth' });
-      }
-    } else if (href === '/about') {
-      if (lenis) {
-        // Scrolls to the About full reveal phase
-        const targetScroll = document.documentElement.scrollHeight * 0.11;
-        lenis.scrollTo(targetScroll, { duration: 2.2, easing: easeInOutExpo });
-      } else {
-        window.scrollTo({ top: document.documentElement.scrollHeight * 0.11, behavior: 'smooth' });
-      }
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    let targetProgress = 0.0;
+
+    if (href === '/about') {
+      targetProgress = 1.45 / 37.6;
+    } else if (href === '/work') {
+      targetProgress = 6.5 / 37.6;
     } else if (href === '/contact') {
-      if (lenis) {
-        // Scrolls to Contact section
-        const targetScroll = document.documentElement.scrollHeight * 0.98;
-        lenis.scrollTo(targetScroll, { duration: 2.2, easing: easeInOutExpo });
-      } else {
-        window.scrollTo({ top: document.documentElement.scrollHeight * 0.98, behavior: 'smooth' });
-      }
+      targetProgress = 1.0;
+    }
+
+    const targetScroll = scrollHeight * targetProgress;
+
+    if (lenis) {
+      lenis.scrollTo(targetScroll, {
+        duration: 1.0,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Expo Out
+      });
+    } else {
+      window.scrollTo({ top: targetScroll, behavior: 'auto' });
     }
   }, [navState, handleClose]);
 

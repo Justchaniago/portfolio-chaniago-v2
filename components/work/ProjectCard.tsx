@@ -110,7 +110,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
     wasExpandedRef.current = isExpanded;
   }, [isExpanded, activeIdx]);
 
-  // Debounced IntersectionObserver to auto-reset project slide index to 0 when card leaves the viewport (<10% visibility).
+  // Debounced IntersectionObserver to auto-reset project slide index to 0 when card leaves the viewport completely.
   // Uses a 600ms debounce to prevent premature resets during quick collapse→re-expand snap transitions.
   const resetDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -120,8 +120,8 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.intersectionRatio < 0.1) {
-          // Start debounce: only reset after card has been off-screen for 600ms
+        if (!entry.isIntersecting) {
+          // Start debounce: only reset after card has fully left the viewport for 600ms
           if (!resetDebounceRef.current) {
             resetDebounceRef.current = setTimeout(() => {
               setActiveIdx(0);
@@ -141,14 +141,14 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         }
       },
       {
-        threshold: [0.0, 0.1, 0.2],
+        threshold: [0.0],
       }
     );
 
     observer.observe(cardEl);
 
     return () => {
-      observer.disconnect();
+      observer.unobserve(cardEl);
       if (resetDebounceRef.current) {
         clearTimeout(resetDebounceRef.current);
       }
@@ -455,6 +455,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       className={`project-card-container project-card-container-${project.id}`}
       data-cursor="image"
       data-cursor-text="CASE STUDY"
+      data-active-slide={activeIdx}
       aria-label={`${project.title} project gallery`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

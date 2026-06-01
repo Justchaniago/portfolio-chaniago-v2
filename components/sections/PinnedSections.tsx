@@ -7,6 +7,7 @@ import About from './About';
 import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
+import ScrollDebug from '../layout/ScrollDebug';
 import { projects } from '@/data/projects';
 
 export default function PinnedSections() {
@@ -40,113 +41,124 @@ export default function PinnedSections() {
               const time = progress * dur;
               const isScrollingUp = self && self.direction < 0;
 
-              // 1. Hero Zone
-              if (time >= 0 && time < 0.35) {
-                return 0.0 / dur;
-              }
-              // 2 & 3. About Section Snapping with Hysteresis (State 01: Hero Intro vs State 02: Deep Dive Focus)
-              if (time >= 0.35 && time < 4.5) {
+              // 1. Hero vs About State 01 Snapping with Hysteresis
+              if (time >= 0 && time < 1.85) {
                 if (isScrollingUp) {
-                  // Leave State 02 at 18% progress of About section (approx 1.0)
-                  if (time >= 1.0) {
-                    return 4.0 / dur; // Stable State 02 resting point (82%)
-                  } else {
-                    return 1.45 / dur; // Stable State 01 resting point
-                  }
+                  return time < 0.58 ? 0.0 : 1.85 / dur;
                 } else {
-                  // Enter State 02 when approaching transition window (starts 72% / approx 3.53)
-                  if (time < 3.53) {
-                    return 1.45 / dur; // Stable State 01 resting point
-                  } else {
-                    return 4.0 / dur; // Snap decisively into State 02 (82%)
-                  }
-                }
-              }
-              // 4. Work Masked Title ("Our Work" reveal)
-              if (time >= 4.5 && time < 8.0) {
-                if (isScrollingUp) {
-                  return 4.0 / dur; // Snap back to About State 02
-                }
-                if (time < 7.6) {
-                  return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
-                } else {
-                  return 8.0 / dur; // Snaps forward to Project 1's intro start
+                  return time >= 0.87 ? 1.85 / dur : 0.0;
                 }
               }
 
-              // 5. Dynamic Project loop snapping
+              // 2 & 3. About State 01 vs About State 02 Snapping with Hysteresis
+              if (time >= 1.85 && time < 4.0) {
+                if (isScrollingUp) {
+                  return time >= 1.0 ? 4.0 / dur : 1.85 / dur;
+                } else {
+                  return time >= 3.53 ? 4.0 / dur : 1.85 / dur;
+                }
+              }
+
+              // 4. About State 02 vs Work Intro Snapping
+              if (time >= 4.0 && time < 6.5) {
+                if (isScrollingUp) {
+                  return time < 5.0 ? 4.0 / dur : 6.5 / dur;
+                } else {
+                  return time >= 5.5 ? 6.5 / dur : 4.0 / dur;
+                }
+              }
+
+              // 5. Work Intro vs Project 1 Intro Snapping
+              if (time >= 6.5 && time < 8.0) {
+                if (isScrollingUp) {
+                  return 6.5 / dur;
+                }
+                return time >= 7.6 ? 9.4 / dur : 6.5 / dur;
+              }
+
+              // 6. Dynamic Project loop snapping
               for (let idx = 0; idx < projects.length; idx++) {
-                const start = 8.0 + idx * 9.5; // Offset by 8.0 for "Our Work" cinematic pause
-                const introMid = start + 1.4;
-                const posterRest = start + 4.4;
+                const start = 8.0 + idx * 9.5;
+                const introRest = start + 1.4;
+                const galleryRest = start + 6.75;
                 const morphStart = start + 4.4;
-                const morphThreshold = start + 4.8;
                 const exitStart = start + 8.5;
                 const nextStart = start + 9.5;
 
-                // Inside the current project slot
+                // Project expansion magnetism thresholds (15% down / 85% up of the 1.2s morph duration)
+                const morphThresholdDown = morphStart + 0.15 * 1.2; // start + 4.58
+                const morphThresholdUp = morphStart + 0.85 * 1.2;   // start + 5.42
+
                 if (time >= start && time < nextStart) {
                   if (isScrollingUp) {
-                    // If past the morph threshold (expanded or deep into morph), collapse to poster rest first.
-                    // This preserves the active slide index and provides seamless visual continuity
-                    // between the card preview and the expanded gallery.
-                    if (time >= morphThreshold) {
-                      return posterRest / dur;
+                    // Scrolling up inside this project slot
+                    
+                    // If in the morph range: hysteresis snap back to poster if we scroll below 85%
+                    if (time >= morphStart && time < start + 5.6) {
+                      return time < morphThresholdUp ? introRest / dur : galleryRest / dur;
                     }
-                    // Before morph threshold (poster/intro zone): snap to previous section
-                    if (idx > 0) {
-                      const prevRest = 8.0 + (idx - 1) * 9.5 + 6.75;
-                      return prevRest / dur;
-                    } else {
-                      return 6.5 / dur; // Snap back to "Our Work" reveal
+                    
+                    // If deep inside the gallery zone: stay in gallery
+                    if (time >= start + 5.6 && time < exitStart) {
+                      return galleryRest / dur;
+                    }
+
+                    // Before morph: snap back to intro or previous project gallery
+                    if (time >= start + 2.0 && time < morphStart) {
+                      return introRest / dur;
+                    }
+
+                    if (time >= start && time < start + 2.0) {
+                      if (idx > 0) {
+                        const prevGallery = 8.0 + (idx - 1) * 9.5 + 6.75;
+                        return prevGallery / dur;
+                      } else {
+                        return 6.5 / dur; // Work Intro
+                      }
                     }
                   } else {
-                    // Scrolling DOWN: standard snapping logic
+                    // Scrolling down inside this project slot
                     
                     // Inside Project Intro Zone
                     if (time >= start && time < start + 2.0) {
-                      return introMid / dur;
+                      return introRest / dur;
                     }
                     
-                    // Inside Poster Resting Zone
+                    // Inside Poster resting zone
                     if (time >= start + 2.0 && time < morphStart) {
-                      return posterRest / dur;
+                      return introRest / dur;
                     }
 
-                    // Inside Morph Expansion Zone (Magnetic Snapping threshold)
-                    if (time >= morphStart && time < start + 5.2) {
-                      if (time < morphThreshold) {
-                        return posterRest / dur; // Snap back to Poster
-                      } else {
-                        return (start + 6.75) / dur; // Snap forward to Expanded Gallery
-                      }
+                    // Inside Morph Expansion Zone (Magnetic Snapping)
+                    if (time >= morphStart && time < start + 5.6) {
+                      return time >= morphThresholdDown ? galleryRest / dur : introRest / dur;
                     }
 
                     // Inside Expanded Gallery Landing Zone
-                    if (time >= start + 5.2 && time < exitStart) {
-                      return (start + 6.75) / dur;
+                    if (time >= start + 5.6 && time < exitStart) {
+                      return galleryRest / dur;
                     }
 
                     // Inside Project Exit Handoff Zone
                     if (time >= exitStart && time < nextStart) {
-                      // For the last project, snap to the Contact reveal
                       if (idx === projects.length - 1) {
-                        return 37.6 / dur;
+                        return 37.6 / dur; // Snap to Contact
                       }
-                      return (nextStart + 1.4) / dur;
+                      const nextIntro = nextStart + 1.4;
+                      return nextIntro / dur;
                     }
                   }
                 }
               }
 
-              // 6. Contact Zone
+              // 7. Contact Zone Snapping
               if (time >= 36.5) {
                 if (isScrollingUp) {
                   // Scrolling UP from Contact snaps back to the last project resting state
                   const lastProjectRest = 8.0 + (projects.length - 1) * 9.5 + 6.75;
                   return lastProjectRest / dur;
                 }
-                return 37.6 / dur;
+                return 37.6 / dur; // Snap to canonical Contact resting point
               }
 
               return progress;
@@ -578,6 +590,7 @@ export default function PinnedSections() {
       }}
     >
       <NavRail />
+      <ScrollDebug />
 
       <div
         style={{

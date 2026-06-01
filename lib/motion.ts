@@ -68,3 +68,29 @@ export const motion = {
     },
   },
 } as const;
+
+export function getActiveSectionIndex(progress: number, currentIdx: number): number {
+  // Anchors: 0: Hero, 1: About, 2: Work, 3: Contact
+  // 0 -> 1: down threshold 0.0231, up threshold 0.0154
+  // 1 -> 2: down threshold 0.1192, up threshold 0.0923
+  // 2 -> 3: down threshold 0.6692, up threshold 0.5037
+  if (currentIdx === 0) {
+    if (progress >= 0.0231) return 1;
+    return 0;
+  }
+  if (currentIdx === 1) {
+    if (progress < 0.0154) return 0;
+    if (progress >= 0.1192) return 2;
+    return 1;
+  }
+  if (currentIdx === 2) {
+    if (progress < 0.0923) return 1;
+    if (progress >= 0.6692) return 3;
+    return 2;
+  }
+  if (currentIdx === 3) {
+    if (progress < 0.5037) return 2;
+    return 3;
+  }
+  return 0;
+}
