@@ -32,39 +32,84 @@ export default function PinnedSections() {
           trigger: containerRef.current,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 1.2,
+          scrub: 0.6, // Faster catch-up to Lenis scroll to avoid double smoothing lag
           snap: {
             snapTo: (progress) => {
               const dur = tl.duration();
               if (!dur) return progress;
               const time = progress * dur;
-              
+
+              // 1. Hero Zone
+              if (time >= 0 && time < 0.8) {
+                return 0.0 / dur;
+              }
+              // 2. About Bio Zone
+              if (time >= 0.8 && time < 2.3) {
+                return 1.5 / dur;
+              }
+              // 3. About Sub-Section (Metrics/Stack)
+              if (time >= 2.3 && time < 4.5) {
+                return 3.8 / dur;
+              }
+              // 4. Work Masked Title ("Our Work" reveal)
+              if (time >= 4.5 && time < 7.6) {
+                return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
+              }
+
+              // 5. Dynamic Project loop snapping
               for (let idx = 0; idx < projects.length; idx++) {
-                const start = 6.0 + idx * 9.5;
+                const start = 8.0 + idx * 9.5; // Offset by 8.0 for "Our Work" cinematic pause
+                const introMid = start + 1.4;
+                const posterRest = start + 4.4;
                 const morphStart = start + 4.4;
-                const morphEnd = start + 5.6;
+                const morphThreshold = start + 4.8;
                 const exitStart = start + 8.5;
                 const nextStart = start + 9.5;
+
+                // Inside Project Intro Zone
+                if (time >= start && time < start + 2.0) {
+                  return introMid / dur;
+                }
                 
-                // 1. Lock to Expanded Gallery Landing State
+                // Inside Poster Resting Zone
+                if (time >= start + 2.0 && time < morphStart) {
+                  return posterRest / dur;
+                }
+
+                // Inside Morph Expansion Zone (Magnetic Snapping threshold)
+                if (time >= morphStart && time < start + 5.2) {
+                  if (time < morphThreshold) {
+                    return posterRest / dur; // Snap back to Poster
+                  } else {
+                    return (start + 6.75) / dur; // Snap forward to Expanded Gallery
+                  }
+                }
+
+                // Inside Expanded Gallery Landing Zone
                 if (time >= start + 5.2 && time < exitStart) {
                   return (start + 6.75) / dur;
                 }
-                
-                // 2. Collapse back to Poster State
-                if (time > morphStart && time < start + 5.2) {
-                  return morphStart / dur;
-                }
-                
-                // 3. Snap to next project start if exiting
+
+                // Inside Project Exit Handoff Zone
                 if (time >= exitStart && time < nextStart) {
+                  // For the last project, snap to the Contact reveal
+                  if (idx === projects.length - 1) {
+                    return 37.0 / dur;
+                  }
                   return nextStart / dur;
                 }
               }
+
+              // 6. Contact Zone
+              if (time >= 36.5) {
+                return 37.0 / dur;
+              }
+
               return progress;
             },
-            duration: { min: 0.5, max: 0.8 },
-            ease: 'power2.out',
+            duration: { min: 0.4, max: 0.7 },
+            delay: 0.05, // Ultra-responsive 50ms snapping delay for premium magnetic tactile feel
+            ease: 'power3.out',
           },
           onUpdate: (self) => {
             const progress = self.progress;
@@ -159,13 +204,18 @@ export default function PinnedSections() {
       }, 0);
       // Work and Contact initial hidden states
       tl.set('.work-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
+      tl.set('.work-intro-line-1, .work-intro-line-2', {
+        yPercent: 100,
+        opacity: 0,
+      }, 0);
       projects.forEach((project) => {
         tl.set(`.project-card-container-${project.id}`, {
-          top: '100vh',
+          top: cardTop, // Rest at stable poster position by default
           left: cardLeft,
           width: cardWidth,
           height: cardHeight,
           borderRadius: cardRadius,
+          y: '100vh', // Start translated down for hardware-accelerated composite-only animations
           opacity: 0,
           pointerEvents: 'none',
           attr: { 'data-expanded': 'false' },
@@ -215,31 +265,45 @@ export default function PinnedSections() {
       tl.to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 3.55);
 
       // =========================================================================
-      // --- PHASE 4: About exit + Work Intro reveal (4.85 -> 6.0) ---
+      // --- PHASE 4: About exit + "Our Work" Cinematic Transition (4.85 -> 8.0) ---
       // =========================================================================
       tl.to('.about-portrait-left-img', { opacity: 0, yPercent: 12, duration: 0.8, ease: 'power2.in' }, 4.85);
       tl.to('.about-sub-content', { opacity: 0, pointerEvents: 'none', y: -40, duration: 0.6, ease: 'power2.in' }, 4.85);
       tl.to('.about-glass-overlay', { opacity: 0, duration: 0.6, ease: 'power1.inOut' }, 4.85);
 
-      // Enable visibility for Work intro container
-      tl.to('.work-section-container', { opacity: 1, pointerEvents: 'auto', duration: 0.4, ease: 'none' }, 5.0);
+      // Enable visibility for "Our Work" container
+      tl.to('.work-section-container', { opacity: 1, pointerEvents: 'auto', duration: 0.45, ease: 'none' }, 4.85);
 
-      // Reveal the large "MY WORK" masked editorial typography
-      tl.fromTo('.work-intro-char',
-        { yPercent: 100, opacity: 0, filter: 'blur(12px)' },
-        { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.05, duration: 0.8, ease: 'premiumBezier' },
-        5.1
-      );
+      // 1. Line 1 ("Our") reveals upward independently
+      tl.to('.work-intro-line-1', {
+        yPercent: 0,
+        opacity: 1,
+        duration: 1.0,
+        ease: 'premiumBezier',
+      }, 5.0);
 
-      // Brief pause and then fade out the title to let the projects emerge
-      tl.to('.work-intro-container', { opacity: 0, duration: 0.4, ease: 'power2.inOut' }, 5.7);
+      // 2. Line 2 ("Work") reveals with a 150ms staggered delay
+      tl.to('.work-intro-line-2', {
+        yPercent: 0,
+        opacity: 1,
+        duration: 1.0,
+        ease: 'premiumBezier',
+      }, 5.15);
+
+      // 3. Seamless handoff: as user scrolls past, text subtly fades and moves upward
+      tl.to('.work-intro-container', {
+        y: '-80px',
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power2.inOut',
+      }, 7.2);
 
       // =========================================================================
       // =========================================================================
       // --- PHASE 5: Dynamic Projects Portal Morph Loop (6.0 -> 30.0) ---
       // =========================================================================
       projects.forEach((project, idx) => {
-        const start = 6.0 + idx * 9.5;
+        const start = 8.0 + idx * 9.5;
 
         // Slide positions and transitions are now managed dynamically via custom gestures in ProjectCard.tsx
 
@@ -297,13 +361,12 @@ export default function PinnedSections() {
         // =========================================================================
         // --- PHASE 02: IMAGE-ONLY PROJECT CARD ENTRY (Independent Fades) ---
         // =========================================================================
-        // Card slides upward smoothly from below (100vh) to centered height (cardTop) and fades in
+        // Card slides upward smoothly from below (hardware-accelerated y-translate) and fades in
         tl.fromTo(`.project-card-container-${project.id}`,
-          { top: '100vh', opacity: 0, borderRadius: cardRadius },
+          { y: '100vh', opacity: 0 },
           {
-            top: cardTop,
+            y: '0vh',
             opacity: 1,
-            borderRadius: cardRadius,
             pointerEvents: 'auto',
             duration: 1.2,
             ease: 'power2.out',
@@ -311,10 +374,10 @@ export default function PinnedSections() {
           start + 2.2
         );
 
-        // Inner image parallax during entry
+        // Inner image parallax during entry (100% composite-only)
         tl.fromTo(`.project-image-wrapper-${project.id}`,
-          { yPercent: -15, borderRadius: cardRadius },
-          { yPercent: 0, borderRadius: cardRadius, duration: 1.2, ease: 'power2.out' },
+          { yPercent: -15 },
+          { yPercent: 0, duration: 1.2, ease: 'power2.out' },
           start + 2.2
         );
 
@@ -417,10 +480,10 @@ export default function PinnedSections() {
           ease: 'premiumBezier',
         }, start + 8.5);
 
-        // Slide the entire expanded fullscreen card straight UP off-screen and reduce opacity to 0
+        // Slide the entire expanded fullscreen card straight UP off-screen using hardware-accelerated y-translate
         if (idx < projects.length - 1) {
           tl.to(`.project-card-container-${project.id}`, {
-            top: '-100vh',
+            y: '-100vh',
             opacity: 0,
             duration: 1.0,
             ease: 'premiumBezier',
@@ -428,7 +491,7 @@ export default function PinnedSections() {
         } else {
           // For the LAST project, slide straight up off-screen
           tl.to(`.project-card-container-${project.id}`, {
-            top: '-100vh',
+            y: '-100vh',
             opacity: 0,
             duration: 1.0,
             ease: 'premiumBezier',
@@ -455,21 +518,21 @@ export default function PinnedSections() {
       });
 
       // =========================================================================
-      // --- PHASE 6: Work Exit + Contact reveal (34.8 -> 35.4) ---
+      // --- PHASE 6: Work Exit + Contact reveal (36.8 -> 37.4) ---
       // =========================================================================
       tl.to('.contact-section-container', {
         opacity: 1,
         pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 34.8);
+      }, 36.8);
 
       tl.to('.contact-content-wrapper', {
         opacity: 1,
         y: 0,
         duration: 0.6,
         ease: 'power2.out',
-      }, 35.0);
+      }, 37.0);
     });
 
     return () => {

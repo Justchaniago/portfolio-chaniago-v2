@@ -1,8 +1,6 @@
 'use client';
 
 export default function WorkIntro() {
-  const text = "MY WORK";
-  
   return (
     <div
       className="work-intro-container"
@@ -14,11 +12,11 @@ export default function WorkIntro() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'var(--color-bg, #FFFFFF)',
+        backgroundColor: '#FFFFFF', // Solid pristine white for seamless handoff
         zIndex: 2,
         pointerEvents: 'none',
-        opacity: 0, // Controlled by master timeline
-        willChange: 'opacity',
+        opacity: 0, // Controlled by master timeline in PinnedSections
+        willChange: 'opacity, transform',
       }}
     >
       {/* Editorial grid background lines to make it feel sophisticated and structured */}
@@ -27,8 +25,8 @@ export default function WorkIntro() {
           position: 'absolute',
           inset: 0,
           backgroundImage: `
-            linear-gradient(to right, rgba(10, 10, 10, 0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(10, 10, 10, 0.03) 1px, transparent 1px)
+            linear-gradient(to right, rgba(10, 10, 10, 0.02) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(10, 10, 10, 0.02) 1px, transparent 1px)
           `,
           backgroundSize: '100px 100px',
           backgroundPosition: 'center center',
@@ -36,36 +34,65 @@ export default function WorkIntro() {
         }}
       />
 
-      <h1
+      <div
         style={{
-          fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-          fontSize: 'clamp(80px, 12vw, 180px)',
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          letterSpacing: '-0.05em',
-          lineHeight: 1.0,
-          margin: 0,
-          overflow: 'hidden',
           display: 'flex',
-          gap: '0.05em',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '0px',
         }}
       >
-        {text.split("").map((char, index) => (
+        {/* Line 1 clipping container */}
+        <div
+          style={{
+            overflow: 'hidden',
+            display: 'block',
+            paddingBottom: '0.05em', // Prevent character descenders clipping
+          }}
+        >
           <span
-            key={index}
-            className="work-intro-char"
+            className="work-intro-line-1"
             style={{
-              display: 'inline-block',
-              willChange: 'transform, filter, opacity',
-              transform: 'translateY(100%)',
-              opacity: 0,
-              filter: 'blur(12px)',
+              display: 'block',
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(80px, 15vw, 220px)',
+              fontWeight: 800,
+              fontStyle: 'italic',
+              color: '#000000',
+              letterSpacing: '-0.05em',
+              lineHeight: 0.8,
             }}
           >
-            {char === " " ? "\u00A0" : char}
+            Our
           </span>
-        ))}
-      </h1>
+        </div>
+
+        {/* Line 2 clipping container */}
+        <div
+          style={{
+            overflow: 'hidden',
+            display: 'block',
+            paddingBottom: '0.05em',
+          }}
+        >
+          <span
+            className="work-intro-line-2"
+            style={{
+              display: 'block',
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(80px, 15vw, 220px)',
+              fontWeight: 800,
+              fontStyle: 'italic',
+              color: '#000000',
+              letterSpacing: '-0.05em',
+              lineHeight: 0.8,
+            }}
+          >
+            Work
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
