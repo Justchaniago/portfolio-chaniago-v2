@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
+import Work from './Work';
 
 export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,21 +27,31 @@ export default function PinnedSections() {
             const progress = self.progress;
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
             const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
+            const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
 
-            if (heroEl && aboutEl) {
-              if (progress < 0.48) {
+            // 3-Stage dynamic pointerEvents update gates to isolate sections precisely
+            if (heroEl && aboutEl && workEl) {
+              if (progress < 0.38) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
-              } else {
+                workEl.style.pointerEvents = 'none';
+              } else if (progress >= 0.38 && progress < 0.72) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
+                workEl.style.pointerEvents = 'none';
+              } else {
+                heroEl.style.pointerEvents = 'none';
+                aboutEl.style.pointerEvents = 'none';
+                workEl.style.pointerEvents = 'auto';
               }
             }
           },
         },
       });
 
-      // --- PHASE 1: Hero elements fade & shift out (0 -> 40) ---
+      // =========================================================================
+      // --- PHASE 1: Hero elements fade & shift out (Timeline 0.0 -> 0.8) ---
+      // =========================================================================
       tl.to('.hero-text-content', {
         opacity: 0,
         y: -60,
@@ -76,7 +87,9 @@ export default function PinnedSections() {
         ease: 'power2.out',
       }, 0);
 
-      // --- PHASE 2: Global Theme Variable Morphing (15 -> 65) ---
+      // =========================================================================
+      // --- PHASE 2: Global Theme Variable Morphing (Timeline 0.15 -> 2.20) ---
+      // =========================================================================
       tl.to('html', {
         '--color-bg': '#FFFFFF',
         '--color-text-1': '#0A0A0A',
@@ -91,8 +104,7 @@ export default function PinnedSections() {
         ease: 'none',
       }, 0.15);
 
-
-      // Premium Clip-Path Mask Unveil + Spatial Parallax Rise (Ends perfectly flush at bottom edge with zero gaps!)
+      // Premium Clip-Path Mask Unveil + Spatial Parallax Rise
       tl.fromTo('.about-portrait-img',
         {
           clipPath: 'inset(100% 0% 0% 0%)',
@@ -151,6 +163,58 @@ export default function PinnedSections() {
         },
         0.62
       );
+
+      // =========================================================================
+      // --- PHASE 3: Fade Out About & Reveal Selected Works (Timeline 2.2 -> 3.8) ---
+      // =========================================================================
+      // 1. About text content and glass overlays shift up and fade out cleanly
+      tl.to('.about-editorial-text', {
+        opacity: 0,
+        y: -50,
+        duration: 0.6,
+        ease: 'power1.inOut',
+      }, 2.2);
+
+      tl.to('.about-glass-overlay', {
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power1.inOut',
+      }, 2.2);
+
+      // 2. Portrait image shrinks, fades, and sinks back under the bottom white edge
+      tl.to('.about-portrait-img', {
+        opacity: 0,
+        yPercent: 12,
+        clipPath: 'inset(100% 0% 0% 0%)',
+        duration: 0.8,
+        ease: 'power2.in',
+      }, 2.2);
+
+      // 3. Work section container emerges
+      tl.to('.work-section-container', {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'none',
+      }, 2.6);
+
+      // 4. Stagger-reveal Selected Works header and staggered cards
+      tl.fromTo('.work-header',
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
+        2.8
+      );
+
+      tl.fromTo('.work-card-1',
+        { opacity: 0, y: 40, scale: 0.96 },
+        { opacity: 1, y: 24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
+        3.0
+      );
+
+      tl.fromTo('.work-card-2',
+        { opacity: 0, y: 10, scale: 0.96 },
+        { opacity: 1, y: -24, scale: 1, duration: 0.9, ease: 'premiumBezier' },
+        3.2
+      );
     });
 
     return () => {
@@ -176,7 +240,7 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '350vh', // Total scroll budget (longer depth for slower scrub)
+        height: '500vh', // Expanded scroll budget for 3-phase scrub
       }}
     >
       {/* Sticky base container locking viewport */}
@@ -192,8 +256,8 @@ export default function PinnedSections() {
       >
         <Hero />
         <About />
+        <Work />
       </div>
     </div>
   );
 }
-

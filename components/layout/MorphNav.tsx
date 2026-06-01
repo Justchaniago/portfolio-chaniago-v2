@@ -203,8 +203,18 @@ export default function MorphNav() {
   useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = maxScroll > 0 ? y / maxScroll : 0;
+
       setIsCollapsed(y > 80);
-      setActiveSection(y < window.innerHeight * 0.8 ? 'work' : 'about');
+      
+      if (progress < 0.38) {
+        setActiveSection('work');
+      } else if (progress >= 0.38 && progress < 0.72) {
+        setActiveSection('about');
+      } else {
+        setActiveSection('work');
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -368,15 +378,18 @@ export default function MorphNav() {
 
     if (href === '/work') {
       if (lenis) {
-        lenis.scrollTo(0, { duration: 2.2, easing: easeInOutExpo });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } else if (href === '/about') {
-      if (lenis) {
+        // Scrolls to the Work phase at the bottom of the timeline
         lenis.scrollTo('bottom', { duration: 2.6, easing: easeInOutExpo });
       } else {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      }
+    } else if (href === '/about') {
+      if (lenis) {
+        // Scrolls to the About full reveal phase in the middle of the timeline (50% depth)
+        const targetScroll = document.documentElement.scrollHeight * 0.50;
+        lenis.scrollTo(targetScroll, { duration: 2.2, easing: easeInOutExpo });
+      } else {
+        window.scrollTo({ top: document.documentElement.scrollHeight * 0.50, behavior: 'smooth' });
       }
     } else if (href === '/contact') {
       window.location.href = 'mailto:ferryruslyc@gmail.com';
