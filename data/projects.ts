@@ -6,6 +6,7 @@ export interface Project {
   image: string;
   slug: string;
   impact: string;
+  gallery: string[];
 }
 
 export const projects: Project[] = [
@@ -17,6 +18,7 @@ export const projects: Project[] = [
     impact: 'Optimizing franchise performance and store management for global beverage retailers.',
     image: '/images/project1.png',
     slug: 'gong-cha-panel',
+    gallery: ['/images/project1.png', '/images/project1.png', '/images/project1.png'],
   },
   {
     id: '02',
@@ -26,6 +28,7 @@ export const projects: Project[] = [
     impact: 'Redefining daily loyalty rituals and beverage ordering for a global tea brand.',
     image: '/images/project2.png',
     slug: 'gong-cha',
+    gallery: ['/images/project2.png', '/images/project2.png', '/images/project2.png'],
   },
   {
     id: '03',
@@ -35,5 +38,6 @@ export const projects: Project[] = [
     impact: 'Supporting emotional patterns through responsive AI architectures and reflective check-in experiences.',
     image: '/images/project3.png',
     slug: 'teman-dengar',
+    gallery: ['/images/project3.png', '/images/project3.png', '/images/project3.png'],
   }
 ];

@@ -87,11 +87,11 @@ export default function NavRail() {
 
       // Map progress thresholds to section indices (using midpoints of the transitions for perfect sync)
       let activeIdx = 0;
-      if (progress >= 0.06 && progress < 0.22) {
+      if (progress >= 0.06 && progress < 0.17) {
         activeIdx = 1; // About
-      } else if (progress >= 0.22 && progress < 0.93) {
+      } else if (progress >= 0.17 && progress < 0.94) {
         activeIdx = 2; // Work
-      } else if (progress >= 0.93) {
+      } else if (progress >= 0.94) {
         activeIdx = 3; // Contact
       }
 

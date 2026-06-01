@@ -208,9 +208,9 @@ export default function MorphNav() {
 
       setIsCollapsed(y > 80);
       
-      if (progress < 0.22) {
+      if (progress < 0.17) {
         setActiveSection('about');
-      } else if (progress >= 0.22 && progress < 0.93) {
+      } else if (progress >= 0.17 && progress < 0.94) {
         setActiveSection('work');
       } else {
         setActiveSection('contact');

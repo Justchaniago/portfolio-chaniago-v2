@@ -202,10 +202,12 @@ export default function PinnedSections() {
 
       // =========================================================================
       // =========================================================================
-      // --- PHASE 5: Dynamic Projects Portal Morph Loop (6.0 -> 26.0) ---
+      // --- PHASE 5: Dynamic Projects Portal Morph Loop (6.0 -> 30.0) ---
       // =========================================================================
       projects.forEach((project, idx) => {
-        const start = 6.0 + idx * 6.4;
+        const start = 6.0 + idx * 8.0;
+
+        // Slide positions and transitions are now managed dynamically via custom gestures in ProjectCard.tsx
 
         // =========================================================================
         // --- PHASE 01: PROJECT TYPOGRAPHY INTRODUCTION ---
@@ -306,7 +308,7 @@ export default function PinnedSections() {
         }, start + 4.2);
 
         // Inner image scales down slightly for morph depth
-        tl.to(`.project-image-${project.id}`, {
+        tl.to(`.project-image-${project.id}-0`, {
           scale: 1.0,
           duration: 1.2,
           ease: 'premiumBezier',
@@ -323,12 +325,40 @@ export default function PinnedSections() {
           ease: 'none',
         }, start + 4.2);
 
-        // --- IMMERSIVE PROJECT EXPERIENCE (VISUAL PAUSE) ---
-        // Hold fullscreen image-only stage to allow visual breathing room.
-        // start + 5.4 to start + 6.4 (duration: 1.0s). Pristine visual, no text or overlay.
+        // =========================================================================
+        // --- EXTRA: FLOATING GALLERY CONTROL PILL EMERGENCE ---
+        // =========================================================================
+        // 1. Orb Emergence (translates up, fades in, and blurs in)
+        tl.to(`.project-gallery-pill-${project.id}`, {
+          opacity: 1,
+          y: 0,
+          scale: 1.0,
+          filter: 'blur(0px)',
+          duration: 0.6,
+          ease: 'premiumBezier',
+        }, start + 5.2);
+
+        // 2. Shape Morph to Pill (width expands to 180px)
+        tl.to(`.project-gallery-pill-${project.id}`, {
+          width: '180px',
+          duration: 0.7,
+          ease: 'premiumBezier',
+        }, start + 5.6);
+
+        // 3. Staggered Content Reveal inside the Pill
+        tl.to(`.pill-content-${project.id}`, {
+          opacity: 1,
+          pointerEvents: 'auto',
+          duration: 0.4,
+          ease: 'power2.out',
+        }, start + 6.0);
+
+        // The horizontal project gallery interactions (dragging, parallax slides, live capsule and counters)
+        // are now entirely handled via high-performance horizontal pointer gestures in ProjectCard.tsx,
+        // leaving the vertical wheel/touch scroll completely unobstructed.
 
         // =========================================================================
-        // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT ---
+        // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT & PILL POWER DOWN ---
         // =========================================================================
         // Once the project reaches expanded state, it is a one-way journey. 
         // It never collapses back to card state. It simply slides straight UP off-screen.
@@ -338,22 +368,48 @@ export default function PinnedSections() {
             top: '-100vh',
             duration: 1.0,
             ease: 'premiumBezier',
-          }, start + 6.4);
+          }, start + 8.3);
         } else {
           // For the LAST project, slide straight up off-screen
           tl.to(`.project-card-container-${project.id}`, {
             top: '-100vh',
             duration: 1.0,
             ease: 'premiumBezier',
-          }, start + 6.4);
+          }, start + 8.3);
 
           // Fade out the entire Work section container to reveal Contact underneath
           tl.to('.work-section-container', {
             opacity: 0,
             duration: 0.6,
             ease: 'power2.inOut',
-          }, start + 6.6);
+          }, start + 8.5);
         }
+
+        // --- CONTROL PILL POWER DOWN (COLLAPSE REVERSAL) ---
+        // 1. Staggered content inside the pill fades out
+        tl.to(`.pill-content-${project.id}`, {
+          opacity: 0,
+          pointerEvents: 'none',
+          duration: 0.25,
+          ease: 'power2.in',
+        }, start + 8.3);
+
+        // 2. Shape morphs back to circular orb (width 56px)
+        tl.to(`.project-gallery-pill-${project.id}`, {
+          width: '56px',
+          duration: 0.4,
+          ease: 'premiumBezier',
+        }, start + 8.4);
+
+        // 3. Orb slides down, blurs, and fades out entirely
+        tl.to(`.project-gallery-pill-${project.id}`, {
+          opacity: 0,
+          y: 32,
+          scale: 0.8,
+          filter: 'blur(8px)',
+          duration: 0.4,
+          ease: 'premiumBezier',
+        }, start + 8.5);
 
         // Smoothly transition variables back to light mode as card exits off-screen (instant toggle)
         tl.to('html', {
@@ -364,25 +420,25 @@ export default function PinnedSections() {
           '--color-card-bg': 'rgba(255, 255, 255, 0.35)',
           duration: 0.1,
           ease: 'none',
-        }, start + 6.4);
+        }, start + 8.3);
       });
 
       // =========================================================================
-      // --- PHASE 6: Work Exit + Contact reveal (25.6 -> 27.0) ---
+      // --- PHASE 6: Work Exit + Contact reveal (30.3 -> 31.7) ---
       // =========================================================================
       tl.to('.contact-section-container', {
         opacity: 1,
         pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 25.6);
+      }, 30.3);
 
       tl.to('.contact-content-wrapper', {
         opacity: 1,
         y: 0,
         duration: 0.6,
         ease: 'power2.out',
-      }, 25.8);
+      }, 30.5);
     });
 
     return () => {
@@ -426,6 +482,7 @@ export default function PinnedSections() {
         <About />
         <ProjectShowcase />
         <Contact />
+
       </div>
     </div>
   );
