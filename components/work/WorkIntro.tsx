@@ -15,6 +15,7 @@ export default function WorkIntro() {
         backgroundColor: '#FFFFFF', // Solid pristine white for seamless handoff
         zIndex: 2,
         pointerEvents: 'none',
+        opacity: 1, // Set to 1 by default so parent visibility dictates rendering
         willChange: 'opacity, transform',
       }}
     >

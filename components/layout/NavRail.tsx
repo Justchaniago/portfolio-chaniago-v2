@@ -5,9 +5,9 @@ import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 const SECTIONS = [
   { id: 'hero', label: 'Hero', num: '01', progress: 0.0 },
-  { id: 'about', label: 'About', num: '02', progress: 0.11 },
-  { id: 'work', label: 'Work', num: '03', progress: 0.58 },
-  { id: 'contact', label: 'Contact', num: '04', progress: 0.98 },
+  { id: 'about', label: 'About', num: '02', progress: 0.04 }, // Rest point of About biography text (1.5s / 37.6s)
+  { id: 'work', label: 'Work', num: '03', progress: 0.17 },  // Resting pause of "Our Work" cinematic intro (6.5s / 37.6s)
+  { id: 'contact', label: 'Contact', num: '04', progress: 0.98 }, // Rest point of Contact section (37.0s / 37.6s)
 ];
 
 const SECTION_GAP = 56; // gap in pixels between dots
@@ -49,30 +49,30 @@ export default function NavRail() {
     if (typeof window === 'undefined') return;
 
     const getPreciseY = (progress: number) => {
-      if (progress <= 0.04) {
+      if (progress <= 0.004) {
         return 0; // lock to Dot 1 (Hero)
       }
-      if (progress > 0.04 && progress < 0.08) {
+      if (progress > 0.004 && progress < 0.02) {
         // interpolate between Dot 1 (0px) and Dot 2 (56px)
-        const t = (progress - 0.04) / (0.08 - 0.04);
+        const t = (progress - 0.004) / (0.02 - 0.004);
         const ease = t * t * (3 - 2 * t);
         return ease * 56;
       }
-      if (progress >= 0.08 && progress <= 0.18) {
+      if (progress >= 0.02 && progress <= 0.129) {
         return 56; // lock to Dot 2 (About)
       }
-      if (progress > 0.18 && progress < 0.26) {
+      if (progress > 0.129 && progress < 0.18) {
         // interpolate between Dot 2 (56px) and Dot 3 (112px)
-        const t = (progress - 0.18) / (0.26 - 0.18);
+        const t = (progress - 0.129) / (0.18 - 0.129);
         const ease = t * t * (3 - 2 * t);
         return 56 + ease * 56;
       }
-      if (progress >= 0.26 && progress <= 0.88) {
+      if (progress >= 0.18 && progress <= 0.96) {
         return 112; // lock to Dot 3 (Work)
       }
-      if (progress > 0.88 && progress < 0.94) {
+      if (progress > 0.96 && progress < 0.971) {
         // interpolate between Dot 3 (112px) and Dot 4 (168px)
-        const t = (progress - 0.88) / (0.94 - 0.88);
+        const t = (progress - 0.96) / (0.971 - 0.96);
         const ease = t * t * (3 - 2 * t);
         return 112 + ease * 56;
       }
@@ -85,13 +85,13 @@ export default function NavRail() {
 
       const progress = window.scrollY / scrollHeight;
 
-      // Map progress thresholds to section indices (using midpoints of the transitions for perfect sync)
+      // Map progress thresholds to section indices (using active V3 coordinates for perfect sync)
       let activeIdx = 0;
-      if (progress >= 0.06 && progress < 0.17) {
+      if (progress >= 0.004 && progress < 0.129) {
         activeIdx = 1; // About
-      } else if (progress >= 0.17 && progress < 0.94) {
+      } else if (progress >= 0.129 && progress < 0.971) {
         activeIdx = 2; // Work
-      } else if (progress >= 0.94) {
+      } else if (progress >= 0.971) {
         activeIdx = 3; // Contact
       }
 

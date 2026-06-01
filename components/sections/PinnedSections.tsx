@@ -52,8 +52,12 @@ export default function PinnedSections() {
                 return 3.8 / dur;
               }
               // 4. Work Masked Title ("Our Work" reveal)
-              if (time >= 4.5 && time < 7.6) {
-                return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
+              if (time >= 4.5 && time < 8.0) {
+                if (time < 7.6) {
+                  return 6.5 / dur; // Snaps to the fully revealed resting pause of "Our Work"
+                } else {
+                  return 8.0 / dur; // Snaps forward to Project 1's intro start
+                }
               }
 
               // 5. Dynamic Project loop snapping
@@ -107,9 +111,9 @@ export default function PinnedSections() {
 
               return progress;
             },
-            duration: { min: 0.4, max: 0.7 },
-            delay: 0.05, // Ultra-responsive 50ms snapping delay for premium magnetic tactile feel
-            ease: 'power3.out',
+            duration: { min: 0.35, max: 0.65 }, // Snappier, fluid glide times
+            delay: 0.015, // Ultra-responsive 15ms snapping delay for instant magnetic capture!
+            ease: 'power4.out', // Crisp, high-end momentum deceleration curve
           },
           onUpdate: (self) => {
             const progress = self.progress;
@@ -119,17 +123,17 @@ export default function PinnedSections() {
             const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
 
             if (heroEl && aboutEl && workEl && contactEl) {
-              if (progress < 0.008) {
+              if (progress < 0.004) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.008 && progress < 0.211) {
+              } else if (progress >= 0.004 && progress < 0.129) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
                 workEl.style.pointerEvents = 'none';
                 contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.211 && progress < 0.948) {
+              } else if (progress >= 0.129 && progress < 0.971) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'auto';
@@ -204,6 +208,7 @@ export default function PinnedSections() {
       }, 0);
       // Work and Contact initial hidden states
       tl.set('.work-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
+      tl.set('.work-intro-container', { opacity: 1, y: '0px' }, 0);
       tl.set('.work-intro-line-1, .work-intro-line-2', {
         yPercent: 100,
         opacity: 0,
@@ -557,7 +562,7 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '1200vh',
+        height: '750vh', // Optimizing physical travel distance by 37.5% for ultra-responsive, ergonomic scrolling
       }}
     >
       <NavRail />
