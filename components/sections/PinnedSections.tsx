@@ -40,18 +40,25 @@ export default function PinnedSections() {
               const time = progress * dur;
               
               for (let idx = 0; idx < projects.length; idx++) {
-                const start = 6.0 + idx * 8.0;
-                const morphStart = start + 4.2;
-                const morphEnd = start + 5.4;
+                const start = 6.0 + idx * 9.5;
+                const morphStart = start + 4.4;
+                const morphEnd = start + 5.6;
+                const exitStart = start + 8.5;
+                const nextStart = start + 9.5;
                 
-                // Magnetic Snap: if expansion progress reaches >= 85% completion (start + 5.22)
-                if (time >= start + 5.15 && time < morphEnd) {
-                  return morphEnd / dur;
+                // 1. Lock to Expanded Gallery Landing State
+                if (time >= start + 5.2 && time < exitStart) {
+                  return (start + 6.75) / dur;
                 }
                 
-                // Reverse Snap: if collapsing progress reaches <= 15% remaining (start + 4.38)
-                if (time > morphStart && time <= start + 4.45) {
+                // 2. Collapse back to Poster State
+                if (time > morphStart && time < start + 5.2) {
                   return morphStart / dur;
+                }
+                
+                // 3. Snap to next project start if exiting
+                if (time >= exitStart && time < nextStart) {
+                  return nextStart / dur;
                 }
               }
               return progress;
@@ -159,7 +166,7 @@ export default function PinnedSections() {
           width: cardWidth,
           height: cardHeight,
           borderRadius: cardRadius,
-          opacity: 1,
+          opacity: 0,
           pointerEvents: 'none',
           attr: { 'data-expanded': 'false' },
         }, 0);
@@ -232,15 +239,15 @@ export default function PinnedSections() {
       // --- PHASE 5: Dynamic Projects Portal Morph Loop (6.0 -> 30.0) ---
       // =========================================================================
       projects.forEach((project, idx) => {
-        const start = 6.0 + idx * 8.0;
+        const start = 6.0 + idx * 9.5;
 
         // Slide positions and transitions are now managed dynamically via custom gestures in ProjectCard.tsx
 
         // =========================================================================
-        // --- PHASE 01: PROJECT TYPOGRAPHY INTRODUCTION ---
+        // --- PHASE 01: PROJECT TYPOGRAPHY INTRODUCTION (Staggered Intro) ---
         // =========================================================================
         // Masked reveal, upward translate, blur resolve, and scaleX horizontal divider emergence
-        tl.to(`.project-intro-block-${project.id}`, { opacity: 1, pointerEvents: 'auto', duration: 0.1 }, start);
+        tl.to(`.project-intro-block-${project.id}`, { opacity: 1, pointerEvents: 'auto', duration: 0.1 }, start + 0.2);
 
         tl.to(`.project-intro-eyebrow-${project.id}`, {
           opacity: 1,
@@ -248,22 +255,22 @@ export default function PinnedSections() {
           filter: 'blur(0px)',
           duration: 0.8,
           ease: 'premiumBezier',
-        }, start + 0.15);
+        }, start + 0.2);
 
         tl.to(`.project-intro-title-${project.id}`, {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          duration: 0.9,
+          duration: 0.8,
           ease: 'premiumBezier',
-        }, start + 0.25);
+        }, start + 0.35);
 
         tl.to(`.project-intro-line-${project.id}`, {
           opacity: 1,
           scaleX: 1,
           duration: 0.6,
           ease: 'power2.out',
-        }, start + 0.4);
+        }, start + 0.5);
 
         tl.to(`.project-intro-desc-${project.id}`, {
           opacity: 1,
@@ -271,10 +278,10 @@ export default function PinnedSections() {
           filter: 'blur(0px)',
           duration: 0.8,
           ease: 'premiumBezier',
-        }, start + 0.55);
+        }, start + 0.65);
 
-        // --- PAUSE TYPOGRAPHY INTRODUCTION (0.8s) ---
-        // start + 1.2 to start + 2.0. Allow user to read and build anticipation.
+        // --- PAUSE TYPOGRAPHY INTRODUCTION (0.55s) ---
+        // start + 1.45 to start + 2.0. Allow user to read and build anticipation.
 
         // --- TYPOGRAPHY INTRODUCTION EXIT ---
         // Typography slides up cleanly and fades out to make space for the emergent card
@@ -288,13 +295,14 @@ export default function PinnedSections() {
         }, start + 2.0);
 
         // =========================================================================
-        // --- PHASE 02: IMAGE-ONLY PROJECT CARD ENTRY ---
+        // --- PHASE 02: IMAGE-ONLY PROJECT CARD ENTRY (Independent Fades) ---
         // =========================================================================
-        // Card slides upward smoothly from below (100vh) to centered height (cardTop)
+        // Card slides upward smoothly from below (100vh) to centered height (cardTop) and fades in
         tl.fromTo(`.project-card-container-${project.id}`,
-          { top: '100vh', borderRadius: cardRadius },
+          { top: '100vh', opacity: 0, borderRadius: cardRadius },
           {
             top: cardTop,
+            opacity: 1,
             borderRadius: cardRadius,
             pointerEvents: 'auto',
             duration: 1.2,
@@ -326,20 +334,20 @@ export default function PinnedSections() {
           borderRadius: '0px',
           duration: 1.2,
           ease: 'premiumBezier',
-        }, start + 4.2);
+        }, start + 4.4);
 
         tl.to(`.project-image-wrapper-${project.id}`, {
           borderRadius: '0px',
           duration: 1.2,
           ease: 'premiumBezier',
-        }, start + 4.2);
+        }, start + 4.4);
 
         // Inner image scales down slightly for morph depth
         tl.to(`.project-image-${project.id}-0`, {
           scale: 1.0,
           duration: 1.2,
           ease: 'premiumBezier',
-        }, start + 4.2);
+        }, start + 4.4);
 
         // Dynamically transition all visual variables on html for NavRail & MorphNav to white/dark mode (instant toggle)
         tl.to('html', {
@@ -350,12 +358,12 @@ export default function PinnedSections() {
           '--color-card-bg': 'rgba(255, 255, 255, 0.08)',
           duration: 0.1,
           ease: 'none',
-        }, start + 4.2);
+        }, start + 4.4);
 
         // =========================================================================
-        // --- EXTRA: FLOATING GALLERY CONTROL PILL EMERGENCE ---
+        // --- EXTRA: FLOATING GALLERY CONTROL PILL EMERGENCE (V3 Landing Sequence) ---
         // =========================================================================
-        // 1. Orb Emergence (starts after 150ms pause at start + 5.55)
+        // 1. Orb Emergence (starts after 150ms pause at start + 5.75)
         tl.to(`.project-gallery-pill-${project.id}`, {
           opacity: 1,
           y: 0,
@@ -363,88 +371,78 @@ export default function PinnedSections() {
           filter: 'blur(0px)',
           duration: 0.6,
           ease: 'premiumBezier',
-        }, start + 5.55);
+        }, start + 5.75);
 
-        // 2. Shape Morph to Pill (starts at start + 5.95)
+        // 2. Shape Morph to Pill (starts at start + 6.35)
         tl.to(`.project-gallery-pill-${project.id}`, {
           width: '180px',
           duration: 0.7,
           ease: 'premiumBezier',
-        }, start + 5.95);
+        }, start + 6.35);
 
-        // 3. Staggered Content Reveal inside the Pill (starts at start + 6.35)
+        // 3. Staggered Content Reveal inside the Pill (starts at start + 6.75)
         tl.to(`.pill-content-${project.id}`, {
           opacity: 1,
           pointerEvents: 'auto',
           duration: 0.4,
           ease: 'power2.out',
-        }, start + 6.35);
+        }, start + 6.75);
 
         // Toggle state attribute signaling card has fully landed to trigger autoplay loop
-        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 6.35);
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'true' } }, start + 6.75);
 
         // The horizontal project gallery interactions (dragging, parallax slides, live capsule and counters)
         // are now entirely handled via high-performance horizontal pointer gestures in ProjectCard.tsx,
         // leaving the vertical wheel/touch scroll completely unobstructed.
 
         // =========================================================================
-        // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT & PILL POWER DOWN ---
+        // --- PHASE 04: IMMERSIVE FULLSCREEN EXIT & PILL POWER DOWN (Exit Sequence) ---
         // =========================================================================
-        // Once the project reaches expanded state, it is a one-way journey. 
-        // It never collapses back to card state. It simply slides straight UP off-screen.
+        // Halt autoplay progression immediately
+        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false' } }, start + 8.5);
+
+        // Fade gallery controls instantly on exit
+        tl.to(`.pill-content-${project.id}`, {
+          opacity: 0,
+          pointerEvents: 'none',
+          duration: 0.3,
+        }, start + 8.5);
+
+        tl.to(`.project-gallery-pill-${project.id}`, {
+          opacity: 0,
+          y: 32,
+          scale: 0.8,
+          filter: 'blur(8px)',
+          duration: 0.5,
+          ease: 'premiumBezier',
+        }, start + 8.5);
+
+        // Slide the entire expanded fullscreen card straight UP off-screen and reduce opacity to 0
         if (idx < projects.length - 1) {
-          // Slide the entire expanded fullscreen card straight UP off-screen
           tl.to(`.project-card-container-${project.id}`, {
             top: '-100vh',
+            opacity: 0,
             duration: 1.0,
             ease: 'premiumBezier',
-          }, start + 8.3);
+          }, start + 8.5);
         } else {
           // For the LAST project, slide straight up off-screen
           tl.to(`.project-card-container-${project.id}`, {
             top: '-100vh',
+            opacity: 0,
             duration: 1.0,
             ease: 'premiumBezier',
-          }, start + 8.3);
+          }, start + 8.5);
 
           // Fade out the entire Work section container to reveal Contact underneath
           tl.to('.work-section-container', {
             opacity: 0,
             duration: 0.6,
             ease: 'power2.inOut',
-          }, start + 8.5);
+          }, start + 8.7);
         }
 
-        // Reset data-expanded state to halt autoplay timers immediately upon exit initiation
-        tl.set(`.project-card-container-${project.id}`, { attr: { 'data-expanded': 'false' } }, start + 8.3);
-
-        // --- CONTROL PILL POWER DOWN (COLLAPSE REVERSAL) ---
-        // 1. Staggered content inside the pill fades out
-        tl.to(`.pill-content-${project.id}`, {
-          opacity: 0,
-          pointerEvents: 'none',
-          duration: 0.25,
-          ease: 'power2.in',
-        }, start + 8.3);
-
-        // 2. Shape morphs back to circular orb (width 56px)
-        tl.to(`.project-gallery-pill-${project.id}`, {
-          width: '56px',
-          duration: 0.4,
-          ease: 'premiumBezier',
-        }, start + 8.4);
-
-        // 3. Orb slides down, blurs, and fades out entirely
-        tl.to(`.project-gallery-pill-${project.id}`, {
-          opacity: 0,
-          y: 32,
-          scale: 0.8,
-          filter: 'blur(8px)',
-          duration: 0.4,
-          ease: 'premiumBezier',
-        }, start + 8.5);
-
-        // Smoothly transition variables back to light mode as card exits off-screen (instant toggle)
+        // Smoothly transition HTML variables back to light mode as card exits off-screen (instant toggle)
         tl.to('html', {
           '--color-bg': '#FFFFFF',
           '--color-text-1': '#0A0A0A',
@@ -453,25 +451,25 @@ export default function PinnedSections() {
           '--color-card-bg': 'rgba(255, 255, 255, 0.35)',
           duration: 0.1,
           ease: 'none',
-        }, start + 8.3);
+        }, start + 8.5);
       });
 
       // =========================================================================
-      // --- PHASE 6: Work Exit + Contact reveal (30.3 -> 31.7) ---
+      // --- PHASE 6: Work Exit + Contact reveal (34.8 -> 35.4) ---
       // =========================================================================
       tl.to('.contact-section-container', {
         opacity: 1,
         pointerEvents: 'auto',
         duration: 0.4,
         ease: 'none',
-      }, 30.3);
+      }, 34.8);
 
       tl.to('.contact-content-wrapper', {
         opacity: 1,
         y: 0,
         duration: 0.6,
         ease: 'power2.out',
-      }, 30.5);
+      }, 35.0);
     });
 
     return () => {
