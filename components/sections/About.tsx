@@ -43,7 +43,7 @@ export default function About() {
         }}
       />
 
-      {/* 2. Massive Right-Aligned Bottom Transparent Portrait Image (Shifted 6% right, 10% larger) */}
+      {/* 2a. Massive Right-Aligned Bottom Transparent Portrait Image (Shifted 6% right, 10% larger) */}
       <img
         src="/images/bannertransparan.png"
         alt="About Portrait"
@@ -60,6 +60,26 @@ export default function About() {
           clipPath: 'inset(100% 0% 0% 0%)', // Crop reveal mask
           transform: 'translateY(120px)', // Initial spatial lift translate
           willChange: 'clip-path, transform',
+          zIndex: 2,
+        }}
+      />
+
+      {/* 2b. Massive Left-Aligned Bottom Transparent Portrait Image (Sub-section pose morph) */}
+      <img
+        src="/images/bannertransparanleft.png"
+        alt="About Portrait Left"
+        className="about-portrait-left-img"
+        style={{
+          position: 'absolute',
+          bottom: '-10vh',
+          left: '0vw',
+          width: 'auto',
+          height: '123vh',
+          display: 'block',
+          objectFit: 'contain',
+          objectPosition: 'bottom left',
+          opacity: 0, // Animated via GSAP master timeline
+          willChange: 'transform, opacity',
           zIndex: 2,
         }}
       />
@@ -232,6 +252,228 @@ export default function About() {
         >
           Building thoughtful digital experiences through code, design, and AI.
         </p>
+      </div>
+
+      {/* 5. New Sub-section Editorial Grid (Placed on the right, progressive reveals) */}
+      <div
+        className="about-sub-content"
+        style={{
+          position: 'absolute',
+          right: '8vw', // Placed on the right quadrant
+          bottom: '12vh',
+          width: 'clamp(440px, 40vw, 640px)',
+          zIndex: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4vh',
+          opacity: 0, // Animated via GSAP timeline
+          willChange: 'opacity, transform',
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Eyebrow */}
+        <span
+          className="sub-section-eyebrow"
+          style={{
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-2, #444444)',
+            opacity: 0.45,
+            display: 'block',
+            willChange: 'opacity, transform',
+          }}
+        >
+          02 — Deep Dive Focus
+        </span>
+
+        {/* Current Focus Grid */}
+        <div
+          className="sub-section-focus"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            willChange: 'opacity, transform',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '8px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-2, #444444)',
+              opacity: 0.3,
+            }}
+          >
+            Current Focus
+          </span>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+            }}
+          >
+            {[
+              { title: 'Teman Dengar', desc: 'Disability accessibility app' },
+              { title: 'AI Systems', desc: 'Agentic workflows & logic' },
+              { title: 'Automation', desc: 'System-level pipelines' },
+              { title: 'Product Engineering', desc: 'High-fidelity UI systems' },
+            ].map((focus) => (
+              <div
+                key={focus.title}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
+                  background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: 'var(--color-text-1, #0A0A0A)',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {focus.title}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-body, sans-serif)',
+                    fontSize: '9px',
+                    color: 'var(--color-text-2, #444444)',
+                    opacity: 0.75,
+                    marginTop: '2px',
+                  }}
+                >
+                  {focus.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected Metrics */}
+        <div
+          className="sub-section-metrics"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            willChange: 'opacity, transform',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '8px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-2, #444444)',
+              opacity: 0.3,
+            }}
+          >
+            Selected Metrics
+          </span>
+          <div style={{ display: 'flex', gap: '36px' }}>
+            {[
+              { value: '12+', label: 'Projects Built' },
+              { value: '3+', label: 'Years Learning' },
+              { value: '8+', label: 'Core Systems' },
+            ].map((metric) => (
+              <div key={metric.label} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display, Georgia, serif)',
+                    fontSize: 'clamp(24px, 2.2vw, 32px)',
+                    fontWeight: 500,
+                    color: 'var(--color-text-1, #0A0A0A)',
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1,
+                  }}
+                >
+                  {metric.value}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '8px',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-2, #444444)',
+                    opacity: 0.75,
+                  }}
+                >
+                  {metric.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Core Tech Stack */}
+        <div
+          className="sub-section-stack"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            willChange: 'opacity, transform',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '8px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-2, #444444)',
+              opacity: 0.3,
+            }}
+          >
+            Core Stack
+          </span>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px',
+            }}
+          >
+            {['Next.js', 'React', 'TypeScript', 'GSAP', 'Framer Motion', 'Tailwind CSS', 'Node.js', 'Python'].map(
+              (tech) => (
+                <span
+                  key={tech}
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '8px',
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
+                    color: 'var(--color-text-1, #0A0A0A)',
+                    padding: '5px 10px',
+                    borderRadius: '100px',
+                    border: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
+                    background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
+                  }}
+                >
+                  {tech}
+                </span>
+              )
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );

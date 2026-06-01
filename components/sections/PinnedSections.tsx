@@ -31,11 +31,11 @@ export default function PinnedSections() {
 
             // 3-Stage dynamic pointerEvents update gates to isolate sections precisely
             if (heroEl && aboutEl && workEl) {
-              if (progress < 0.38) {
+              if (progress < 0.35) {
                 heroEl.style.pointerEvents = 'auto';
                 aboutEl.style.pointerEvents = 'none';
                 workEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.38 && progress < 0.72) {
+              } else if (progress >= 0.35 && progress < 0.76) {
                 heroEl.style.pointerEvents = 'none';
                 aboutEl.style.pointerEvents = 'auto';
                 workEl.style.pointerEvents = 'none';
@@ -88,7 +88,7 @@ export default function PinnedSections() {
       }, 0);
 
       // =========================================================================
-      // --- PHASE 2: Global Theme Variable Morphing (Timeline 0.15 -> 2.20) ---
+      // --- PHASE 2: Global Theme Variable Morphing & About Biography Reveals (Timeline 0.15 -> 1.10) ---
       // =========================================================================
       tl.to('html', {
         '--color-bg': '#FFFFFF',
@@ -104,100 +104,156 @@ export default function PinnedSections() {
         ease: 'none',
       }, 0.15);
 
-      // Premium Clip-Path Mask Unveil + Spatial Parallax Rise
+      // Premium Clip-Path Mask Unveil + Spatial Parallax Rise of the native HD cutout portrait
       tl.fromTo('.about-portrait-img',
         {
           clipPath: 'inset(100% 0% 0% 0%)',
-          y: 80,
-          yPercent: 12,
+          y: 120,
         },
         {
           clipPath: 'inset(0% 0% 0% 0%)',
           y: 0,
-          yPercent: 0,
+          duration: 0.8,
           ease: 'power2.out',
         },
-        0.78
+        0.45
       );
 
-      // 1. Neue Montreal Eyebrow reveal (triggers at 0.50 progress)
+      // 1. Neue Montreal Eyebrow reveal (triggers at 0.80 progress)
       tl.fromTo('.about-eyebrow',
-        {
-          opacity: 0,
-          y: 15,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          ease: 'power2.out',
-        },
-        0.50
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, ease: 'power2.out' },
+        0.80
       );
 
-      // 2. Headline Character Stagger Cascade (Apple Keynote precision style)
+      // 2. Headline Character Stagger Cascade
       tl.fromTo('.about-char',
-        {
-          yPercent: 100, // Starts at translateY(100%) below its own baseline
-          opacity: 0,
-        },
+        { yPercent: 100, opacity: 0 },
         {
           yPercent: 0,
           opacity: 1,
-          stagger: 0.025, // Character stagger: 0.02s - 0.04s
-          duration: 0.8, // Duration: 0.7s - 0.9s
-          ease: 'premiumBezier', // Custom premium cubic-bezier(0.22, 1, 0.36, 1)
+          stagger: 0.025,
+          duration: 0.8,
+          ease: 'premiumBezier',
         },
-        0.52
+        0.82
       );
 
-      // 3. Subheadline / Description reveal (triggers at 0.62 progress)
+      // 3. Subheadline / Description reveal
       tl.fromTo('.about-description',
-        {
-          opacity: 0,
-          y: 20,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          ease: 'power2.out',
-        },
-        0.62
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, ease: 'power2.out' },
+        1.05
       );
 
       // =========================================================================
-      // --- PHASE 3: Fade Out About & Reveal Selected Works (Timeline 2.2 -> 3.8) ---
+      // --- PHASE 3: NEW SUB-SECTION TRANSITION & PORTRAIT CROSS-FADE SLIDE (Timeline 1.10 -> 2.20) ---
       // =========================================================================
-      // 1. About text content and glass overlays shift up and fade out cleanly
+      // Initial state setup for left-aligned portrait and sub-content grids
+      gsap.set('.about-portrait-left-img', {
+        xPercent: 50, // Shifted right initially to slide in smoothly leftwards
+        opacity: 0,
+      });
+      gsap.set('.about-sub-content', { opacity: 0 });
+      gsap.set('.sub-section-eyebrow, .sub-section-focus, .sub-section-metrics, .sub-section-stack', {
+        opacity: 0,
+        y: 24,
+      });
+
+      // 1. Fade out and slide up the initial About biography text block
       tl.to('.about-editorial-text', {
         opacity: 0,
-        y: -50,
+        y: -80,
         duration: 0.6,
-        ease: 'power1.inOut',
-      }, 2.2);
+        ease: 'power2.inOut',
+      }, 1.10);
 
+      // 2. Coordinated Portrait Cross-Fade Slide (0.8s duration)
+      // Right-aligned portrait slides left and fades out
+      tl.to('.about-portrait-img', {
+        xPercent: -50,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power2.inOut',
+      }, 1.20);
+
+      // Left-aligned portrait slides left and fades in synchronously
+      tl.to('.about-portrait-left-img', {
+        xPercent: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.inOut',
+      }, 1.20);
+
+      // 3. Progressive Right-Side Sub-section Content Reveals
+      tl.to('.about-sub-content', {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'none',
+      }, 1.30);
+
+      tl.to('.sub-section-eyebrow', {
+        opacity: 1,
+        y: 0,
+        duration: 0.4,
+        ease: 'power2.out',
+      }, 1.40);
+
+      tl.to('.sub-section-focus', {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
+      }, 1.50);
+
+      tl.to('.sub-section-metrics', {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
+      }, 1.70);
+
+      tl.to('.sub-section-stack', {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
+      }, 1.90);
+
+      // =========================================================================
+      // --- PHASE 4: SUB-SECTION TO CURATED WORKS STAGGER REVEAL (Timeline 2.20 onwards) ---
+      // =========================================================================
+      // Left-aligned portrait fades and sinks downwards
+      tl.to('.about-portrait-left-img', {
+        opacity: 0,
+        yPercent: 12,
+        duration: 0.8,
+        ease: 'power2.in',
+      }, 2.20);
+
+      // Right-side sub-section content fades and slides upwards
+      tl.to('.about-sub-content', {
+        opacity: 0,
+        y: -40,
+        duration: 0.6,
+        ease: 'power2.in',
+      }, 2.20);
+
+      // Glass dome overlay fades out
       tl.to('.about-glass-overlay', {
         opacity: 0,
         duration: 0.6,
         ease: 'power1.inOut',
-      }, 2.2);
+      }, 2.20);
 
-      // 2. Portrait image shrinks, fades, and sinks back under the bottom white edge
-      tl.to('.about-portrait-img', {
-        opacity: 0,
-        yPercent: 12,
-        clipPath: 'inset(100% 0% 0% 0%)',
-        duration: 0.8,
-        ease: 'power2.in',
-      }, 2.2);
-
-      // 3. Work section container emerges
+      // Work section container emerges
       tl.to('.work-section-container', {
         opacity: 1,
         duration: 0.4,
         ease: 'none',
       }, 2.6);
 
-      // 4. Stagger-reveal Selected Works header and staggered cards
+      // Selected Works cards stagger up
       tl.fromTo('.work-header',
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
@@ -219,7 +275,6 @@ export default function PinnedSections() {
 
     return () => {
       ctx.revert();
-      // Reset variables upon destruction to be totally safe
       gsap.set('html', {
         '--color-bg': '',
         '--color-text-1': '',
@@ -240,7 +295,7 @@ export default function PinnedSections() {
       style={{
         position: 'relative',
         width: '100%',
-        height: '500vh', // Expanded scroll budget for 3-phase scrub
+        height: '500vh', // Expanded scroll budget for multi-phase scrub
       }}
     >
       {/* Sticky base container locking viewport */}
