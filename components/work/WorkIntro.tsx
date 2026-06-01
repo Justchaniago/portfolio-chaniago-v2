@@ -15,7 +15,6 @@ export default function WorkIntro() {
         backgroundColor: '#FFFFFF', // Solid pristine white for seamless handoff
         zIndex: 2,
         pointerEvents: 'none',
-        opacity: 0, // Controlled by master timeline in PinnedSections
         willChange: 'opacity, transform',
       }}
     >

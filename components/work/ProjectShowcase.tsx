@@ -15,6 +15,7 @@ export default function ProjectShowcase() {
         height: '100%',
         backgroundColor: 'var(--color-bg, #FFFFFF)',
         zIndex: 1,
+        opacity: 0, // GSAP reveals at timeline 4.85
         pointerEvents: 'none', // Toggle managed by PinnedSections
         overflow: 'hidden',
       }}
