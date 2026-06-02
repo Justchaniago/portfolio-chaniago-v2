@@ -6,7 +6,7 @@ import { getActiveSectionIndex } from '@/lib/motion';
 
 const SECTIONS = [
   { id: 'hero', label: 'Hero', num: '01', progress: 0.0 },
-  { id: 'about', label: 'About', num: '02', progress: 1.45 / 37.6 }, 
+  { id: 'about', label: 'About', num: '02', progress: 1.85 / 37.6 }, 
   { id: 'work', label: 'Work', num: '03', progress: 6.5 / 37.6 },  
   { id: 'contact', label: 'Contact', num: '04', progress: 1.0 }, 
 ];
@@ -130,20 +130,13 @@ export default function NavRail() {
 
   const handleSectionClick = (progressVal: number) => {
     if (typeof window === 'undefined') return;
-    const lenis = (window as any).lenis;
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const targetScroll = scrollHeight * progressVal;
-
-    if (lenis) {
-      lenis.scrollTo(targetScroll, {
-        duration: 1.0,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Expo Out
-      });
+    const cinematicNavigate = (window as any).__cinematicNavigate;
+    if (cinematicNavigate) {
+      cinematicNavigate(progressVal);
     } else {
-      window.scrollTo({
-        top: targetScroll,
-        behavior: 'auto',
-      });
+      // Fallback: instant scroll if cinematic system not ready
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: scrollHeight * progressVal, behavior: 'auto' });
     }
   };
 

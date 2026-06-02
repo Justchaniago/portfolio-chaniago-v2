@@ -455,7 +455,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       className={`project-card-container project-card-container-${project.id}`}
       data-cursor="image"
       data-cursor-text="CASE STUDY"
-      data-active-slide={activeIdx}
       aria-label={`${project.title} project gallery`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

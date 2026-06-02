@@ -1,17 +1,27 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { gsap } from '@/lib/gsap';
+import { useEffect, useRef, useCallback } from 'react';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
 import Hero from './Hero';
 import About from './About';
 import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
-import ScrollDebug from '../layout/ScrollDebug';
 import { projects } from '@/data/projects';
+
+// Section anchor progress values (timeline time / 37.6)
+const SECTION_ANCHORS: Record<string, number> = {
+  hero: 0.0,
+  about: 1.85 / 37.6,
+  work: 6.5 / 37.6,
+  contact: 1.0,
+};
 
 export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const isTransitioningRef = useRef(false);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -169,6 +179,7 @@ export default function PinnedSections() {
           },
           onUpdate: (self) => {
             const progress = self.progress;
+
             const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
             const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
             const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
@@ -200,6 +211,10 @@ export default function PinnedSections() {
           },
         },
       });
+
+      // Expose the master timeline so cinematicNavigate can force it to a
+      // destination progress synchronously (Fix A: settle before reveal).
+      timelineRef.current = tl;
 
       // =========================================================================
       // --- PHASE 1: Hero fade & shift out (0.0 -> 0.15) ---
@@ -566,6 +581,7 @@ export default function PinnedSections() {
 
     return () => {
       ctx.revert();
+      timelineRef.current = null;
       gsap.set('html', {
         '--color-bg': '',
         '--color-text-1': '',
@@ -580,19 +596,164 @@ export default function PinnedSections() {
     };
   }, []);
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Cinematic cross-section navigation — masked scroll jump with theme-matched reveal
+  // ══════════════════════════════════════════════════════════════════════════════
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const cinematicNavigate = useCallback((targetProgress: number) => {
+    if (isTransitioningRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const overlay = overlayRef.current;
+    const sticky = stickyRef.current;
+    if (!overlay || !sticky) return;
+
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const targetScroll = scrollHeight * targetProgress;
+    const currentScroll = window.scrollY;
+
+    if (Math.abs(currentScroll - targetScroll) < 5) return;
+
+    isTransitioningRef.current = true;
+    // Gate the nav indicators (MorphNav / NavRail) from reacting to the jump scroll.
+    (window as any).__navTransitioning = true;
+
+    const lenis = (window as any).lenis;
+    if (lenis) lenis.stop();
+
+    ScrollTrigger.getAll().forEach((st) => {
+      if (st.vars.snap) {
+        (st as any)._snapDisabled = true;
+        st.disable();
+      }
+    });
+
+    // Overlay enters masking the SOURCE scene — paint it the current theme color.
+    const sourceBg = getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-bg').trim() || '#0A0A0A';
+    gsap.set(overlay, { display: 'block', opacity: 0, backgroundColor: sourceBg });
+
+    // ── PHASE 1: Departure — blur/scale the scene out behind a rising mask ──
+    const departTl = gsap.timeline({
+      onComplete: () => {
+        // ── PHASE 2: Masked jump (overlay fully opaque now) ──
+        gsap.set(sticky, { clearProps: 'scale,filter' });
+        window.scrollTo({ top: targetScroll, behavior: 'auto' });
+        ScrollTrigger.update();
+
+        // ── PHASE 3: Stabilize across a few frames, then re-enable snapping ──
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              ScrollTrigger.getAll().forEach((st) => {
+                if ((st as any)._snapDisabled) {
+                  st.enable();
+                  delete (st as any)._snapDisabled;
+                }
+              });
+              ScrollTrigger.update();
+
+              // ── Resolve the destination scene synchronously (still masked) ──
+              // scrub:0.6 eases the timeline toward the new scroll over ~0.6s —
+              // longer than the 0.4s reveal — which would let the mask lift on a
+              // mid-scrub scene. Force the scrub catch-up to completion and pin the
+              // timeline exactly to the destination so every tweened value (hero
+              // opacity, theme colors) is final BEFORE the reveal begins.
+              const masterTl = timelineRef.current;
+              const masterSt = masterTl?.scrollTrigger;
+              if (masterTl && masterSt) {
+                const scrubTween = typeof (masterSt as any).getTween === 'function'
+                  ? (masterSt as any).getTween()
+                  : null;
+                if (scrubTween) scrubTween.progress(1); // finish catch-up instantly
+                masterTl.progress(targetProgress);      // pin to exact destination
+                ScrollTrigger.update();
+              }
+
+              // ── Overlay color sync: match the SETTLED destination scene ──
+              // The timeline is now pinned to the destination, so --color-bg holds
+              // the real arrival theme. Paint the overlay that exact color so the
+              // reveal dissolves destination-color → destination-scene (no veil).
+              const destBg = getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-bg').trim() || '#0A0A0A';
+              gsap.set(overlay, { backgroundColor: destBg });
+
+              // ── PHASE 4: Arrival — settle scale + dissolve the matched mask ──
+              gsap.set(sticky, { scale: 1.01 });
+              gsap.to(sticky, {
+                scale: 1,
+                duration: 0.5,
+                ease: 'power2.out',
+                clearProps: 'scale',
+              });
+              gsap.to(overlay, {
+                opacity: 0,
+                duration: 0.4,
+                ease: 'power2.inOut',
+                onComplete: () => {
+                  gsap.set(overlay, { display: 'none' });
+                  isTransitioningRef.current = false;
+                  if (lenis) lenis.start();
+                  (window as any).__navTransitioning = false;
+                },
+              });
+            });
+          });
+        });
+      },
+    });
+
+    departTl.to(sticky, {
+      scale: 0.985,
+      filter: 'blur(3px)',
+      duration: 0.3,
+      ease: 'power2.out',
+    }, 0);
+
+    departTl.to(overlay, {
+      opacity: 1,
+      duration: 0.3,
+      ease: 'power2.in',
+    }, 0);
+
+  }, []);
+
+  // Expose the cinematic navigator globally for NavRail and MorphNav
+  useEffect(() => {
+    (window as any).__cinematicNavigate = cinematicNavigate;
+    return () => {
+      delete (window as any).__cinematicNavigate;
+    };
+  }, [cinematicNavigate]);
+
   return (
     <div
       ref={containerRef}
       style={{
         position: 'relative',
         width: '100%',
-        height: '750vh', // Optimizing physical travel distance by 37.5% for ultra-responsive, ergonomic scrolling
+        height: '750vh',
       }}
     >
       <NavRail />
-      <ScrollDebug />
+
+      {/* Cinematic transition masking overlay — sits above ALL content */}
+      <div
+        ref={overlayRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 99999,
+          pointerEvents: 'none',
+          display: 'none',
+          opacity: 0,
+          willChange: 'opacity',
+        }}
+      />
 
       <div
+        ref={stickyRef}
         style={{
           position: 'sticky',
           top: 0,
@@ -600,6 +761,7 @@ export default function PinnedSections() {
           width: '100%',
           height: '100vh',
           overflow: 'hidden',
+          willChange: 'transform, filter',
         }}
       >
         <Hero />

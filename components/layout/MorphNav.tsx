@@ -372,36 +372,42 @@ export default function MorphNav() {
 
   const isAnimating = navState === 'opening' || navState === 'closing';
 
-  // Unified navigation click handler
+  // Unified navigation click handler — uses cinematic chapter-transition system
   const handleNavigationClick = useCallback((e: React.MouseEvent, href: string, isFromOverlay: boolean = false) => {
     e.preventDefault();
-    const lenis = (window as any).lenis;
 
-    // Handle closing the full-screen menu overlay first if clicked from inside the curtain menu
-    if (isFromOverlay && navState === 'open') {
-      handleClose();
-    }
-
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
     let targetProgress = 0.0;
 
     if (href === '/about') {
-      targetProgress = 1.45 / 37.6;
+      targetProgress = 1.85 / 37.6;
     } else if (href === '/work') {
       targetProgress = 6.5 / 37.6;
     } else if (href === '/contact') {
       targetProgress = 1.0;
     }
 
-    const targetScroll = scrollHeight * targetProgress;
+    const cinematicNavigate = (window as any).__cinematicNavigate;
 
-    if (lenis) {
-      lenis.scrollTo(targetScroll, {
-        duration: 1.0,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Expo Out
-      });
+    // Handle closing the full-screen menu overlay first if clicked from inside the curtain menu
+    if (isFromOverlay && navState === 'open') {
+      handleClose();
+      // Delay cinematic transition slightly so overlay close animation doesn't conflict
+      setTimeout(() => {
+        if (cinematicNavigate) {
+          cinematicNavigate(targetProgress);
+        } else {
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          window.scrollTo({ top: scrollHeight * targetProgress, behavior: 'auto' });
+        }
+      }, 350);
+      return;
+    }
+
+    if (cinematicNavigate) {
+      cinematicNavigate(targetProgress);
     } else {
-      window.scrollTo({ top: targetScroll, behavior: 'auto' });
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: scrollHeight * targetProgress, behavior: 'auto' });
     }
   }, [navState, handleClose]);
 
