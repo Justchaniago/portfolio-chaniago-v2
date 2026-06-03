@@ -9,18 +9,21 @@ interface LoaderProps {
 
 export default function Loader({ onComplete }: LoaderProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const topBarRef = useRef<HTMLDivElement>(null);
-  const bottomBarRef = useRef<HTMLDivElement>(null);
-  const percentRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const laserLineRef = useRef<HTMLDivElement>(null);
   
-  const panel1Ref = useRef<HTMLDivElement>(null);
-  const panel2Ref = useRef<HTMLDivElement>(null);
-  const panel3Ref = useRef<HTMLDivElement>(null);
+  // Text container refs
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const wordCraftRef = useRef<HTMLDivElement>(null);
+  const wordSystemsRef = useRef<HTMLDivElement>(null);
+  const wordChaniagoRef = useRef<HTMLDivElement>(null);
   
-  const slide1Ref = useRef<HTMLDivElement>(null);
-  const slide2Ref = useRef<HTMLDivElement>(null);
-  const slide3Ref = useRef<HTMLDivElement>(null);
-  const slide4Ref = useRef<HTMLDivElement>(null);
+  // Individual letter refs for CHANIAGO
+  const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  
+  // Monogram container and line refs
+  const monogramContainerRef = useRef<HTMLDivElement>(null);
+  const monogramLineRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -49,71 +52,199 @@ export default function Loader({ onComplete }: LoaderProps) {
         }
       });
 
-      // Set initial states
-      gsap.set([slide2Ref.current, slide3Ref.current, slide4Ref.current], { opacity: 0, y: 30 });
-      gsap.set(slide1Ref.current, { opacity: 1, y: 0 });
-      gsap.set([panel1Ref.current, panel2Ref.current, panel3Ref.current], { yPercent: 0 });
+      // =========================================================================
+      // --- INITIAL STATES ---
+      // =========================================================================
+      gsap.set(laserLineRef.current, { width: 0, height: '1px', opacity: 0 });
+      gsap.set(textContainerRef.current, { opacity: 0, clipPath: 'inset(50% 0% 50% 0%)' });
+      gsap.set(wordCraftRef.current, { y: 0, opacity: 0 });
+      gsap.set(wordSystemsRef.current, { y: 60, opacity: 0 });
+      gsap.set(wordChaniagoRef.current, { y: 60, opacity: 0 });
+      gsap.set(monogramContainerRef.current, { opacity: 0 });
+      
+      // Hide monogram lines initially
+      monogramLineRefs.current.forEach((line) => {
+        if (line) gsap.set(line, { scaleX: 0, opacity: 0 });
+      });
 
-      const progressObj = { value: 0 };
+      // =========================================================================
+      // --- SCENE 01: ABSOLUTE DARKNESS & LASER LINE (0.0s -> 1.2s) ---
+      // =========================================================================
+      // Laser line appears in the center
+      tl.to(laserLineRef.current, {
+        opacity: 1,
+        duration: 0.3,
+        ease: 'none'
+      }, 0.2);
 
-      // 1. Percentage count-up (4.5 seconds)
-      tl.to(progressObj, {
-        value: 100,
-        duration: 4.5,
-        ease: 'none',
-        onUpdate: () => {
-          const p = Math.round(progressObj.value);
-          if (percentRef.current) {
-            percentRef.current.textContent = `[ ${p.toString().padStart(2, '0')}% ]`;
+      // Laser line expands horizontally with extreme precision
+      tl.to(laserLineRef.current, {
+        width: '280px',
+        duration: 0.8,
+        ease: 'power4.inOut'
+      }, 0.4);
+
+      // =========================================================================
+      // --- SCENE 02: LIGHT-CARVED TYPOGRAPHY - CRAFT (1.2s -> 2.2s) ---
+      // =========================================================================
+      // The laser line expands vertically to "carve out" the text container mask
+      tl.to(laserLineRef.current, {
+        height: '50px',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+        duration: 0.6,
+        ease: 'power3.inOut'
+      }, 1.2);
+
+      tl.to(textContainerRef.current, {
+        opacity: 1,
+        clipPath: 'inset(0% 0% 0% 0%)',
+        duration: 0.6,
+        ease: 'power3.inOut'
+      }, 1.2);
+
+      // Reveal CRAFT inside the carved space
+      tl.to(wordCraftRef.current, {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power2.out'
+      }, 1.4);
+
+      // =========================================================================
+      // --- SCENE 03: TYPOGRAPHIC EVOLUTION - SYSTEMS (2.2s -> 3.4s) ---
+      // =========================================================================
+      // CRAFT exits upward, SYSTEMS immediately replaces it (tension-based, no bounce)
+      tl.to(wordCraftRef.current, {
+        y: -60,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power4.inOut'
+      }, 2.2);
+
+      tl.to(wordSystemsRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power4.inOut'
+      }, 2.2);
+
+      // =========================================================================
+      // --- SCENE 04: IDENTITY EMERGENCE - CHANIAGO (3.4s -> 4.8s) ---
+      // =========================================================================
+      // SYSTEMS exits upward, CHANIAGO enters
+      tl.to(wordSystemsRef.current, {
+        y: -60,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power4.inOut'
+      }, 3.4);
+
+      tl.to(wordChaniagoRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power4.inOut'
+      }, 3.4);
+
+      // Pause on CHANIAGO to let identity sink in (emotional peak)
+      tl.to({}, { duration: 1.0 });
+
+      // =========================================================================
+      // --- SCENE 05 & 06: DECONSTRUCTION & MONOGRAM FORMATION (4.8s -> 6.5s) ---
+      // =========================================================================
+      tl.add(() => {
+        // 1. Fade out the laser line borders
+        gsap.to(laserLineRef.current, {
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+
+        // 2. Get positions of CHANIAGO letters relative to the global container
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        if (!containerRect) return;
+
+        // Show monogram container
+        gsap.set(monogramContainerRef.current, { opacity: 1 });
+
+        letterRefs.current.forEach((letter, idx) => {
+          if (!letter) return;
+          const letterRect = letter.getBoundingClientRect();
+          
+          // Calculate center coordinates of the letter relative to container
+          const startX = letterRect.left - containerRect.left + letterRect.width / 2;
+          const startY = letterRect.top - containerRect.top + letterRect.height / 2;
+
+          // Fade out the letter text
+          gsap.to(letter, {
+            opacity: 0,
+            scale: 0.5,
+            filter: 'blur(4px)',
+            duration: 0.4,
+            ease: 'power2.in'
+          });
+
+          // Get the corresponding monogram line
+          const monoLine = monogramLineRefs.current[idx];
+          if (monoLine) {
+            // Position the monogram line exactly at the letter's center initially
+            gsap.set(monoLine, {
+              position: 'absolute',
+              left: `${startX}px`,
+              top: `${startY}px`,
+              width: '40px', // Initial length
+              height: '1px',
+              backgroundColor: '#FFFFFF',
+              transformOrigin: 'center center',
+              xPercent: -50,
+              yPercent: -50,
+              rotation: idx * 45, // Scattered initial rotations
+              scaleX: 0,
+              opacity: 0
+            });
+
+            // Animate the line appearing at the letter's position
+            gsap.to(monoLine, {
+              opacity: 1,
+              scaleX: 1,
+              duration: 0.3,
+              ease: 'power2.out'
+            });
+
+            // Fly and morph the line to its final architectural monogram position
+            // We clear the absolute pixel offsets and let the CSS grid/flex layout of the monogram take over,
+            // or we animate them to their final relative positions inside the monogram container.
+            // To make it perfectly responsive, we animate them to x: 0, y: 0 relative to their final grid slots!
+            const finalLeft = monoLine.getAttribute('data-final-left') || '0%';
+            const finalTop = monoLine.getAttribute('data-final-top') || '0%';
+            const finalWidth = monoLine.getAttribute('data-final-width') || '100%';
+            const finalHeight = monoLine.getAttribute('data-final-height') || '1px';
+            const finalRotation = monoLine.getAttribute('data-final-rotation') || '0';
+
+            gsap.to(monoLine, {
+              left: finalLeft,
+              top: finalTop,
+              width: finalWidth,
+              height: finalHeight,
+              rotation: finalRotation,
+              xPercent: 0,
+              yPercent: 0,
+              backgroundColor: '#FFFFFF',
+              duration: 1.2,
+              delay: 0.1 + idx * 0.04, // Staggered assembly
+              ease: 'power4.inOut'
+            });
           }
-        }
-      }, 0);
+        });
+      }, 4.8);
 
-      // 2. Slide transitions
-      // Slide 1 -> Slide 2 (at 1.125s)
-      tl.to(slide1Ref.current, {
-        opacity: 0,
-        y: -30,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 1.125);
-      
-      tl.fromTo(slide2Ref.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        1.325
-      );
+      // Wait for the monogram assembly to complete
+      tl.to({}, { duration: 1.8 });
 
-      // Slide 2 -> Slide 3 (at 2.25s)
-      tl.to(slide2Ref.current, {
-        opacity: 0,
-        y: -30,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 2.25);
-      
-      tl.fromTo(slide3Ref.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        2.45
-      );
-
-      // Slide 3 -> Slide 4 (at 3.375s)
-      tl.to(slide3Ref.current, {
-        opacity: 0,
-        y: -30,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 3.375);
-      
-      tl.fromTo(slide4Ref.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        3.575
-      );
-
-      // Pause at 4.5s to verify image is loaded
-      tl.addPause(4.5, () => {
+      // Pause to verify image is loaded before portal reveal
+      tl.addPause(6.6, () => {
         const verifyAndTrigger = () => {
           if (imageLoaded) {
             tl.play();
@@ -124,121 +255,154 @@ export default function Loader({ onComplete }: LoaderProps) {
         verifyAndTrigger();
       });
 
-      // 3. Fade out content
-      tl.to([slide4Ref.current, topBarRef.current, bottomBarRef.current], {
+      // =========================================================================
+      // --- SCENE 07: PORTAL REVEAL (6.6s -> 7.8s) ---
+      // =========================================================================
+      // The monogram scales up rapidly from the center, acting as a geometric portal
+      tl.to(monogramContainerRef.current, {
+        scale: 25,
         opacity: 0,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      });
+        duration: 0.9,
+        ease: 'power4.in'
+      }, 6.6);
 
-      // 4. Slide up panels
-      tl.to([panel1Ref.current, panel2Ref.current, panel3Ref.current], {
-        yPercent: -100,
-        duration: 1.2,
-        ease: 'power4.inOut',
-        stagger: 0.1
-      }, '+=0.1');
+      // Animate an expanding geometric clip-path on the overlay to reveal the homepage
+      tl.to(overlayRef.current, {
+        clipPath: 'circle(150% at 50% 50%)',
+        duration: 1.0,
+        ease: 'power4.inOut'
+      }, 6.6);
 
       // Fade out overlay wrapper synchronously at the very end
       tl.to(overlayRef.current, {
         opacity: 0,
         duration: 0.4,
-        ease: 'power1.out',
-      }, '-=0.4');
+        ease: 'power2.out'
+      }, 7.2);
 
     });
 
     return () => ctx.revert();
   }, [onComplete]);
 
+  // Monogram lines configuration (8 strokes forming an architectural structural glyph)
+  const monogramStrokes = [
+    // 1. Left vertical stem of 'C'
+    { left: '25%', top: '20%', width: '2px', height: '60%', rotation: 0 },
+    // 2. Top horizontal bar of 'C'
+    { left: '25%', top: '20%', width: '50%', height: '2px', rotation: 0 },
+    // 3. Bottom horizontal bar of 'C'
+    { left: '25%', top: '80%', width: '50%', height: '2px', rotation: 0 },
+    // 4. Middle horizontal bar (structural brace)
+    { left: '25%', top: '50%', width: '35%', height: '2px', rotation: 0 },
+    // 5. Right vertical stem (forming 'H' / 'N' intersection)
+    { left: '75%', top: '20%', width: '2px', height: '60%', rotation: 0 },
+    // 6. Diagonal cross-brace (architectural tension line)
+    { left: '25%', top: '50%', width: '56%', height: '2px', rotation: -31 },
+    // 7. Inner vertical accent
+    { left: '50%', top: '35%', width: '2px', height: '30%', rotation: 0 },
+    // 8. Outer diagonal accent (geometric finish)
+    { left: '60%', top: '80%', width: '21%', height: '2px', rotation: -45 }
+  ];
+
   return (
     <div
       ref={overlayRef}
       role="progressbar"
       aria-label="Loading creative portfolio"
-      className="fixed inset-0 z-[99999] overflow-hidden flex flex-col justify-between p-8 md:p-12 select-none"
-      style={{ backgroundColor: 'transparent' }}
+      className="fixed inset-0 z-[99999] overflow-hidden flex items-center justify-center select-none bg-void"
+      style={{
+        clipPath: 'circle(0% at 50% 50%)', // Starts fully masked, expands to reveal homepage
+        willChange: 'clip-path, opacity'
+      }}
     >
-      {/* Background Panels */}
-      <div className="absolute inset-0 flex z-0 pointer-events-none">
-        <div ref={panel1Ref} className="w-1/3 h-full bg-void border-r border-white/[0.03]" />
-        <div ref={panel2Ref} className="w-1/3 h-full bg-void border-r border-white/[0.03]" />
-        <div ref={panel3Ref} className="w-1/3 h-full bg-void" />
-      </div>
-
-      {/* Top Bar */}
       <div
-        ref={topBarRef}
-        className="w-full flex justify-between items-center z-10 font-mono text-[10px] md:text-xs tracking-widest text-ash uppercase"
+        ref={containerRef}
+        className="relative w-full h-full flex items-center justify-center"
       >
-        <span>JUSTCHANIAGO</span>
-        <span ref={percentRef}>[ 00% ]</span>
-      </div>
+        {/* Scene 01 & 02: Laser Calibration Line */}
+        <div
+          ref={laserLineRef}
+          className="absolute z-10 border-white/20"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            boxShadow: '0 0 8px rgba(255, 255, 255, 0.1)',
+            willChange: 'width, height, opacity'
+          }}
+        />
 
-      {/* Center Slides Container */}
-      <div className="flex-1 flex items-center justify-center relative w-full z-10">
-        <div className="max-w-4xl w-full mx-auto px-6 relative h-[350px] md:h-[400px] flex items-center">
-          {/* Slide 1 */}
-          <div ref={slide1Ref} className="absolute inset-x-6 flex flex-col gap-4 md:gap-6">
-            <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-ash uppercase">
-              [ 01 / CONCEPT ]
-            </span>
-            <h2 className="font-display text-4xl md:text-7xl text-white leading-tight italic">
-              The Typographic Manifesto
-            </h2>
-            <p className="font-body text-sm md:text-lg text-ash max-w-xl leading-relaxed">
-              A study in editorial layout, high-contrast form, and digital precision.
-            </p>
+        {/* Centered Typographic Container */}
+        <div
+          ref={textContainerRef}
+          className="relative z-20 flex items-center justify-center h-[60px] w-[320px] overflow-hidden"
+          style={{ willChange: 'clip-path, opacity' }}
+        >
+          {/* Word 1: CRAFT */}
+          <div
+            ref={wordCraftRef}
+            className="absolute font-display text-4xl md:text-5xl font-bold tracking-[0.15em] text-white uppercase text-center"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            CRAFT
           </div>
 
-          {/* Slide 2 */}
-          <div ref={slide2Ref} className="absolute inset-x-6 flex flex-col gap-4 md:gap-6">
-            <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-ash uppercase">
-              [ 02 / PHILOSOPHY ]
-            </span>
-            <h2 className="font-display text-4xl md:text-7xl text-white leading-tight">
-              Uncompromising Craft
-            </h2>
-            <p className="font-body text-sm md:text-lg text-ash max-w-xl leading-relaxed">
-              Where code is treated as a medium of art, and design is executed with mathematical rigor.
-            </p>
+          {/* Word 2: SYSTEMS */}
+          <div
+            ref={wordSystemsRef}
+            className="absolute font-display text-4xl md:text-5xl font-bold tracking-[0.15em] text-white uppercase text-center"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            SYSTEMS
           </div>
 
-          {/* Slide 3 */}
-          <div ref={slide3Ref} className="absolute inset-x-6 flex flex-col gap-4 md:gap-6">
-            <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-ash uppercase">
-              [ 03 / AESTHETIC ]
-            </span>
-            <h2 className="font-display text-4xl md:text-7xl text-white leading-tight italic">
-              The Void & The Light
-            </h2>
-            <p className="font-body text-sm md:text-lg text-ash max-w-xl leading-relaxed">
-              A dark-first, high-contrast canvas designed to let creative work breathe.
-            </p>
-          </div>
-
-          {/* Slide 4 */}
-          <div ref={slide4Ref} className="absolute inset-x-6 flex flex-col gap-4 md:gap-6">
-            <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-ash uppercase">
-              [ 04 / IDENTITY ]
-            </span>
-            <h2 className="font-display text-4xl md:text-7xl text-white leading-tight">
-              JUSTCHANIAGO
-            </h2>
-            <p className="font-body text-sm md:text-lg text-ash max-w-xl leading-relaxed">
-              Creative Developer Portfolio — Edition 2026.
-            </p>
+          {/* Word 3: CHANIAGO (Individual letters for deconstruction) */}
+          <div
+            ref={wordChaniagoRef}
+            className="absolute flex gap-2 md:gap-3 justify-center items-center"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            {['C', 'H', 'A', 'N', 'I', 'A', 'G', 'O'].map((char, idx) => (
+              <span
+                key={idx}
+                ref={(el) => { letterRefs.current[idx] = el; }}
+                className="font-display text-3xl md:text-4xl font-bold tracking-[0.05em] text-white uppercase inline-block"
+                style={{ willChange: 'transform, opacity, filter' }}
+              >
+                {char}
+              </span>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Bottom Bar */}
-      <div
-        ref={bottomBarRef}
-        className="w-full flex justify-between items-center z-10 font-mono text-[10px] md:text-xs tracking-widest text-ash/50 uppercase"
-      >
-        <span>PORTFOLIO '26</span>
-        <span>EDITORIAL EDITION</span>
+        {/* Scene 06: Architectural Monogram Container */}
+        <div
+          ref={monogramContainerRef}
+          className="absolute w-[120px] h-[120px] z-30 pointer-events-none"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            willChange: 'transform, opacity'
+          }}
+        >
+          {monogramStrokes.map((stroke, idx) => (
+            <div
+              key={idx}
+              ref={(el) => { monogramLineRefs.current[idx] = el; }}
+              data-final-left={stroke.left}
+              data-final-top={stroke.top}
+              data-final-width={stroke.width}
+              data-final-height={stroke.height}
+              data-final-rotation={stroke.rotation}
+              className="absolute bg-white"
+              style={{
+                willChange: 'left, top, width, height, transform, opacity'
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
