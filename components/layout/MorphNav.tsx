@@ -217,8 +217,7 @@ export default function MorphNav() {
       
       const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
       setActiveSection((prev) => {
-        const prevIdx = SECTION_IDS.indexOf(prev);
-        const nextIdx = getActiveSectionIndex(progress, prevIdx === -1 ? 0 : prevIdx);
+        const nextIdx = getActiveSectionIndex(progress);
         return SECTION_IDS[nextIdx];
       });
     };
