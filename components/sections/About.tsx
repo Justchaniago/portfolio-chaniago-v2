@@ -15,7 +15,6 @@ export default function About() {
         width: '100%',
         height: '100%',
         backgroundColor: 'var(--color-bg)',
-        transition: 'background-color 0.4s ease, color 0.4s ease',
         zIndex: 1,
         pointerEvents: 'none', // Toggle managed by PinnedSections
         display: 'flex',

@@ -193,7 +193,15 @@ export default function PinnedSections() {
               setVisibility(aboutEl, false);
               setVisibility(workEl, false);
               setVisibility(contactEl, false);
-            } else if (progress >= 0.004 && progress < 0.129) {
+            } else if (progress >= 0.004 && progress < 0.08) {
+              // Overlap Hero and About sections during transition for a smooth cross-fade
+              setVisibility(heroEl, true);
+              setVisibility(aboutEl, true);
+              setVisibility(workEl, false);
+              setVisibility(contactEl, false);
+              // Disable pointer events on hero as it fades out so it doesn't block about section
+              heroEl.style.pointerEvents = 'none';
+            } else if (progress >= 0.08 && progress < 0.129) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, true);
               setVisibility(workEl, false);
@@ -241,7 +249,8 @@ export default function PinnedSections() {
         '--color-card-shadow': '0 8px 32px rgba(10, 10, 10, 0.03)',
         '--color-card-shadow-hover': '0 12px 40px rgba(10, 10, 10, 0.05)',
         '--color-text-reveal-bg': 'rgba(10, 10, 10, 0.12)',
-        ease: 'none',
+        duration: 1.85, // Smoothly transition background color over the entire transition window
+        ease: 'power1.inOut', // Premium, organic easing curve
       }, 0.15);
 
       tl.fromTo('.about-portrait-img',
