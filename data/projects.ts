@@ -7,6 +7,7 @@ export interface Project {
   slug: string;
   impact: string;
   gallery: string[];
+  galleryBrightness?: ('light' | 'dark')[];
 }
 
 export const projects: Project[] = [
@@ -19,6 +20,7 @@ export const projects: Project[] = [
     image: '/images/project1.png',
     slug: 'gong-cha-panel',
     gallery: ['/images/project1.png', '/images/Gongchacontrolpanel.png', '/images/project_aura.png'],
+    galleryBrightness: ['light', 'dark', 'dark'],
   },
   {
     id: '02',
@@ -29,6 +31,7 @@ export const projects: Project[] = [
     image: '/images/project2.png',
     slug: 'gong-cha',
     gallery: ['/images/project2.png', '/images/Gongchaapp.png', '/images/bannertransparan.png'],
+    galleryBrightness: ['dark', 'dark', 'dark'],
   },
   {
     id: '03',
@@ -39,5 +42,6 @@ export const projects: Project[] = [
     image: '/images/project3.png',
     slug: 'teman-dengar',
     gallery: ['/images/project3.png', '/images/project_kuro.png', '/images/chaniago.jpg'],
+    galleryBrightness: ['dark', 'dark', 'dark'],
   }
 ];

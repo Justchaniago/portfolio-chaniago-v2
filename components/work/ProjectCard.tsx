@@ -159,8 +159,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
   useEffect(() => {
     if (!pillRef.current || !pillContentRef.current) return;
 
-    const backplateSelector = `.project-gallery-backplate-${project.id}`;
-
     if (isExpanded) {
       // Create a dedicated animation context for the timeline
       const ctx = gsap.context(() => {
@@ -178,21 +176,13 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           filter: 'blur(8px)',
           pointerEvents: 'none',
         });
-        gsap.set(backplateSelector, {
-          width: '100px',
-          height: '100px',
-          y: 80,
-          opacity: 0,
-          filter: 'blur(8px)',
-          pointerEvents: 'none',
-        });
         gsap.set(pillContentRef.current, {
           opacity: 0,
           pointerEvents: 'none',
         });
 
-        // 2. Orb Emergence: slide up and fade in over 600ms (Pill and Backplate in perfect sync)
-        entryTimeline.to([pillRef.current, backplateSelector], {
+        // 2. Orb Emergence: slide up and fade in over 600ms
+        entryTimeline.to(pillRef.current, {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
@@ -202,18 +192,11 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         });
 
         // 3. 120ms pause, then Morph stretches horizontally over 450ms
-        // Backplate stretches slightly wider than the pill (190px + 48px = 238px)
         entryTimeline.to(pillRef.current, {
           width: '190px',
           duration: 0.45,
           ease: 'premiumBezier',
         }, '+=0.12');
-
-        entryTimeline.to(backplateSelector, {
-          width: '238px',
-          duration: 0.45,
-          ease: 'premiumBezier',
-        }, '<'); // Starts exactly at the same time as the pill morph
 
         // 4. 150ms delay, then Dots fade in over 300ms
         entryTimeline.to(pillContentRef.current, {
@@ -245,9 +228,9 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           duration: 0.2,
         });
 
-        // 2. Reset pill & backplate: shrink back to circular orb, slide down to 80px, and blur/fade out (400ms)
-        exitTimeline.to([pillRef.current, backplateSelector], {
-          width: (index) => index === 0 ? '52px' : '100px', // pillRef is index 0, backplate is index 1
+        // 2. Reset pill: shrink back to circular orb, slide down to 80px, and blur/fade out (400ms)
+        exitTimeline.to(pillRef.current, {
+          width: '52px',
           y: 80,
           opacity: 0,
           filter: 'blur(8px)',
@@ -651,133 +634,141 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
       {/* 5. FLOATING GALLERY CONTROL PILL WITH LOCAL BACKPLATE SYSTEM */}
       {/* Local Backplate Layer (Layer 1 & 2): Follows the pill perfectly, slightly larger, soft feathered edges, local backdrop blur & brightness normalization */}
-      <div
-        className={`project-gallery-backplate project-gallery-backplate-${project.id}`}
-      />
+      {(() => {
+        const currentBrightness = project.galleryBrightness?.[activeIdx] || 'dark';
+        const isLight = currentBrightness === 'light';
 
-      {/* Navigation Pill (Layer 3) */}
-      <div
-        ref={pillRef}
-        className={`project-gallery-pill project-gallery-pill-${project.id}`}
-        data-cursor="native"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerMove={(e) => e.stopPropagation()}
-        onPointerUp={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        {/* Staggered Content inside the Pill */}
-        <div
-          ref={pillContentRef}
-          className={`pill-content pill-content-${project.id}`}
-        >
-          {/* Left: V3 Segmented Story Indicators (Smooth width morph transitions) */}
+        return (
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            {project.gallery && project.gallery.map((_, imgIdx) => {
-              const isActive = imgIdx === activeIdx;
-              const isCompleted = imgIdx < activeIdx;
-
-              // Indicators morph sizes smoothly (6px -> 20px) and style states over 400ms using premium spring-like easing
-              const morphStyle = {
-                position: 'relative' as const,
-                width: isActive ? '20px' : '6px',
-                height: '6px',
-                borderRadius: '999px',
-                backgroundColor: isCompleted ? '#FFFFFF' : isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                border: isActive || isCompleted ? 'none' : '1.5px solid rgba(255, 255, 255, 0.4)',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                transition: 'width 400ms cubic-bezier(0.25, 1, 0.5, 1), background-color 400ms cubic-bezier(0.25, 1, 0.5, 1), border-color 400ms cubic-bezier(0.25, 1, 0.5, 1), opacity 400ms cubic-bezier(0.25, 1, 0.5, 1)',
-              };
-
-              return (
-                <div
-                  key={imgIdx}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleManualSlideChange(imgIdx);
-                  }}
-                  style={morphStyle}
-                >
-                  {/* High-Performance composite-only Progress fill inside the morphed active capsule */}
-                  {isActive && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        height: '100%',
-                        width: '100%',
-                        backgroundColor: '#FFFFFF',
-                        borderRadius: '999px',
-                        transform: `scaleX(${progressPercent / 100})`,
-                        transformOrigin: 'left',
-                        willChange: 'transform',
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Right: Circular Glass Play/Pause Control (Isolates click and pointer propagation) */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsPaused((prev) => !prev);
-            }}
+            ref={pillRef}
+            className={`project-gallery-pill project-gallery-pill-${project.id} ${isLight ? 'is-light' : 'is-dark'}`}
+            data-cursor="native"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             onPointerDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#FFFFFF',
-              outline: 'none',
-              marginLeft: '14px',
-              transition: 'all 0.3s ease',
-              padding: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-              e.currentTarget.style.transform = 'scale(1)';
+            onClick={(e) => {
+              e.stopPropagation();
             }}
           >
-            {isPaused ? (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 5V19L19 12L8 5Z" fill="#FFFFFF"/>
-              </svg>
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="#FFFFFF"/>
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
+            {/* Staggered Content inside the Pill */}
+            <div
+              ref={pillContentRef}
+              className={`pill-content pill-content-${project.id}`}
+            >
+              {/* Left: V3 Segmented Story Indicators (Smooth width morph transitions) */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                {project.gallery && project.gallery.map((_, imgIdx) => {
+                  const isActive = imgIdx === activeIdx;
+                  const isCompleted = imgIdx < activeIdx;
+
+                  // Indicators morph sizes smoothly (6px -> 20px) and style states over 400ms using premium spring-like easing
+                  const morphStyle = {
+                    position: 'relative' as const,
+                    width: isActive ? '20px' : '6px',
+                    height: '6px',
+                    borderRadius: '999px',
+                    backgroundColor: isCompleted
+                      ? (isLight ? '#000000' : '#FFFFFF')
+                      : isActive
+                        ? (isLight ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.3)')
+                        : 'transparent',
+                    border: isActive || isCompleted
+                      ? 'none'
+                      : `1px solid ${isLight ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.5)'}`,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'width 400ms cubic-bezier(0.25, 1, 0.5, 1), background-color 400ms cubic-bezier(0.25, 1, 0.5, 1), border-color 400ms cubic-bezier(0.25, 1, 0.5, 1), opacity 400ms cubic-bezier(0.25, 1, 0.5, 1)',
+                  };
+
+                  return (
+                    <div
+                      key={imgIdx}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleManualSlideChange(imgIdx);
+                      }}
+                      style={morphStyle}
+                    >
+                      {/* High-Performance composite-only Progress fill inside the morphed active capsule */}
+                      {isActive && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            height: '100%',
+                            width: '100%',
+                            backgroundColor: isLight ? '#000000' : '#FFFFFF',
+                            borderRadius: '999px',
+                            transform: `scaleX(${progressPercent / 100})`,
+                            transformOrigin: 'left',
+                            willChange: 'transform',
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right: Circular Glass Play/Pause Control (Isolates click and pointer propagation) */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsPaused((prev) => !prev);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerMove={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                  border: `1px solid ${isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: isLight ? '#000000' : '#FFFFFF',
+                  outline: 'none',
+                  marginLeft: '14px',
+                  transition: 'all 0.3s ease',
+                  padding: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                {isPaused ? (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5V19L19 12L8 5Z" fill={isLight ? '#000000' : '#FFFFFF'}/>
+                  </svg>
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill={isLight ? '#000000' : '#FFFFFF'}/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
