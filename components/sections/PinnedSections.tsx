@@ -345,6 +345,16 @@ export default function PinnedSections() {
           filter: 'blur(8px)',
           pointerEvents: 'none',
         }, 0);
+        tl.set(`.project-gallery-backplate-${project.id}`, {
+          opacity: 0,
+          y: 80,
+          xPercent: -50,
+          scale: 1.0,
+          width: '100px',
+          height: '100px',
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+        }, 0);
       });
       tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
       tl.set('.contact-content-wrapper', { opacity: 0, y: 30 }, 0);

@@ -159,6 +159,8 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
   useEffect(() => {
     if (!pillRef.current || !pillContentRef.current) return;
 
+    const backplateSelector = `.project-gallery-backplate-${project.id}`;
+
     if (isExpanded) {
       // Create a dedicated animation context for the timeline
       const ctx = gsap.context(() => {
@@ -176,13 +178,21 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           filter: 'blur(8px)',
           pointerEvents: 'none',
         });
+        gsap.set(backplateSelector, {
+          width: '100px',
+          height: '100px',
+          y: 80,
+          opacity: 0,
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+        });
         gsap.set(pillContentRef.current, {
           opacity: 0,
           pointerEvents: 'none',
         });
 
-        // 2. Orb Emergence: slide up and fade in over 600ms
-        entryTimeline.to(pillRef.current, {
+        // 2. Orb Emergence: slide up and fade in over 600ms (Pill and Backplate in perfect sync)
+        entryTimeline.to([pillRef.current, backplateSelector], {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
@@ -191,12 +201,19 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           ease: 'premiumBezier',
         });
 
-        // 3. 120ms pause, then Morph stretches horizontally to 190px over 450ms
+        // 3. 120ms pause, then Morph stretches horizontally over 450ms
+        // Backplate stretches slightly wider than the pill (190px + 48px = 238px)
         entryTimeline.to(pillRef.current, {
           width: '190px',
           duration: 0.45,
           ease: 'premiumBezier',
         }, '+=0.12');
+
+        entryTimeline.to(backplateSelector, {
+          width: '238px',
+          duration: 0.45,
+          ease: 'premiumBezier',
+        }, '<'); // Starts exactly at the same time as the pill morph
 
         // 4. 150ms delay, then Dots fade in over 300ms
         entryTimeline.to(pillContentRef.current, {
@@ -228,9 +245,9 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           duration: 0.2,
         });
 
-        // 2. Reset pill: shrink back to 52px orb, slide down to 80px, and blur/fade out (400ms)
-        exitTimeline.to(pillRef.current, {
-          width: '52px',
+        // 2. Reset pill & backplate: shrink back to circular orb, slide down to 80px, and blur/fade out (400ms)
+        exitTimeline.to([pillRef.current, backplateSelector], {
+          width: (index) => index === 0 ? '52px' : '100px', // pillRef is index 0, backplate is index 1
           y: 80,
           opacity: 0,
           filter: 'blur(8px)',
@@ -632,7 +649,13 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         />
       </div>
 
-      {/* 5. FLOATING GALLERY CONTROL PILL (Morphs & emerges from GSAP in PinnedSections, forces native precision cursor) */}
+      {/* 5. FLOATING GALLERY CONTROL PILL WITH LOCAL BACKPLATE SYSTEM */}
+      {/* Local Backplate Layer (Layer 1 & 2): Follows the pill perfectly, slightly larger, soft feathered edges, local backdrop blur & brightness normalization */}
+      <div
+        className={`project-gallery-backplate project-gallery-backplate-${project.id}`}
+      />
+
+      {/* Navigation Pill (Layer 3) */}
       <div
         ref={pillRef}
         className={`project-gallery-pill project-gallery-pill-${project.id}`}
@@ -644,23 +667,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         onPointerUp={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 'var(--pill-bottom, 40px)',
-          left: '50%',
-          height: '52px',
-          borderRadius: '9999px',
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          overflow: 'hidden',
         }}
       >
         {/* Staggered Content inside the Pill */}
