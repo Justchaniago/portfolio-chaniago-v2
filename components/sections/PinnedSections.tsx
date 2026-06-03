@@ -188,24 +188,25 @@ export default function PinnedSections() {
               el.style.pointerEvents = visible ? 'auto' : 'none';
             };
 
-            if (progress < 0.004) {
-              setVisibility(heroEl, true);
-              setVisibility(aboutEl, false);
-              setVisibility(workEl, false);
-              setVisibility(contactEl, false);
-            } else if (progress >= 0.004 && progress < 0.08) {
-              // Overlap Hero and About sections during transition for a smooth cross-fade
+            // To make the transition from Hero to About smooth, we allow both sections to be visible
+            // simultaneously during the transition window (progress 0.0 to 0.05).
+            // This prevents the sudden "pop" or harsh cut of elements.
+            if (progress < 0.05) {
               setVisibility(heroEl, true);
               setVisibility(aboutEl, true);
               setVisibility(workEl, false);
               setVisibility(contactEl, false);
-              // Disable pointer events on hero as it fades out so it doesn't block about section
-              heroEl.style.pointerEvents = 'none';
-            } else if (progress >= 0.08 && progress < 0.129) {
+              
+              // Cross-fade the container opacities manually based on progress for absolute smoothness
+              const fadeProgress = progress / 0.05; // 0.0 -> 1.0
+              heroEl.style.opacity = String(1 - fadeProgress);
+              aboutEl.style.opacity = String(fadeProgress);
+            } else if (progress >= 0.05 && progress < 0.129) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, true);
               setVisibility(workEl, false);
               setVisibility(contactEl, false);
+              aboutEl.style.opacity = '1';
             } else if (progress >= 0.129 && progress < 0.971) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, false);
@@ -226,18 +227,21 @@ export default function PinnedSections() {
       timelineRef.current = tl;
 
       // =========================================================================
-      // --- PHASE 1: Hero fade & shift out (0.0 -> 0.15) ---
+      // --- PHASE 1: Hero fade & shift out (0.0 -> 0.45) ---
       // =========================================================================
-      tl.to('.hero-text-content', { opacity: 0, y: -60, scale: 0.94, ease: 'power1.out' }, 0);
-      tl.to('.hero-meta-row', { opacity: 0, y: -30, ease: 'power1.out' }, 0);
-      tl.to('.hero-fluid-canvas', { opacity: 0, ease: 'power1.out' }, 0);
-      tl.to('.hero-section-container', { opacity: 0, ease: 'power1.inOut' }, 0.15);
-      tl.to('.hero-line-1', { x: 220, ease: 'power2.out' }, 0);
-      tl.to('.hero-line-2', { x: -220, ease: 'power2.out' }, 0);
+      // We extend the fade out of Hero elements and make the transition overlap beautifully with Phase 2.
+      tl.to('.hero-text-content', { opacity: 0, y: -100, scale: 0.92, ease: 'power2.inOut' }, 0);
+      tl.to('.hero-meta-row', { opacity: 0, y: -50, ease: 'power2.inOut' }, 0);
+      tl.to('.hero-fluid-canvas', { opacity: 0, ease: 'power2.inOut' }, 0);
+      tl.to('.hero-section-container', { opacity: 0, ease: 'power2.inOut' }, 0);
+      tl.to('.hero-line-1', { x: 180, ease: 'power3.inOut' }, 0);
+      tl.to('.hero-line-2', { x: -180, ease: 'power3.inOut' }, 0);
 
       // =========================================================================
-      // --- PHASE 2: Theme morph + About biography reveals (0.15 -> 2.75) ---
+      // --- PHASE 2: Theme morph + About biography reveals (0.0 -> 2.75) ---
       // =========================================================================
+      // Start the background color transition earlier (at 0.0 instead of 0.15) and make it a smooth power2 curve
+      // to blend the dark-to-light transition seamlessly without a sudden jump.
       tl.to('html', {
         '--color-bg': '#FFFFFF',
         '--color-text-1': '#0A0A0A',
@@ -249,13 +253,12 @@ export default function PinnedSections() {
         '--color-card-shadow': '0 8px 32px rgba(10, 10, 10, 0.03)',
         '--color-card-shadow-hover': '0 12px 40px rgba(10, 10, 10, 0.05)',
         '--color-text-reveal-bg': 'rgba(10, 10, 10, 0.12)',
-        duration: 1.85, // Smoothly transition background color over the entire transition window
-        ease: 'power1.inOut', // Premium, organic easing curve
-      }, 0.15);
+        ease: 'power2.inOut',
+      }, 0.0);
 
       tl.fromTo('.about-portrait-img',
-        { clipPath: 'inset(100% 0% 0% 0%)', y: 120 },
-        { clipPath: 'inset(0% 0% 0% 0%)', y: 0, duration: 0.8, ease: 'power2.out' },
+        { clipPath: 'inset(100% 0% 0% 0%)', y: 120, opacity: 0 },
+        { clipPath: 'inset(0% 0% 0% 0%)', y: 0, opacity: 1, duration: 0.8, ease: 'power2.out' },
         0.45
       );
       tl.fromTo('.about-eyebrow',
