@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { SECTION_ANCHORS } from '@/lib/motion';
+
 import Hero from './Hero';
 import About from './About';
 import ProjectShowcase from '../work/ProjectShowcase';
@@ -9,13 +11,6 @@ import Contact from './Contact';
 import NavRail from '../layout/NavRail';
 import { projects } from '@/data/projects';
 
-// Section anchor progress values (timeline time / 37.6)
-const SECTION_ANCHORS: Record<string, number> = {
-  hero: 0.0,
-  about: 1.85 / 37.6,
-  work: 6.5 / 37.6,
-  contact: 1.0,
-};
 
 export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,6 +22,13 @@ export default function PinnedSections() {
     if (typeof window === 'undefined') return;
 
     const ctx = gsap.context(() => {
+      const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
+      const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
+      const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
+      const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
+
+      if (!heroEl || !aboutEl || !workEl || !contactEl) return;
+
       const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (isReduced) return;
 
@@ -180,33 +182,32 @@ export default function PinnedSections() {
           onUpdate: (self) => {
             const progress = self.progress;
 
-            const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
-            const aboutEl = document.querySelector('.about-section-container') as HTMLDivElement | null;
-            const workEl = document.querySelector('.work-section-container') as HTMLDivElement | null;
-            const contactEl = document.querySelector('.contact-section-container') as HTMLDivElement | null;
+            // Use opacity and pointerEvents for performance, instead of display: none
+            const setVisibility = (el: HTMLDivElement, visible: boolean) => {
+              el.style.opacity = visible ? '1' : '0';
+              el.style.pointerEvents = visible ? 'auto' : 'none';
+            };
 
-            if (heroEl && aboutEl && workEl && contactEl) {
-              if (progress < 0.004) {
-                heroEl.style.pointerEvents = 'auto';
-                aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'none';
-                contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.004 && progress < 0.129) {
-                heroEl.style.pointerEvents = 'none';
-                aboutEl.style.pointerEvents = 'auto';
-                workEl.style.pointerEvents = 'none';
-                contactEl.style.pointerEvents = 'none';
-              } else if (progress >= 0.129 && progress < 0.971) {
-                heroEl.style.pointerEvents = 'none';
-                aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'auto';
-                contactEl.style.pointerEvents = 'none';
-              } else {
-                heroEl.style.pointerEvents = 'none';
-                aboutEl.style.pointerEvents = 'none';
-                workEl.style.pointerEvents = 'none';
-                contactEl.style.pointerEvents = 'auto';
-              }
+            if (progress < 0.004) {
+              setVisibility(heroEl, true);
+              setVisibility(aboutEl, false);
+              setVisibility(workEl, false);
+              setVisibility(contactEl, false);
+            } else if (progress >= 0.004 && progress < 0.129) {
+              setVisibility(heroEl, false);
+              setVisibility(aboutEl, true);
+              setVisibility(workEl, false);
+              setVisibility(contactEl, false);
+            } else if (progress >= 0.129 && progress < 0.971) {
+              setVisibility(heroEl, false);
+              setVisibility(aboutEl, false);
+              setVisibility(workEl, true);
+              setVisibility(contactEl, false);
+            } else {
+              setVisibility(heroEl, false);
+              setVisibility(aboutEl, false);
+              setVisibility(workEl, false);
+              setVisibility(contactEl, true);
             }
           },
         },

@@ -13,11 +13,13 @@ export default function CustomCursor() {
   const [cursorText, setCursorText] = useState('');
   const [isNativeZone, setIsNativeZone] = useState(false);
   
-  // Dynamic interaction and closed navbar proximity states
+  // Dynamic interaction states
   const [isClicked, setIsClicked] = useState(false);
+  // Navbar Proximity
   const [isNearNav, setIsNearNav] = useState(false);
   const [navAngle, setNavAngle] = useState(-45); // default points up-right (↗)
   const [proximityProgress, setProximityProgress] = useState(0); // 0 (far) to 1.0 (hovering)
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,8 @@ export default function CustomCursor() {
         setProximityProgress(0);
       }
 
+
+
       // Perform translation directly with pull offset
       if (containerRef.current) {
         containerRef.current.style.transform = `translate3d(${e.clientX + pullX}px, ${e.clientY + pullY}px, 0)`;
@@ -112,7 +116,7 @@ export default function CustomCursor() {
       if (!visible) setVisible(true);
 
       // ────────────────────────────────────────────────────────────────────────
-      // CASE B: Pixel-Perfect Hit-Testing via elementFromPoint DOM Traversal
+      // CASE C: Pixel-Perfect Hit-Testing via elementFromPoint DOM Traversal
       // ────────────────────────────────────────────────────────────────────────
       const el = document.elementFromPoint(e.clientX, e.clientY);
       if (!el) return;
@@ -128,6 +132,8 @@ export default function CustomCursor() {
           isNativeZoneVal = true;
           break;
         }
+
+
 
         // Priority 1: Explicit data-cursor attributes (view, image, nav, drag, default)
         if (dc) {
@@ -286,7 +292,7 @@ export default function CustomCursor() {
               : cursorState === 'drag'
               ? 68
               : 6,
-            borderRadius: isArrow ? '1px' : '50%',
+            borderRadius: isArrow ? '1px' : '50%', // Matches default
             // Remove border outline on Arrow/Dot state to keep pure minimalist strokes
             border: isArrow
               ? '0px solid transparent'
@@ -428,6 +434,8 @@ export default function CustomCursor() {
             )}
           </AnimatePresence>
         </motion.div>
+
+
       </div>
     </>,
     document.body

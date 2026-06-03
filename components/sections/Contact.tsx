@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { motion } from 'framer-motion';
 
 export default function Contact() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,6 +22,7 @@ export default function Contact() {
         inset: 0,
         width: '100%',
         height: '100%',
+        minHeight: '100vh',
         backgroundColor: 'var(--color-bg, #FFFFFF)',
         transition: 'background-color 0.4s ease, color 0.4s ease',
         zIndex: 1,
@@ -40,6 +42,7 @@ export default function Contact() {
           width: '100%',
           maxWidth: '1200px',
           display: 'grid',
+          marginTop: '-5vh',
           gridTemplateColumns: '1.2fr 1fr',
           gap: '8vw',
           alignItems: 'start',
@@ -104,25 +107,71 @@ export default function Contact() {
             >
               Direct Channel
             </span>
-            <a
+            <motion.a
+              id="email-cta-link"
               href="mailto:ferryruslyc@gmail.com"
-              data-cursor="button"
+              aria-label="Send email to Ferryrusly"
               className="contact-email-link"
+              initial="initial"
+              whileHover="hover"
+              whileTap={{ scale: 0.94, transition: { duration: 0.120 } }}
               style={{
                 fontFamily: 'var(--font-display, Georgia, serif)',
                 fontSize: 'clamp(24px, 2.2vw, 36px)',
-                color: 'var(--color-text-1, #0A0A0A)',
                 textDecoration: 'none',
-                letterSpacing: '-0.02em',
                 display: 'inline-block',
-                borderBottom: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
-                paddingBottom: '8px',
                 cursor: 'pointer',
-                transition: 'border-color 0.3s ease',
+                position: 'relative',
+                overflow: 'visible',
               }}
             >
-              ferryruslyc@gmail.com
-            </a>
+              {/* Base Layer: Static Black Text */}
+              <span
+                style={{
+                  display: 'block',
+                  color: 'var(--color-text-1, #0A0A0A)',
+                  paddingBottom: '8px',
+                }}
+              >
+                ferryruslyc@gmail.com
+              </span>
+
+              {/* Reveal Layer: Absolute container that clips white text on black background */}
+              <motion.div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  right: 0,
+                  overflow: 'hidden',
+                  backgroundColor: '#0A0A0A',
+                  pointerEvents: 'none',
+                  transformOrigin: 'left',
+                }}
+                variants={{
+                  initial: { width: '0%' },
+                  hover: {
+                    width: '100%',
+                    transition: { duration: 0.45, ease: [0.65, 0, 0.35, 1] },
+                  },
+                }}
+              >
+                {/* White Text inside Reveal Layer: Must be static and perfectly sized to match the base text */}
+                <span
+                  style={{
+                    display: 'block',
+                    color: '#FFFFFF',
+                    paddingBottom: '8px',
+                    width: 'max-content',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ferryruslyc@gmail.com
+                </span>
+              </motion.div>
+            </motion.a>
           </div>
 
           {/* Social Grid */}

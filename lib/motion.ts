@@ -69,28 +69,25 @@ export const motion = {
   },
 } as const;
 
-export function getActiveSectionIndex(progress: number, currentIdx: number): number {
-  // Anchors: 0: Hero, 1: About, 2: Work, 3: Contact
-  // 0 -> 1: down threshold 0.0231, up threshold 0.0154
-  // 1 -> 2: down threshold 0.1192, up threshold 0.0923
-  // 2 -> 3: down threshold 0.6692, up threshold 0.5037
-  if (currentIdx === 0) {
-    if (progress >= 0.0231) return 1;
-    return 0;
+// Section anchor progress values (timeline time / 37.6)
+export const SECTION_ANCHORS: Record<string, number> = {
+  hero: 0.0,
+  about: 1.85 / 37.6,
+  work: 6.5 / 37.6,
+  contact: 1.0,
+};
+
+export function getActiveSectionIndex(progress: number): number {
+  const anchors = Object.values(SECTION_ANCHORS);
+  let closestIndex = 0;
+  let minDiff = Math.abs(progress - anchors[0]);
+
+  for (let i = 1; i < anchors.length; i++) {
+    const diff = Math.abs(progress - anchors[i]);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestIndex = i;
+    }
   }
-  if (currentIdx === 1) {
-    if (progress < 0.0154) return 0;
-    if (progress >= 0.1192) return 2;
-    return 1;
-  }
-  if (currentIdx === 2) {
-    if (progress < 0.0923) return 1;
-    if (progress >= 0.6692) return 3;
-    return 2;
-  }
-  if (currentIdx === 3) {
-    if (progress < 0.5037) return 2;
-    return 3;
-  }
-  return 0;
+  return closestIndex;
 }

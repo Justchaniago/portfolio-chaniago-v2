@@ -28,12 +28,12 @@ const COPY = {
 export default function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lxRef      = useRef(-1);
-  const lyRef      = useRef(-1);
+  const lxRef = useRef(-1);
+  const lyRef = useRef(-1);
 
-  const [on,       setOn]       = useState(false);
-  const [hovered,  setHovered]  = useState(false);
-  const [cursor,   setCursor]   = useState({ x: -100, y: -100 });
+  const [on, setOn] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [cursor, setCursor] = useState({ x: -100, y: -100 });
   const [cursorOn, setCursorOn] = useState(false);
 
   const { disturb, resetLastPos } = useFluidSim(canvasRef, FLUID_CONFIG);

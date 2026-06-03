@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { getActiveSectionIndex } from '@/lib/motion';
+import { getActiveSectionIndex, SECTION_ANCHORS } from '@/lib/motion';
 
 const SECTIONS = [
-  { id: 'hero', label: 'Hero', num: '01', progress: 0.0 },
-  { id: 'about', label: 'About', num: '02', progress: 1.85 / 37.6 }, 
-  { id: 'work', label: 'Work', num: '03', progress: 6.5 / 37.6 },  
-  { id: 'contact', label: 'Contact', num: '04', progress: 1.0 }, 
+  { id: 'hero', label: 'Hero', num: '01', progress: SECTION_ANCHORS.hero },
+  { id: 'about', label: 'About', num: '02', progress: SECTION_ANCHORS.about }, 
+  { id: 'work', label: 'Work', num: '03', progress: SECTION_ANCHORS.work },  
+  { id: 'contact', label: 'Contact', num: '04', progress: SECTION_ANCHORS.contact }, 
 ];
 
 const SECTION_GAP = 56; // gap in pixels between dots
@@ -50,35 +50,38 @@ export default function NavRail() {
     if (typeof window === 'undefined') return;
 
     const getPreciseY = (progress: number) => {
-      // 0 to 56px (Hero -> About)
-      if (progress < 0.0154) return 0;
-      if (progress >= 0.0154 && progress < 0.0231) {
-        const t = (progress - 0.0154) / (0.0231 - 0.0154);
-        return t * 56;
+      const sectionProgresses = Object.values(SECTION_ANCHORS);
+      const numSections = sectionProgresses.length;
+
+      for (let i = 0; i < numSections - 1; i++) {
+        const startProgress = sectionProgresses[i];
+        const endProgress = sectionProgresses[i + 1];
+
+        if (progress >= startProgress && progress < endProgress) {
+          const ratio = (progress - startProgress) / (endProgress - startProgress);
+          return i * SECTION_GAP + ratio * SECTION_GAP;
+        }
       }
-      // 56px to 112px (About -> Work)
-      if (progress >= 0.0231 && progress < 0.0923) return 56;
-      if (progress >= 0.0923 && progress < 0.1192) {
-        const t = (progress - 0.0923) / (0.1192 - 0.0923);
-        return 56 + t * 56;
+
+      if (progress >= sectionProgresses[numSections - 1]) {
+        return (numSections - 1) * SECTION_GAP;
       }
-      // 112px to 168px (Work -> Contact)
-      if (progress >= 0.1192 && progress < 0.5037) return 112;
-      if (progress >= 0.5037 && progress < 0.6692) {
-        const t = (progress - 0.5037) / (0.6692 - 0.5037);
-        return 112 + t * 56;
-      }
-      return 168; // Contact
+
+      return 0;
     };
 
     const handleScroll = () => {
+      if ((window as any).__navTransitioning) {
+        return;
+      }
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (scrollHeight <= 0) return;
 
       const progress = window.scrollY / scrollHeight;
+      console.log('Scroll progress:', progress, 'Active Index:', getActiveSectionIndex(progress));
 
       // Update activeIndex using shared viewport-center hysteresis logic
-      setActiveIndex((prev) => getActiveSectionIndex(progress, prev));
+      setActiveIndex(getActiveSectionIndex(progress));
 
       const targetY = getPreciseY(progress);
       baseTargetYRef.current = targetY;
