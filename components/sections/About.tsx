@@ -546,9 +546,9 @@ export default function About() {
             object-fit: cover !important; /* Cover to ensure it fills the width */
             object-position: top center !important; /* Focus on head/shoulders */
             transform: translateY(0) !important; /* Remove initial lift */
-            /* Apply fade mask ONLY to the very bottom edge (lower torso) */
-            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+            /* Apply a long, gradual fade mask starting from the mid-torso down to the bottom edge */
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.4) 80%, rgba(0,0,0,0) 100%) !important;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.4) 80%, rgba(0,0,0,0) 100%) !important;
           }
           .about-portrait-left-img {
             height: 55vh !important;
@@ -557,9 +557,9 @@ export default function About() {
             left: 0 !important;
             object-fit: cover !important;
             object-position: top center !important;
-            /* Apply fade mask ONLY to the very bottom edge (lower torso) */
-            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+            /* Apply a long, gradual fade mask starting from the mid-torso down to the bottom edge */
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.4) 80%, rgba(0,0,0,0) 100%) !important;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.4) 80%, rgba(0,0,0,0) 100%) !important;
           }
 
           /* Typography: Upper portion, above portrait */
