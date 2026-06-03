@@ -78,16 +78,9 @@ export const SECTION_ANCHORS: Record<string, number> = {
 };
 
 export function getActiveSectionIndex(progress: number): number {
-  const anchors = Object.values(SECTION_ANCHORS);
-  let closestIndex = 0;
-  let minDiff = Math.abs(progress - anchors[0]);
-
-  for (let i = 1; i < anchors.length; i++) {
-    const diff = Math.abs(progress - anchors[i]);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closestIndex = i;
-    }
-  }
-  return closestIndex;
+  // Align active section detection perfectly with the actual visual visibility thresholds in PinnedSections.tsx
+  if (progress < 0.05) return 0; // Hero
+  if (progress >= 0.05 && progress < 0.129) return 1; // About
+  if (progress >= 0.129 && progress < 0.971) return 2; // Work
+  return 3; // Contact
 }

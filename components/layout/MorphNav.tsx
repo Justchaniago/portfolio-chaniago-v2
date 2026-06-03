@@ -206,24 +206,39 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Scroll tracking — isCollapsed + activeSection
+  // Scroll tracking — isCollapsed + activeSection (using shared ScrollTrigger progress as SSOT)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleScroll = () => {
       const y = window.scrollY;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = maxScroll > 0 ? y / maxScroll : 0;
-
       setIsCollapsed(y > 80);
-      
+    };
+
+    const handleProgressUpdate = (e: Event) => {
+      const progress = (e as CustomEvent).detail.progress;
       const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
       setActiveSection(() => {
         const nextIdx = getActiveSectionIndex(progress);
         return SECTION_IDS[nextIdx];
       });
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
+
+    // Initial values
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    if ((window as any).__scrollTriggerProgress !== undefined) {
+      const initialProgress = (window as any).__scrollTriggerProgress;
+      const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
+      setActiveSection(SECTION_IDS[getActiveSectionIndex(initialProgress)]);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
+    };
   }, []);
 
   // Keyboard close

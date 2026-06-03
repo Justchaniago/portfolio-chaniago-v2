@@ -16,6 +16,7 @@ export default function PinnedSections() {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const isTransitioningRef = useRef(false);
+  const targetProgressRef = useRef<number | null>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
@@ -51,136 +52,116 @@ export default function PinnedSections() {
               const dur = tl.duration();
               if (!dur) return progress;
               const time = progress * dur;
-              const isScrollingUp = self && self.direction < 0;
+              
+              // Get scroll direction and velocity
+              const direction = self ? self.direction : 1; // 1 = down, -1 = up
+              const velocity = self ? Math.abs(self.getVelocity()) : 0;
 
-              // 1. Hero vs About State 01 Snapping with Hysteresis
-              if (time >= 0 && time < 1.85) {
-                if (isScrollingUp) {
-                  return time < 0.58 ? 0.0 : 1.85 / dur;
-                } else {
-                  return time >= 0.87 ? 1.85 / dur : 0.0;
-                }
-              }
+              // Define the static transitions first
+              const transitions = [
+                { from: 0.0, to: 1.85, activeStart: 0.0, activeEnd: 1.85 },
+                { from: 1.85, to: 4.0, activeStart: 1.85, activeEnd: 4.0 },
+                { from: 4.0, to: 6.5, activeStart: 4.0, activeEnd: 6.5 },
+              ];
 
-              // 2 & 3. About State 01 vs About State 02 Snapping with Hysteresis
-              if (time >= 1.85 && time < 4.0) {
-                if (isScrollingUp) {
-                  return time >= 1.0 ? 4.0 / dur : 1.85 / dur;
-                } else {
-                  return time >= 3.53 ? 4.0 / dur : 1.85 / dur;
-                }
-              }
-
-              // 4. About State 02 vs Work Intro Snapping
-              if (time >= 4.0 && time < 6.5) {
-                if (isScrollingUp) {
-                  return time < 5.0 ? 4.0 / dur : 6.5 / dur;
-                } else {
-                  return time >= 5.5 ? 6.5 / dur : 4.0 / dur;
-                }
-              }
-
-              // 5. Work Intro vs Project 1 Intro Snapping
-              if (time >= 6.5 && time < 8.0) {
-                if (isScrollingUp) {
-                  return 6.5 / dur;
-                }
-                return time >= 7.6 ? 9.4 / dur : 6.5 / dur;
-              }
-
-              // 6. Dynamic Project loop snapping
-              for (let idx = 0; idx < projects.length; idx++) {
+              // Add project transitions dynamically
+              projects.forEach((project, idx) => {
                 const start = 8.0 + idx * 9.5;
                 const introRest = start + 1.4;
-                const galleryRest = start + 6.75;
+                const cardRest = start + 3.8; // Explicit resting state for the Poster Phase
                 const morphStart = start + 4.4;
+                const galleryRest = start + 6.75;
                 const exitStart = start + 8.5;
                 const nextStart = start + 9.5;
 
-                // Project expansion magnetism thresholds (15% down / 85% up of the 1.2s morph duration)
-                const morphThresholdDown = morphStart + 0.15 * 1.2; // start + 4.58
-                const morphThresholdUp = morphStart + 0.85 * 1.2;   // start + 5.42
+                // 1. Transition from previous state to this project's intro
+                const prevRest = idx === 0 ? 6.5 : (8.0 + (idx - 1) * 9.5 + 6.75);
+                const prevExitStart = idx === 0 ? 6.5 : (8.0 + (idx - 1) * 9.5 + 8.5);
+                transitions.push({
+                  from: prevRest,
+                  to: introRest,
+                  activeStart: prevExitStart,
+                  activeEnd: introRest
+                });
 
-                if (time >= start && time < nextStart) {
-                  if (isScrollingUp) {
-                    // Scrolling up inside this project slot
-                    
-                    // If in the morph range: hysteresis snap back to poster if we scroll below 85%
-                    if (time >= morphStart && time < start + 5.6) {
-                      return time < morphThresholdUp ? introRest / dur : galleryRest / dur;
-                    }
-                    
-                    // If deep inside the gallery zone: stay in gallery
-                    if (time >= start + 5.6 && time < exitStart) {
-                      return galleryRest / dur;
-                    }
+                // 2. Transition from this project's intro to its card (Poster Phase)
+                transitions.push({
+                  from: introRest,
+                  to: cardRest,
+                  activeStart: start + 2.0,
+                  activeEnd: start + 3.4
+                });
 
-                    // Before morph: snap back to intro or previous project gallery
-                    if (time >= start + 2.0 && time < morphStart) {
-                      return introRest / dur;
-                    }
+                // 3. Transition from this project's card (Poster Phase) to its gallery
+                transitions.push({
+                  from: cardRest,
+                  to: galleryRest,
+                  activeStart: morphStart,
+                  activeEnd: galleryRest
+                });
+              });
 
-                    if (time >= start && time < start + 2.0) {
-                      if (idx > 0) {
-                        const prevGallery = 8.0 + (idx - 1) * 9.5 + 6.75;
-                        return prevGallery / dur;
-                      } else {
-                        return 6.5 / dur; // Work Intro
-                      }
+              // Add final transition from last project's gallery to Contact
+              const lastProjectStart = 8.0 + (projects.length - 1) * 9.5;
+              const lastGalleryRest = lastProjectStart + 6.75;
+              const lastExitStart = lastProjectStart + 8.5;
+              transitions.push({
+                from: lastGalleryRest,
+                to: 37.6,
+                activeStart: lastExitStart,
+                activeEnd: 37.6
+              });
+
+              // Bounds checks
+              if (time <= 0.0) return 0.0;
+              if (time >= 37.6) return 37.6 / dur;
+
+              // Find the active transition
+              let targetTime = time;
+              for (const t of transitions) {
+                // If time is in the resting zone before the active transition
+                if (time >= t.from && time < t.activeStart) {
+                  targetTime = t.from;
+                  break;
+                }
+                // If time is in the active transition zone
+                if (time >= t.activeStart && time <= t.activeEnd) {
+                  const distance = t.activeEnd - t.activeStart;
+                  if (distance > 0) {
+                    const p = (time - t.activeStart) / distance;
+                    // High velocity (flick) lowers the threshold to make snapping extremely responsive
+                    const isFlick = velocity > 400;
+                    const thresholdDown = isFlick ? 0.08 : 0.25;
+                    const thresholdUp = isFlick ? 0.08 : 0.25;
+
+                    if (direction > 0) {
+                      targetTime = p >= thresholdDown ? t.to : t.from;
+                    } else {
+                      targetTime = (1 - p) >= thresholdUp ? t.from : t.to;
                     }
                   } else {
-                    // Scrolling down inside this project slot
-                    
-                    // Inside Project Intro Zone
-                    if (time >= start && time < start + 2.0) {
-                      return introRest / dur;
-                    }
-                    
-                    // Inside Poster resting zone
-                    if (time >= start + 2.0 && time < morphStart) {
-                      return introRest / dur;
-                    }
-
-                    // Inside Morph Expansion Zone (Magnetic Snapping)
-                    if (time >= morphStart && time < start + 5.6) {
-                      return time >= morphThresholdDown ? galleryRest / dur : introRest / dur;
-                    }
-
-                    // Inside Expanded Gallery Landing Zone
-                    if (time >= start + 5.6 && time < exitStart) {
-                      return galleryRest / dur;
-                    }
-
-                    // Inside Project Exit Handoff Zone
-                    if (time >= exitStart && time < nextStart) {
-                      if (idx === projects.length - 1) {
-                        return 37.6 / dur; // Snap to Contact
-                      }
-                      const nextIntro = nextStart + 1.4;
-                      return nextIntro / dur;
-                    }
+                    targetTime = t.from;
                   }
+                  break;
                 }
               }
 
-              // 7. Contact Zone Snapping
-              if (time >= 36.5) {
-                if (isScrollingUp) {
-                  // Scrolling UP from Contact snaps back to the last project resting state
-                  const lastProjectRest = 8.0 + (projects.length - 1) * 9.5 + 6.75;
-                  return lastProjectRest / dur;
-                }
-                return 37.6 / dur; // Snap to canonical Contact resting point
-              }
-
-              return progress;
+              return targetTime / dur;
             },
             duration: { min: 0.35, max: 0.65 }, // Snappier, fluid glide times
             delay: 0.015, // Ultra-responsive 15ms snapping delay for instant magnetic capture!
             ease: 'power4.out', // Crisp, high-end momentum deceleration curve
           },
           onUpdate: (self) => {
-            const progress = self.progress;
+            // During cinematic transitions, freeze/pin the visibility updates to the target progress
+            // to prevent temporary ScrollTrigger.refresh() timeline reversions (progress 0) from flashing the Hero.
+            const progress = targetProgressRef.current !== null ? targetProgressRef.current : self.progress;
+
+            // Publish progress to global window property and dispatch custom event for MorphNav and NavRail
+            if (typeof window !== 'undefined') {
+              (window as any).__scrollTriggerProgress = progress;
+              window.dispatchEvent(new CustomEvent('scrollTriggerProgress', { detail: { progress } }));
+            }
 
             // Use opacity and pointerEvents for performance, instead of display: none
             const setVisibility = (el: HTMLDivElement, visible: boolean) => {
@@ -629,6 +610,7 @@ export default function PinnedSections() {
     if (Math.abs(currentScroll - targetScroll) < 5) return;
 
     isTransitioningRef.current = true;
+    targetProgressRef.current = targetProgress;
     // Gate the nav indicators (MorphNav / NavRail) from reacting to the jump scroll.
     (window as any).__navTransitioning = true;
 
@@ -707,6 +689,7 @@ export default function PinnedSections() {
                 onComplete: () => {
                   gsap.set(overlay, { display: 'none' });
                   isTransitioningRef.current = false;
+                  targetProgressRef.current = null;
                   if (lenis) lenis.start();
                   (window as any).__navTransitioning = false;
                 },

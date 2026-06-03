@@ -45,45 +45,18 @@ export default function NavRail() {
   const baseTargetYRef = useRef(0);
   const mouseYRef = useRef<number | null>(null);
 
-  // Track window scroll and determine current active index
+  // Track ScrollTrigger progress and determine current active index (using shared ScrollTrigger progress as SSOT)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const getPreciseY = (progress: number) => {
-      const sectionProgresses = Object.values(SECTION_ANCHORS);
-      const numSections = sectionProgresses.length;
+    const handleProgressUpdate = (e: Event) => {
+      const progress = (e as CustomEvent).detail.progress;
 
-      for (let i = 0; i < numSections - 1; i++) {
-        const startProgress = sectionProgresses[i];
-        const endProgress = sectionProgresses[i + 1];
+      const activeIndex = getActiveSectionIndex(progress);
+      setActiveIndex(activeIndex);
 
-        if (progress >= startProgress && progress < endProgress) {
-          const ratio = (progress - startProgress) / (endProgress - startProgress);
-          return i * SECTION_GAP + ratio * SECTION_GAP;
-        }
-      }
-
-      if (progress >= sectionProgresses[numSections - 1]) {
-        return (numSections - 1) * SECTION_GAP;
-      }
-
-      return 0;
-    };
-
-    const handleScroll = () => {
-      if ((window as any).__navTransitioning) {
-        return;
-      }
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight <= 0) return;
-
-      const progress = window.scrollY / scrollHeight;
-      console.log('Scroll progress:', progress, 'Active Index:', getActiveSectionIndex(progress));
-
-      // Update activeIndex using shared viewport-center hysteresis logic
-      setActiveIndex(getActiveSectionIndex(progress));
-
-      const targetY = getPreciseY(progress);
+      // Active Dot snaps exactly to the active section's dot position
+      const targetY = activeIndex * SECTION_GAP;
       baseTargetYRef.current = targetY;
 
       // Update position factoring in mouse hover ref status
@@ -94,18 +67,65 @@ export default function NavRail() {
         y.set(targetY);
       }
 
-      // Dynamically fill the progress rail
+      // Calculate local progress within the current section group
+      const sectionProgresses = Object.values(SECTION_ANCHORS);
+      const nextIndex = Math.min(activeIndex + 1, SECTIONS.length - 1);
+      const sectionStartProgress = sectionProgresses[activeIndex];
+      const sectionEndProgress = sectionProgresses[nextIndex];
+
+      let localProgress = 0;
+      if (activeIndex < sectionProgresses.length - 1) {
+        const range = sectionEndProgress - sectionStartProgress;
+        localProgress = range > 0 ? (progress - sectionStartProgress) / range : 0;
+      }
+      const clampedLocalProgress = Math.max(0, Math.min(1, localProgress));
+
+      const fillTop = activeIndex * SECTION_GAP;
+      const fillHeight = clampedLocalProgress * SECTION_GAP;
+
+      // Dynamically position and size the local progress segment
       const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
       if (fillLine) {
-        fillLine.style.transform = `scaleY(${progress})`;
+        fillLine.style.top = `${fillTop}px`;
+        fillLine.style.height = `${fillHeight}px`;
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    // Initial call to set correct initial state
-    handleScroll();
+    window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Initial call to set correct initial state
+    if ((window as any).__scrollTriggerProgress !== undefined) {
+      const initialProgress = (window as any).__scrollTriggerProgress;
+      const activeIndex = getActiveSectionIndex(initialProgress);
+      setActiveIndex(activeIndex);
+
+      const targetY = activeIndex * SECTION_GAP;
+      baseTargetYRef.current = targetY;
+      y.set(targetY);
+
+      const sectionProgresses = Object.values(SECTION_ANCHORS);
+      const nextIndex = Math.min(activeIndex + 1, SECTIONS.length - 1);
+      const sectionStartProgress = sectionProgresses[activeIndex];
+      const sectionEndProgress = sectionProgresses[nextIndex];
+
+      let localProgress = 0;
+      if (activeIndex < sectionProgresses.length - 1) {
+        const range = sectionEndProgress - sectionStartProgress;
+        localProgress = range > 0 ? (initialProgress - sectionStartProgress) / range : 0;
+      }
+      const clampedLocalProgress = Math.max(0, Math.min(1, localProgress));
+
+      const fillTop = activeIndex * SECTION_GAP;
+      const fillHeight = clampedLocalProgress * SECTION_GAP;
+
+      const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
+      if (fillLine) {
+        fillLine.style.top = `${fillTop}px`;
+        fillLine.style.height = `${fillHeight}px`;
+      }
+    }
+
+    return () => window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
   }, [y]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -218,12 +238,10 @@ export default function NavRail() {
             position: 'absolute',
             top: 0,
             width: '1px',
-            height: '100%',
+            height: 0,
             background: 'var(--color-text-1, #0A0A0A)',
-            transformOrigin: 'top center',
-            transform: 'scaleY(0)',
             transition: 'background 0.4s ease',
-            willChange: 'transform',
+            willChange: 'top, height',
           }}
         />
 

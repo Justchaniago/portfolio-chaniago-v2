@@ -24,6 +24,7 @@ export default function Contact() {
         height: '100%',
         minHeight: '100vh',
         backgroundColor: 'var(--color-bg, #FFFFFF)',
+        transition: 'background-color 0.4s ease, color 0.4s ease',
         zIndex: 1,
         pointerEvents: 'none', // Toggle managed by PinnedSections
         display: 'flex',

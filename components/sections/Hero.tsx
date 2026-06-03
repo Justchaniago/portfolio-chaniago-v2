@@ -232,7 +232,7 @@ export default function Hero() {
           fontSize: 'clamp(48px, 7.5vw, 110px)',
           fontWeight: 500,
           letterSpacing: '-0.045em',
-          lineHeight: 1.05,
+          lineHeight: 1.25,
           color: 'rgba(255,255,255,0.88)',
           margin: 0,
         }}>
@@ -284,7 +284,24 @@ export default function Hero() {
                 {COPY.highlight}
               </em>
               <span style={{ color: 'rgba(255,255,255,0.22)' }}>
-                {COPY.line2.replace(COPY.highlight, '')}
+                {(() => {
+                  const parts = COPY.line2.replace(COPY.highlight, '').split('—');
+                  if (parts.length === 2) {
+                    return (
+                      <>
+                        {parts[0]}
+                        <span style={{
+                          display: 'inline-block',
+                          transform: 'translateY(0.08em)',
+                          verticalAlign: 'middle',
+                          lineHeight: 1,
+                        }}>—</span>
+                        {parts[1]}
+                      </>
+                    );
+                  }
+                  return COPY.line2.replace(COPY.highlight, '');
+                })()}
               </span>
             </span>
           </span>
