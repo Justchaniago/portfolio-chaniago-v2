@@ -182,7 +182,7 @@ export default function About() {
             className="about-text-line"
             style={{
               fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-              fontSize: 'clamp(72px, 5.5vw, 96px)',
+              fontSize: 'clamp(56px, 5.5vw, 96px)', // Reduced min-size for mobile
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '-0.045em',
@@ -208,29 +208,41 @@ export default function About() {
 
           {/* Line 2: I'm Chaniago. */}
           <h2
-            className="about-text-line"
+            className="about-text-line about-text-line-2"
             style={{
               fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-              fontSize: 'clamp(72px, 5.5vw, 96px)',
+              fontSize: 'clamp(56px, 5.5vw, 96px)', // Reduced min-size for mobile
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '-0.045em',
               lineHeight: 0.9,
               margin: 0,
               overflow: 'hidden',
-              whiteSpace: 'nowrap', // Force line to stay strictly on one line (no wrapping)
+              whiteSpace: 'normal', // Allow wrapping on mobile if needed
+              wordBreak: 'break-word', // Ensure long names don't overflow
             }}
           >
-            {"I'm Chaniago.".split("").map((char, index) => (
+            {"I'm Chaniago.".split(" ").map((word, wordIndex, array) => (
               <span
-                key={index}
-                className="about-char"
+                key={wordIndex}
                 style={{
                   display: 'inline-block',
-                  willChange: 'transform',
+                  whiteSpace: 'nowrap',
+                  marginRight: wordIndex < array.length - 1 ? '0.25em' : '0'
                 }}
               >
-                {char === " " ? "\u00A0" : char}
+                {word.split("").map((char, charIndex) => (
+                  <span
+                    key={`${wordIndex}-${charIndex}`}
+                    className="about-char"
+                    style={{
+                      display: 'inline-block',
+                      willChange: 'transform',
+                    }}
+                  >
+                    {char}
+                  </span>
+                ))}
               </span>
             ))}
           </h2>
@@ -353,6 +365,7 @@ export default function About() {
             Current Focus
           </span>
           <div
+            className="sub-section-focus-grid"
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
@@ -515,6 +528,80 @@ export default function About() {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          /* Structural Rebalancing for Mobile */
+          .about-section-container {
+            justify-content: flex-start !important; /* Align content to top */
+            padding-top: 12vh !important; /* Add top padding for text */
+          }
+          
+          /* Portrait: Meaningful visual anchor, 35-45% of viewport, showing shoulders/chest */
+          .about-portrait-img {
+            height: 55vh !important; /* Reduced height to fit within lower half */
+            width: 100vw !important; /* Full width to ground it */
+            bottom: 0 !important; /* Anchored to bottom */
+            right: 0 !important;
+            object-fit: cover !important; /* Cover to ensure it fills the width */
+            object-position: top center !important; /* Focus on head/shoulders */
+            transform: translateY(0) !important; /* Remove initial lift */
+            /* Apply fade mask ONLY to the very bottom edge (lower torso) */
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+          }
+          .about-portrait-left-img {
+            height: 55vh !important;
+            width: 100vw !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            object-fit: cover !important;
+            object-position: top center !important;
+            /* Apply fade mask ONLY to the very bottom edge (lower torso) */
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%) !important;
+          }
+
+          /* Typography: Upper portion, above portrait */
+          .about-editorial-text {
+            position: relative !important; /* Flow with document */
+            left: 0 !important;
+            bottom: auto !important;
+            width: 100% !important;
+            padding: 0 6vw !important; /* Match container padding */
+            z-index: 5 !important; /* Ensure it's above portrait */
+          }
+
+          /* Heading Layout: Prevent clipping, allow wrapping */
+          .about-text-line {
+            font-size: clamp(48px, 12vw, 72px) !important; /* Adjust scale for mobile */
+            white-space: normal !important; /* Allow wrapping */
+          }
+
+          /* Sub-content: Flow below main text, above portrait */
+          .about-sub-content {
+            position: relative !important;
+            right: auto !important;
+            left: auto !important;
+            bottom: auto !important;
+            top: auto !important;
+            width: 100% !important;
+            padding: 0 6vw !important;
+            margin-top: 4vh !important; /* Space below main text */
+            z-index: 5 !important;
+          }
+
+          /* Hide glass overlay on mobile as it obscures the portrait and isn't needed for text contrast here */
+          .about-glass-overlay {
+            display: none !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .sub-section-focus-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }
