@@ -216,7 +216,7 @@ export default function MorphNav() {
       setIsCollapsed(y > 80);
       
       const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
-      setActiveSection((prev) => {
+      setActiveSection(() => {
         const nextIdx = getActiveSectionIndex(progress);
         return SECTION_IDS[nextIdx];
       });
