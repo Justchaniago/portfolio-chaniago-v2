@@ -148,12 +148,62 @@ export default function Hero() {
     resetLastPos();
   }, [resetLastPos]);
 
+  // Touch → fluid (Mobile interaction translation)
+  const onTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || e.touches.length === 0) return;
+
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scX = canvas.width / rect.width;
+    const scY = canvas.height / rect.height;
+    const mx = (touch.clientX - rect.left) * scX;
+    const my = (touch.clientY - rect.top) * scY;
+
+    // Generate a strong initial ripple on tap
+    disturb(mx, my, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+    
+    lxRef.current = mx;
+    lyRef.current = my;
+  }, [disturb]);
+
+  const onTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || e.touches.length === 0) return;
+
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scX = canvas.width / rect.width;
+    const scY = canvas.height / rect.height;
+    const mx = (touch.clientX - rect.left) * scX;
+    const my = (touch.clientY - rect.top) * scY;
+
+    if (lxRef.current >= 0) {
+      const vx = mx - lxRef.current;
+      const vy = my - lyRef.current;
+      if (Math.abs(vx) > 0.4 || Math.abs(vy) > 0.4) {
+        disturb(mx, my, vx, vy);
+      }
+    }
+    lxRef.current = mx;
+    lyRef.current = my;
+  }, [disturb]);
+
+  const onTouchEnd = useCallback(() => {
+    lxRef.current = -1;
+    lyRef.current = -1;
+    resetLastPos();
+  }, [resetLastPos]);
+
   return (
     <section
       ref={sectionRef}
       onMouseMove={onMouseMove}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
       className="hero-section-container"
       style={{
         position: 'absolute',
@@ -229,7 +279,7 @@ export default function Hero() {
         {/* H1 */}
         <h1 style={{
           fontFamily: 'var(--font-display, Georgia, serif)',
-          fontSize: 'clamp(48px, 7.5vw, 110px)',
+          fontSize: 'clamp(42px, 7.5vw, 110px)', // Slightly smaller min-size for mobile to prevent wrapping
           fontWeight: 500,
           letterSpacing: '-0.045em',
           lineHeight: 1.25,
@@ -314,8 +364,8 @@ export default function Hero() {
         style={{
           position: 'absolute',
           bottom: 'clamp(28px, 4vw, 52px)',
-          left: 'clamp(32px, 6vw, 80px)',
-          right: 'clamp(32px, 6vw, 80px)',
+          left: 'clamp(24px, 6vw, 80px)', // Slightly reduced left padding on mobile
+          right: 'clamp(24px, 6vw, 80px)', // Slightly reduced right padding on mobile
           zIndex: 4,
           display: 'flex',
           alignItems: 'flex-end',
@@ -328,7 +378,12 @@ export default function Hero() {
           pointerEvents: 'none',
         }}
       >
-        <div style={{ display: 'flex', gap: 'clamp(16px, 3vw, 40px)', alignItems: 'flex-end' }}>
+        <div style={{
+          display: 'flex',
+          gap: 'clamp(16px, 3vw, 40px)',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap', // Allow wrapping on very small screens
+        }}>
           {[
             { label: 'Based in', value: COPY.location },
             { label: 'Status', value: COPY.status },
@@ -408,6 +463,11 @@ export default function Hero() {
         }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition-duration: 0.01ms !important; }
+        }
+        @media (max-width: 768px) {
+          .hero-scroll-indicator {
+            opacity: ${on ? 0.6 : 0} !important;
+          }
         }
       `}</style>
     </section>

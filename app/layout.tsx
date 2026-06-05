@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import LenisInit from "@/components/layout/LenisInit";
 import MorphNav from "@/components/layout/MorphNav";
@@ -22,6 +23,19 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const notoPhagsPa = Noto_Sans_PhagsPa({
+  variable: "--font-phags-pa",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+const bitcountGridSingle = localFont({
+  src: "./fonts/bitcount-grid-single-latin.woff2",
+  variable: "--font-bitcount",
+  display: "swap",
+  adjustFontFallback: false,
+});
+
 export const metadata: Metadata = {
   title: "Portfolio — Fullstack Creative Developer",
   description: "Dark-first · Editorial · AI-assisted · Precision meets craft.",
@@ -35,7 +49,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${bitcountGridSingle.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />

@@ -13,7 +13,16 @@ export const FLUID_CONFIG = {
   ambientMag: 0.02,       // Magnitude of random ambient ripples
 } as const;
 
-export type FluidConfig = typeof FLUID_CONFIG;
+export interface FluidConfig {
+  damping: number;
+  speed: number;
+  dist: number;
+  iri: number;
+  tint: number;
+  ambientFreq: number;
+  ambientMag: number;
+  transparent?: boolean;
+}
 
 interface Sim {
   cur: Float32Array;        // Current height buffer
@@ -89,6 +98,7 @@ function renderSim(s: Sim, cfg: FluidConfig, img: ImageData): void {
   const { cur, cols, rows, W, H, cell } = s;
   const iriF = cfg.iri / 10;
   const tntF = cfg.tint / 10;
+  const isTransparent = !!cfg.transparent;
 
   for (let py = 0; py < H; py++) {
     for (let px2 = 0; px2 < W; px2++) {
@@ -106,7 +116,11 @@ function renderSim(s: Sim, cfg: FluidConfig, img: ImageData): void {
       const dyH = cur[rD * cols + gc] - cur[rU * cols + gc];
       const slope = Math.sqrt(dxH * dxH + dyH * dyH);
 
-      let R = 6, G = 6, B = 6; // Deep monochromatic void base color
+      // In transparent mode, base is completely clear (alpha = 0).
+      // Otherwise, base is deep monochromatic void color.
+      let R = isTransparent ? 10 : 6;
+      let G = isTransparent ? 10 : 6;
+      let B = isTransparent ? 10 : 6;
 
       // Specular Highlight — White on crests
       if (h > 0.003) {
@@ -138,11 +152,20 @@ function renderSim(s: Sim, cfg: FluidConfig, img: ImageData): void {
         R += dp * 0.79; G += dp * 0.94; B += dp * 0.66; // #C9F0A8 mix tint
       }
 
+      // Calculate alpha based on wave activity for transparent mode
+      let alpha = 255;
+      if (isTransparent) {
+        // Compute activity based on deviation from flat surface and slope steepness
+        // Scale values up so ripples are clearly visible and well-saturated
+        const activity = Math.min(1.0, Math.abs(h) * 110 + slope * 10);
+        alpha = Math.min(255, Math.max(0, Math.round(activity * 255)));
+      }
+
       const b4 = (py * W + px2) * 4;
       px[b4] = Math.min(255, Math.max(0, (R + 0.5) | 0));
       px[b4 + 1] = Math.min(255, Math.max(0, (G + 0.5) | 0));
       px[b4 + 2] = Math.min(255, Math.max(0, (B + 0.5) | 0));
-      px[b4 + 3] = 255;
+      px[b4 + 3] = alpha;
     }
   }
 }
@@ -150,13 +173,26 @@ function renderSim(s: Sim, cfg: FluidConfig, img: ImageData): void {
 // ── Hook ─────────────────────────────────────────────────────
 export function useFluidSim(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  cfg: FluidConfig = FLUID_CONFIG
+  cfg: FluidConfig = FLUID_CONFIG,
+  mode: 'hero' | 'ambient' = 'hero'
 ) {
   const simRef = useRef<Sim | null>(null);
   const rafRef = useRef<number>(0);
   const frameRef = useRef(0);
   const lxRef = useRef(-1);
   const lyRef = useRef(-1);
+
+  const isAmbient = mode === 'ambient';
+  const activeCfg = isAmbient ? {
+    damping: 0.988,
+    speed: 2,
+    dist: 4,
+    iri: 3.5,            // More visible iridescence (was 1.5)
+    tint: 2.5,           // More visible phosphor green glow (was 1.0)
+    ambientFreq: 12,     // Slightly higher frequency (was 16)
+    ambientMag: 0.015,   // Much more visible ambient power (was 0.004)
+    transparent: true,   // Transparent mode enabled
+  } : cfg;
 
   const initSim = useCallback(() => {
     const canvas = canvasRef.current;
@@ -194,8 +230,8 @@ export function useFluidSim(
     vx: number, vy: number
   ) => {
     if (!simRef.current) return;
-    disturbSim(simRef.current, cfg, mx, my, vx, vy);
-  }, [cfg]);
+    disturbSim(simRef.current, activeCfg, mx, my, vx, vy);
+  }, [activeCfg]);
 
   const resetLastPos = useCallback(() => {
     lxRef.current = -1;
@@ -219,18 +255,18 @@ export function useFluidSim(
 
       // Ambient micro-ripple
       frameRef.current++;
-      if (frameRef.current % cfg.ambientFreq === 0) {
+      if (frameRef.current % activeCfg.ambientFreq === 0) {
         const c = 1 + Math.floor(Math.random() * (s.cols - 2));
         const r = 1 + Math.floor(Math.random() * (s.rows - 2));
-        s.cur[r * s.cols + c] += (Math.random() - 0.5) * cfg.ambientMag;
+        s.cur[r * s.cols + c] += (Math.random() - 0.5) * activeCfg.ambientMag;
       }
 
       // Physics Steps
-      stepSim(s, cfg);
+      stepSim(s, activeCfg);
 
       // Render Frame
       const img = ctx.createImageData(s.W, s.H);
-      renderSim(s, cfg, img);
+      renderSim(s, activeCfg, img);
       ctx.putImageData(img, 0, 0);
 
       rafRef.current = requestAnimationFrame(loop);
@@ -254,7 +290,7 @@ export function useFluidSim(
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
     };
-  }, [canvasRef, cfg, initSim]);
+  }, [canvasRef, activeCfg, initSim]);
 
   return { disturb, resetLastPos };
 }

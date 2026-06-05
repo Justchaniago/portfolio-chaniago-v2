@@ -1,248 +1,280 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
+import type { PointerEvent } from 'react';
 import { gsap } from '@/lib/gsap';
 
-const emailTarget = 'chaniagoatwork@gmail.com';
+type ContactWindow = Window & {
+  __scrollTriggerProgress?: number;
+};
 
-interface FieldNode {
-  id: number;
+type ContactCharRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type ContactCharInteraction = {
+  wrapper: HTMLElement;
+  char: HTMLElement;
+  rect: ContactCharRect;
   x: number;
   y: number;
-  size: number; // dot radius in px
-  baseOpacity: number;
-}
+  targetX: number;
+  targetY: number;
+  energy: number;
+};
 
-// Generate scattered dot-field forming an abstract organic cloud mass
-// concentrated in the center-horizontal band of the viewport
-function generateDotField(): FieldNode[] {
-  const nodes: FieldNode[] = [];
-  const totalDots = 280;
-
-  for (let i = 0; i < totalDots; i++) {
-    // Distribute across full width but concentrated vertically in the 25%–65% band
-    const x = 3 + Math.random() * 94;
-    // Use gaussian-ish distribution centered around 45vh
-    const rawY = (Math.random() + Math.random() + Math.random()) / 3; // bell curve 0–1
-    const y = 20 + rawY * 50; // map to 20vh–70vh
-
-    // Vary dot sizes for depth (most are tiny, a few are slightly larger)
-    const size = 1.5 + Math.random() * 2.5;
-
-    // Vary base opacity to create depth layers
-    const baseOpacity = 0.03 + Math.random() * 0.06;
-
-    nodes.push({ id: i, x, y, size, baseOpacity });
-  }
-
-  return nodes;
-}
+const CONTACT_TITLE = 'JUSTCHANIAGO';
+const CONTACT_TITLE_PROGRESS = 0.971;
+const TITLE_HOVER_RADIUS = 150;
+const TITLE_HOVER_MAX_RADIUS = 320;
+const TITLE_HOVER_VELOCITY_MULTIPLIER = 0.4;
+const TITLE_HOVER_INTERPOLATION = 0.15;
+const TITLE_HOVER_DECAY = 0.92;
 
 export default function Contact() {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerWrapperRef = useRef<HTMLDivElement>(null);
-  const nameLineRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const emailRef = useRef<HTMLAnchorElement>(null);
-  const copyrightRef = useRef<HTMLDivElement>(null);
-  const socialsRef = useRef<HTMLDivElement>(null);
-  const navLinksRef = useRef<HTMLDivElement>(null);
-
-  const [active, setActive] = useState(false);
-  const [displayEmail, setDisplayEmail] = useState('');
-  const [fieldNodes, setFieldNodes] = useState<FieldNode[]>([]);
-
-  const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const mousePos = useRef({ x: -1000, y: -1000 });
-  const fieldWakeRef = useRef(0);
+  const titleRef = useRef<HTMLDivElement>(null);
   const revealedRef = useRef(false);
+  const charInteractionsRef = useRef<ContactCharInteraction[]>([]);
+  const interactionFrameRef = useRef<number | null>(null);
+  const pointerRef = useRef({
+    x: 0,
+    y: 0,
+    previousX: 0,
+    previousY: 0,
+    velocity: 0,
+    active: false,
+  });
 
-  // 1. Client-side only generation
-  useEffect(() => {
-    setFieldNodes(generateDotField());
-    setDisplayEmail('□'.repeat(emailTarget.length));
+  const cacheTitleRects = useCallback(() => {
+    const title = titleRef.current;
+    if (!title) return;
+
+    const previous = new Map(
+      charInteractionsRef.current.map((item) => [item.char, item])
+    );
+
+    charInteractionsRef.current = Array.from(
+      title.querySelectorAll<HTMLElement>('.contact-title-char-wrap')
+    ).flatMap((wrapper) => {
+      const char = wrapper.querySelector<HTMLElement>('.contact-title-char');
+      if (!char) return [];
+
+      const rect = char.getBoundingClientRect();
+      const cached = previous.get(char);
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      return [{
+        wrapper,
+        char,
+        rect: {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+        x: cached?.x ?? centerX,
+        y: cached?.y ?? centerY,
+        targetX: cached?.targetX ?? centerX,
+        targetY: cached?.targetY ?? centerY,
+        energy: cached?.energy ?? 0,
+      }];
+    });
   }, []);
 
-  // 2. Section activation + reveal choreography
+  function runInteractionFrame() {
+    const pointer = pointerRef.current;
+    const items = charInteractionsRef.current;
+    const effectiveRadius = Math.min(
+      TITLE_HOVER_MAX_RADIUS,
+      Math.max(
+        TITLE_HOVER_RADIUS,
+        TITLE_HOVER_RADIUS + pointer.velocity * TITLE_HOVER_VELOCITY_MULTIPLIER
+      )
+    );
+    let maxEnergy = 0;
+
+    items.forEach((item) => {
+      let incomingEnergy = 0;
+
+      if (pointer.active) {
+        const centerX = item.rect.left + item.rect.width / 2;
+        const centerY = item.rect.top + item.rect.height / 2;
+        const distance = Math.hypot(pointer.x - centerX, pointer.y - centerY);
+
+        incomingEnergy = Math.max(0, 1 - distance / effectiveRadius);
+        item.targetX = pointer.x - item.rect.left;
+        item.targetY = pointer.y - item.rect.top;
+      }
+
+      item.x += (item.targetX - item.x) * TITLE_HOVER_INTERPOLATION;
+      item.y += (item.targetY - item.y) * TITLE_HOVER_INTERPOLATION;
+      item.energy = Math.max(incomingEnergy, item.energy * TITLE_HOVER_DECAY);
+
+      const hoverStop = Math.round(item.energy * 68);
+      const warmStop = item.energy > 0.001 ? hoverStop + 14 : 0;
+      const whiteStop = item.energy > 0.001 ? hoverStop + 38 : 0;
+      const scale = 1 + Math.min(item.energy * 0.035, 0.05);
+
+      item.char.style.setProperty('--contact-hover-x', `${item.x}px`);
+      item.char.style.setProperty('--contact-hover-y', `${item.y}px`);
+      item.char.style.setProperty('--contact-hover-stop', `${hoverStop}%`);
+      item.char.style.setProperty('--contact-hover-warm-stop', `${warmStop}%`);
+      item.char.style.setProperty('--contact-hover-white-stop', `${whiteStop}%`);
+      item.wrapper.style.setProperty('--contact-energy-scale', scale.toFixed(3));
+
+      maxEnergy = Math.max(maxEnergy, item.energy);
+    });
+
+    if (pointer.active || maxEnergy > 0.01) {
+      interactionFrameRef.current = window.requestAnimationFrame(runInteractionFrame);
+      return;
+    }
+
+    items.forEach((item) => {
+      item.char.style.setProperty('--contact-hover-stop', '0%');
+      item.char.style.setProperty('--contact-hover-warm-stop', '0%');
+      item.char.style.setProperty('--contact-hover-white-stop', '0%');
+      item.wrapper.style.setProperty('--contact-energy-scale', '1');
+    });
+    interactionFrameRef.current = null;
+  }
+
+  function startInteractionLoop() {
+    if (interactionFrameRef.current !== null) return;
+    interactionFrameRef.current = window.requestAnimationFrame(runInteractionFrame);
+  }
+
+  function handleTitlePointerEnter(e: PointerEvent<HTMLDivElement>) {
+    const pointer = pointerRef.current;
+
+    cacheTitleRects();
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.previousX = e.clientX;
+    pointer.previousY = e.clientY;
+    pointer.velocity = 0;
+    pointer.active = true;
+    startInteractionLoop();
+  }
+
+  function handleTitlePointerMove(e: PointerEvent<HTMLDivElement>) {
+    if (charInteractionsRef.current.length === 0) {
+      cacheTitleRects();
+    }
+
+    const pointer = pointerRef.current;
+    pointer.previousX = pointer.x;
+    pointer.previousY = pointer.y;
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.velocity = Math.hypot(
+      pointer.x - pointer.previousX,
+      pointer.y - pointer.previousY
+    );
+    pointer.active = true;
+
+    startInteractionLoop();
+  }
+
+  function handleTitlePointerLeave() {
+    pointerRef.current.active = false;
+    pointerRef.current.velocity = 0;
+    startInteractionLoop();
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let revealTl: gsap.core.Timeline | null = null;
+    const handleResize = () => cacheTitleRects();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (interactionFrameRef.current !== null) {
+        window.cancelAnimationFrame(interactionFrameRef.current);
+        interactionFrameRef.current = null;
+      }
+    };
+  }, [cacheTitleRects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let revealTween: gsap.core.Tween | null = null;
 
     const handleProgress = (e: Event) => {
       const progress = (e as CustomEvent).detail?.progress ?? 0;
-      const isActive = progress >= 0.971;
+      const isActive = progress >= CONTACT_TITLE_PROGRESS;
       const val = isActive ? 'auto' : 'none';
 
       if (innerWrapperRef.current) {
         innerWrapperRef.current.style.pointerEvents = val;
       }
 
-      setActive(isActive);
+      if (isActive && titleRef.current && !revealedRef.current) {
+        revealedRef.current = true;
+        if (revealTween) revealTween.kill();
 
-      if (isActive) {
-        if (!revealedRef.current) {
-          revealedRef.current = true;
-          if (revealTl) revealTl.kill();
-          revealTl = gsap.timeline();
+        const chars = titleRef.current.querySelectorAll<HTMLElement>('.contact-title-char');
+        gsap.set(titleRef.current, { opacity: 1 });
 
-          // A. Name lines: masked translateY(120%) → 0%
-          const lines = nameLineRefs.current.filter(Boolean);
-          revealTl.fromTo(lines,
-            { yPercent: 120 },
-            { yPercent: 0, duration: 1.0, ease: 'power4.out', stagger: 0.12 },
-            0.0
-          );
-
-          // B. Email resolve: blocks → characters
-          const emailObj = { progress: 0 };
-          const emailLength = emailTarget.length;
-          revealTl.to(emailObj, {
-            progress: emailLength,
-            duration: 1.4,
-            ease: 'power1.inOut',
-            onUpdate: () => {
-              const cur = emailObj.progress;
-              const resolved = Math.floor(cur);
-              let result = '';
-              for (let i = 0; i < emailLength; i++) {
-                if (i < resolved) {
-                  result += emailTarget[i];
-                } else if (i === resolved) {
-                  const chars = '01#@+$%*□';
-                  result += chars[Math.floor(Math.random() * chars.length)];
-                } else {
-                  result += '□';
-                }
-              }
-              setDisplayEmail(result);
+        revealTween = gsap.fromTo(
+          chars,
+          {
+            y: '112%',
+            opacity: 0,
+          },
+          {
+            y: '0%',
+            opacity: 1,
+            duration: 0.82,
+            stagger: {
+              each: 0.045,
+              from: 'center',
             },
-            onComplete: () => setDisplayEmail(emailTarget),
-          }, 0.6);
+            ease: 'power4.out',
+          }
+        );
+      }
 
-          // C. Copyright
-          revealTl.fromTo(copyrightRef.current,
-            { opacity: 0, y: 12 },
-            { opacity: 0.4, y: 0, duration: 0.5, ease: 'power2.out' },
-            0.9
-          );
+      if (!isActive && titleRef.current && revealedRef.current) {
+        revealedRef.current = false;
+        if (revealTween) revealTween.kill();
+        const chars = titleRef.current.querySelectorAll<HTMLElement>('.contact-title-char');
 
-          // D. Social links
-          revealTl.fromTo(socialsRef.current,
-            { opacity: 0, y: 12 },
-            { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-            1.0
-          );
-
-          // E. Nav links
-          revealTl.fromTo(navLinksRef.current,
-            { opacity: 0, y: 12 },
-            { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-            1.1
-          );
-
-          // F. Dot field wake
-          revealTl.to(fieldWakeRef, {
-            current: 1,
-            duration: 2.0,
-            ease: 'power2.out',
-          }, 0.8);
-        }
-      } else {
-        if (revealedRef.current) {
-          revealedRef.current = false;
-          if (revealTl) revealTl.kill();
-          const lines = nameLineRefs.current.filter(Boolean);
-          gsap.killTweensOf([lines, copyrightRef.current, socialsRef.current, navLinksRef.current, fieldWakeRef]);
-
-          setDisplayEmail('□'.repeat(emailTarget.length));
-          gsap.set(lines, { yPercent: 120 });
-          gsap.set(copyrightRef.current, { opacity: 0, y: 12 });
-          gsap.set(socialsRef.current, { opacity: 0, y: 12 });
-          gsap.set(navLinksRef.current, { opacity: 0, y: 12 });
-          fieldWakeRef.current = 0;
-        }
+        revealTween = gsap.to(chars, {
+          y: '112%',
+          opacity: 0,
+          duration: 0.82,
+          stagger: {
+            each: 0.045,
+            from: 'center',
+          },
+          ease: 'power4.in',
+          onComplete: () => {
+            if (titleRef.current) {
+              gsap.set(titleRef.current, { opacity: 0 });
+            }
+          },
+        });
       }
     };
 
     window.addEventListener('scrollTriggerProgress', handleProgress);
-    const initialProgress = (window as any).__scrollTriggerProgress ?? 0;
+    const initialProgress = (window as ContactWindow).__scrollTriggerProgress ?? 0;
     handleProgress(new CustomEvent('scrollTriggerProgress', { detail: { progress: initialProgress } }));
 
     return () => {
       window.removeEventListener('scrollTriggerProgress', handleProgress);
-      if (revealTl) revealTl.kill();
+      if (revealTween) revealTween.kill();
     };
-  }, [fieldNodes.length]);
-
-  // 3. Mouse tracking
-  useEffect(() => {
-    if (!active) return;
-    const onMove = (e: MouseEvent) => { mousePos.current = { x: e.clientX, y: e.clientY }; };
-    const onLeave = () => { mousePos.current = { x: -1000, y: -1000 }; };
-    window.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseleave', onLeave);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseleave', onLeave);
-    };
-  }, [active]);
-
-  // 4. 60fps dot-field proximity loop (direct DOM writes)
-  useEffect(() => {
-    if (!active || fieldNodes.length === 0) return;
-
-    let raf: number;
-    const count = fieldNodes.length;
-    const intensities = new Array(count).fill(0);
-
-    const tick = () => {
-      const mx = mousePos.current.x;
-      const my = mousePos.current.y;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const radius = 160;
-      const wake = fieldWakeRef.current;
-
-      for (let i = 0; i < count; i++) {
-        const node = fieldNodes[i];
-        const el = dotRefs.current[i];
-        if (!el) continue;
-
-        const nx = w * (node.x / 100);
-        const ny = h * (node.y / 100);
-        const dx = mx - nx;
-        const dy = my - ny;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        let target = 0;
-        if (mx > -500 && dist < radius) {
-          target = 1 - dist / radius;
-        }
-
-        let intensity = intensities[i];
-        intensity = target > intensity ? target : Math.max(0, intensity - 0.04);
-        intensities[i] = intensity;
-
-        const baseOp = wake * node.baseOpacity;
-        const op = baseOp + intensity * (0.85 - baseOp);
-        const scale = 1 + intensity * 0.6;
-
-        el.style.opacity = String(op);
-        el.style.transform = `scale(${scale})`;
-      }
-
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, fieldNodes]);
-
-  const handleNav = (targetProgress: number) => {
-    if (typeof window !== 'undefined' && (window as any).__cinematicNavigate) {
-      (window as any).__cinematicNavigate(targetProgress);
-    }
-  };
+  }, []);
 
   return (
     <section
@@ -269,191 +301,88 @@ export default function Contact() {
           width: '100%',
           height: '100%',
           pointerEvents: 'none',
-          opacity: 0,
+          opacity: 1,
         }}
       >
-        {/* ═══════════ TOP ROW: 3-column grid ═══════════ */}
         <div
-          style={{
-            position: 'absolute',
-            top: '5vh',
-            left: '4.5vw',
-            right: '4.5vw',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            zIndex: 3,
-            pointerEvents: 'auto',
-          }}
+          ref={titleRef}
+          className="contact-title-debug"
+          aria-label={CONTACT_TITLE}
+          onPointerEnter={handleTitlePointerEnter}
+          onPointerMove={handleTitlePointerMove}
+          onPointerLeave={handleTitlePointerLeave}
         >
-          {/* Col 1: Email + Copyright */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <a
-              ref={emailRef}
-              href={`mailto:${emailTarget}`}
-              className="contact-top-link"
-              style={{ textDecoration: 'none' }}
+          {CONTACT_TITLE.split('').map((char, charIndex) => (
+            <span
+              className="contact-title-char-wrap"
+              key={`${char}-${charIndex}`}
+              aria-hidden="true"
             >
-              {displayEmail}
-            </a>
-            <div
-              ref={copyrightRef}
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '11px',
-                letterSpacing: '0.04em',
-                color: '#FFFFFF',
-                opacity: 0,
-              }}
-            >
-              © 2026
-            </div>
-          </div>
-
-          {/* Col 2: Social links (center) */}
-          <div
-            ref={socialsRef}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              opacity: 0,
-            }}
-          >
-            <a href="https://github.com/Justchaniago" target="_blank" rel="noopener noreferrer" className="contact-top-link">GITHUB</a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="contact-top-link">LINKEDIN</a>
-            <a href="https://behance.net" target="_blank" rel="noopener noreferrer" className="contact-top-link">BEHANCE</a>
-          </div>
-
-          {/* Col 3: Nav links (right-aligned) */}
-          <div
-            ref={navLinksRef}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              gap: '6px',
-              opacity: 0,
-            }}
-          >
-            <button onClick={() => handleNav(0.129)} className="contact-top-link contact-nav-btn">WORK</button>
-            <button onClick={() => handleNav(0.05)} className="contact-top-link contact-nav-btn">INFO</button>
-            <button onClick={() => handleNav(0.971)} className="contact-top-link contact-nav-btn">CONTACT</button>
-          </div>
-        </div>
-
-        {/* ═══════════ DOT FIELD (organic scatter) ═══════════ */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        >
-          {fieldNodes.map((node) => (
-            <div
-              key={node.id}
-              ref={(el) => { dotRefs.current[node.id] = el; }}
-              style={{
-                position: 'absolute',
-                left: `${node.x}vw`,
-                top: `${node.y}vh`,
-                width: `${node.size}px`,
-                height: `${node.size}px`,
-                borderRadius: '50%',
-                backgroundColor: '#ff784f',
-                opacity: 0,
-                transformOrigin: 'center',
-                willChange: 'transform, opacity',
-              }}
-            />
+              <span className="contact-title-char">{char}</span>
+            </span>
           ))}
-        </div>
-
-        {/* ═══════════ BOTTOM: Massive Name ═══════════ */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            padding: '0 4.5vw',
-            zIndex: 2,
-            lineHeight: 0.82,
-            /* Push the text below the fold so baseline crops against the bottom edge */
-            transform: 'translateY(12%)',
-          }}
-        >
-          {/* "Ferry" — bold sans-serif, like "Luke" in the reference */}
-          <div style={{ overflow: 'hidden' }}>
-            <span
-              ref={(el) => { nameLineRefs.current[0] = el; }}
-              style={{
-                display: 'block',
-                transform: 'translateY(120%)',
-                willChange: 'transform',
-                fontFamily: 'var(--font-body, "DM Sans", system-ui, sans-serif)',
-                fontSize: 'clamp(100px, 18vw, 340px)',
-                fontWeight: 700,
-                letterSpacing: '-0.04em',
-                color: '#FFFFFF',
-              }}
-            >
-              Ferry
-            </span>
-          </div>
-
-          {/* "Chaniago." — italic serif + orange dot, like "Baffait." in the reference */}
-          <div style={{ overflow: 'hidden' }}>
-            <span
-              ref={(el) => { nameLineRefs.current[1] = el; }}
-              style={{
-                display: 'block',
-                transform: 'translateY(120%)',
-                willChange: 'transform',
-                fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
-                fontStyle: 'italic',
-                fontSize: 'clamp(100px, 18vw, 340px)',
-                fontWeight: 400,
-                letterSpacing: '-0.03em',
-                color: '#FFFFFF',
-              }}
-            >
-              Chaniago<span style={{ color: '#ff784f' }}>.</span>
-            </span>
-          </div>
         </div>
       </div>
 
       <style>{`
-        /* Shared top-row link style */
-        .contact-top-link {
-          font-family: var(--font-mono, monospace);
-          font-size: 12px;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          color: #FFFFFF;
-          text-decoration: none;
-          opacity: 0.7;
-          transition: opacity 0.25s ease;
-          display: block;
-          line-height: 1.6;
-        }
-        .contact-top-link:hover {
-          opacity: 1;
+        .contact-title-debug {
+          position: absolute;
+          left: 50%;
+          bottom: 3vh;
+          transform: translateX(-50%);
+          opacity: 0;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 0;
+          width: calc(100vw - clamp(24px, 4vw, 72px));
+          max-width: calc(100vw - clamp(24px, 4vw, 72px));
+          font-size: clamp(14rem, min(32vh, 15vw), 26rem);
+          font-family: var(--font-bitcount), sans-serif;
+          font-weight: 400;
+          letter-spacing: -0.06em;
+          color: #fff;
+          z-index: 50;
+          white-space: nowrap;
+          line-height: 1;
+          pointer-events: auto;
+          will-change: opacity;
         }
 
-        /* Nav button reset */
-        .contact-nav-btn {
-          background: none;
-          border: none;
-          cursor: none;
-          padding: 0;
-          text-align: right;
+        .contact-title-char-wrap {
+          display: inline-block;
+          overflow: hidden;
+          line-height: 1;
+          transform: scale(var(--contact-energy-scale, 1));
+          transform-origin: center bottom;
+          vertical-align: bottom;
+          will-change: transform;
+        }
+
+        .contact-title-char {
+          display: inline-block;
+          transform: translateY(112%);
+          opacity: 0;
+          color: transparent;
+          background-image: radial-gradient(
+            circle 112px at var(--contact-hover-x, 50%) var(--contact-hover-y, 50%),
+            #ff3b30 0 var(--contact-hover-stop, 0%),
+            rgba(255, 92, 70, 0.78) var(--contact-hover-warm-stop, 0%),
+            #fff var(--contact-hover-white-stop, 0%)
+          );
+          background-clip: text;
+          -webkit-background-clip: text;
+          will-change: transform, opacity;
+        }
+
+        @media (max-width: 768px) {
+          .contact-title-debug {
+            bottom: 3vh;
+            gap: 0;
+            width: calc(100vw - clamp(20px, 5vw, 36px));
+            max-width: calc(100vw - clamp(20px, 5vw, 36px));
+            font-size: clamp(5.8rem, min(20vh, 16vw), 11rem);
+          }
         }
       `}</style>
     </section>

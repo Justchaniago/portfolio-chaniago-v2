@@ -124,6 +124,8 @@
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);
+  --font-phags-pa: var(--font-phags-pa);
+  --font-bitcount: var(--font-bitcount);
 
   /* Custom Transition Timing Functions */
   --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -294,4 +296,21 @@ body {
   .project-gallery-pill {
     --pill-bottom: 24px;
   }
+}
+
+/* Cinematic Eclipse Layer CSS Rule */
+.cinematic-eclipse-layer {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 300vw;
+  height: 300vw;
+  background-color: #050505;
+  border-radius: 40% 60% 45% 55% / 55% 45% 55% 45%;
+  z-index: 2;
+  pointer-events: none;
+  transform: translate(-50%, 0) scale(0.35);
+  transform-origin: center center;
+  will-change: transform, border-radius, opacity;
+  opacity: 0;
 }

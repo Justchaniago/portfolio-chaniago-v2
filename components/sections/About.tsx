@@ -1,25 +1,9 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeFocusIndex, setActiveFocusIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const focusItems = [
-    { title: 'Teman Dengar', desc: 'Disability accessibility app' },
-    { title: 'AI Systems', desc: 'Agentic workflows & logic' },
-    { title: 'Automation', desc: 'System-level pipelines' },
-    { title: 'Product Engineering', desc: 'High-fidelity UI systems' },
-  ];
 
   return (
     <section
@@ -357,7 +341,7 @@ export default function About() {
           </span>
         </div>
 
-        {/* Current Focus Grid / Swipeable Area */}
+        {/* Current Focus Grid */}
         <div
           className="sub-section-focus"
           style={{
@@ -365,151 +349,70 @@ export default function About() {
             flexDirection: 'column',
             gap: '10px',
             willChange: 'opacity, transform',
-            width: '100%',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '8px',
-                fontWeight: 800,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'var(--color-text-1, #0A0A0A)',
-                opacity: 0.55,
-              }}
-            >
-              Current Focus
-            </span>
-            {/* Mobile Pagination Indicators */}
-            {isMobile && (
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {focusItems.map((_, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: idx === activeFocusIndex ? 'var(--color-text-1, #0A0A0A)' : 'var(--color-border, rgba(10, 10, 10, 0.15))',
-                      transition: 'background-color 0.3s ease',
-                    }}
-                  />
-                ))}
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '8px',
+              fontWeight: 800, // Stronger label weight
+              letterSpacing: '0.12em', // Improved uppercase tracking
+              textTransform: 'uppercase',
+              color: 'var(--color-text-1, #0A0A0A)',
+              opacity: 0.55, // Improved visual contrast
+            }}
+          >
+            Current Focus
+          </span>
+          <div
+            className="sub-section-focus-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+            }}
+          >
+            {[
+              { title: 'Teman Dengar', desc: 'Disability accessibility app' },
+              { title: 'AI Systems', desc: 'Agentic workflows & logic' },
+              { title: 'Automation', desc: 'System-level pipelines' },
+              { title: 'Product Engineering', desc: 'High-fidelity UI systems' },
+            ].map((focus) => (
+              <div
+                key={focus.title}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
+                  background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: '11px', // Increased size
+                    fontWeight: 800, // Stronger weight for distinct cards title
+                    color: 'var(--color-text-1, #0A0A0A)',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {focus.title}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-body, sans-serif)',
+                    fontSize: '9px',
+                    color: 'var(--color-text-2, #444444)',
+                    opacity: 0.60, // Lower weight description supports title scanability
+                    marginTop: '2px',
+                  }}
+                >
+                  {focus.desc}
+                </div>
               </div>
-            )}
+            ))}
           </div>
-
-          {isMobile ? (
-            /* Mobile Swipeable Container */
-            <div
-              className="mobile-focus-swipe-container"
-              style={{
-                display: 'flex',
-                overflowX: 'auto',
-                scrollSnapType: 'x mandatory',
-                scrollbarWidth: 'none', // Firefox
-                msOverflowStyle: 'none', // IE/Edge
-                gap: '12px',
-                paddingBottom: '4px', // Space for scrollbar if visible
-                width: '100%',
-              }}
-              onScroll={(e) => {
-                const container = e.currentTarget;
-                const scrollPosition = container.scrollLeft;
-                const itemWidth = container.offsetWidth;
-                const newIndex = Math.round(scrollPosition / itemWidth);
-                if (newIndex !== activeFocusIndex && newIndex >= 0 && newIndex < focusItems.length) {
-                  setActiveFocusIndex(newIndex);
-                }
-              }}
-            >
-              {focusItems.map((focus, idx) => (
-                <div
-                  key={focus.title}
-                  style={{
-                    flex: '0 0 100%', // Each card takes full width
-                    scrollSnapAlign: 'start',
-                    padding: '16px 20px', // Slightly larger padding for mobile
-                    borderRadius: '8px',
-                    border: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
-                    background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '13px', // Larger title for mobile
-                      fontWeight: 800,
-                      color: 'var(--color-text-1, #0A0A0A)',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {focus.title}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-body, sans-serif)',
-                      fontSize: '11px', // Larger desc for mobile
-                      color: 'var(--color-text-2, #444444)',
-                      opacity: 0.70,
-                      marginTop: '4px',
-                    }}
-                  >
-                    {focus.desc}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Desktop Grid */
-            <div
-              className="sub-section-focus-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
-              }}
-            >
-              {focusItems.map((focus) => (
-                <div
-                  key={focus.title}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border, rgba(10, 10, 10, 0.15))',
-                    background: 'var(--color-card-bg, rgba(255, 255, 255, 0.05))',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      color: 'var(--color-text-1, #0A0A0A)',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {focus.title}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-body, sans-serif)',
-                      fontSize: '9px',
-                      color: 'var(--color-text-2, #444444)',
-                      opacity: 0.60,
-                      marginTop: '2px',
-                    }}
-                  >
-                    {focus.desc}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Selected Metrics */}
@@ -686,16 +589,6 @@ export default function About() {
             padding: 0 6vw !important;
             margin-top: 4vh !important; /* Space below main text */
             z-index: 5 !important;
-            /* Hide metrics and stack on mobile to reduce density and focus on the swipeable cards */
-          }
-          
-          .sub-section-metrics, .sub-section-stack {
-             display: none !important;
-          }
-          
-          /* Hide scrollbar for swipe container */
-          .mobile-focus-swipe-container::-webkit-scrollbar {
-            display: none;
           }
 
           /* Hide glass overlay on mobile as it obscures the portrait and isn't needed for text contrast here */

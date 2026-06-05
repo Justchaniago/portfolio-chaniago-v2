@@ -188,7 +188,7 @@ export default function PinnedSections() {
               setVisibility(workEl, false);
               setVisibility(contactEl, false);
               aboutEl.style.opacity = '1';
-            } else if (progress >= 0.129 && progress < 0.971) {
+            } else if (progress >= 0.129 && progress < 0.955) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, false);
               setVisibility(workEl, true);
@@ -328,7 +328,7 @@ export default function PinnedSections() {
         }, 0);
       });
       tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
-      tl.set('.contact-content-wrapper', { opacity: 0 }, 0);
+      tl.set('.contact-content-wrapper', { opacity: 1 }, 0);
 
       // Transition from State 01 to State 02 (happens in transition window 3.53 -> 4.0)
       tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.3, ease: 'power2.inOut' }, 3.53);
