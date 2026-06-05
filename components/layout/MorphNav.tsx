@@ -385,6 +385,7 @@ export default function MorphNav() {
   }, [navState]);
 
   const isAnimating = navState === 'opening' || navState === 'closing';
+  const hideCollapsedTriggerOnContact = activeSection === 'contact' && navState === 'closed';
 
   // Unified navigation click handler — uses cinematic chapter-transition system
   const handleNavigationClick = useCallback((e: React.MouseEvent, href: string, isFromOverlay: boolean = false) => {
@@ -522,6 +523,8 @@ export default function MorphNav() {
           left: isReallyCollapsed ? '100%' : '50%',
           x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,
           width: isReallyCollapsed ? (hovered ? 112 : 44) : 260,
+          opacity: hideCollapsedTriggerOnContact ? 0 : 1,
+          scale: hideCollapsedTriggerOnContact ? 0.94 : 1,
         }}
         transition={morphTransition}
         onMouseEnter={() => isReallyCollapsed && setHovered(true)}
@@ -545,7 +548,7 @@ export default function MorphNav() {
           position: 'fixed',
           top: '12px',
           zIndex: 1001,
-          pointerEvents: 'auto',
+          pointerEvents: hideCollapsedTriggerOnContact ? 'none' : 'auto',
           overflow: 'hidden',
           outline: 'none',
           WebkitTapHighlightColor: 'transparent',

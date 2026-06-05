@@ -1,11 +1,13 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
-import type { PointerEvent } from 'react';
+import type { MouseEvent, PointerEvent } from 'react';
 import { gsap } from '@/lib/gsap';
+import { SECTION_ANCHORS } from '@/lib/motion';
 
 type ContactWindow = Window & {
   __scrollTriggerProgress?: number;
+  __cinematicNavigate?: (targetProgress: number) => void;
 };
 
 type ContactCharRect = {
@@ -33,6 +35,18 @@ const TITLE_HOVER_MAX_RADIUS = 320;
 const TITLE_HOVER_VELOCITY_MULTIPLIER = 0.4;
 const TITLE_HOVER_INTERPOLATION = 0.15;
 const TITLE_HOVER_DECAY = 0.92;
+
+const QUICK_JUMP_LINKS = [
+  { label: 'HOME', target: SECTION_ANCHORS.hero },
+  { label: 'ABOUT', target: SECTION_ANCHORS.about },
+  { label: 'WORK', target: SECTION_ANCHORS.work },
+] as const;
+
+const CONNECT_LINKS = [
+  { label: 'CHANIAGOATWORK@GMAIL.COM', href: 'mailto:chaniagoatwork@gmail.com' },
+  { label: 'LINKEDIN ↗', href: 'https://linkedin.com' },
+  { label: 'GITHUB ↗', href: 'https://github.com/Justchaniago' },
+] as const;
 
 export default function Contact() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -188,6 +202,67 @@ export default function Contact() {
     startInteractionLoop();
   }
 
+  function handleQuickJump(e: MouseEvent<HTMLButtonElement>, target: number) {
+    e.preventDefault();
+    const navigate = (window as ContactWindow).__cinematicNavigate;
+
+    if (navigate) {
+      navigate(target);
+      return;
+    }
+
+    window.scrollTo({
+      top: target * Math.max(document.body.scrollHeight - window.innerHeight, 0),
+      behavior: 'smooth',
+    });
+  }
+
+  function animateUtilityLink(el: HTMLElement, active: boolean) {
+    const chars = Array.from(el.querySelectorAll<HTMLElement>('.contact-link-char'));
+    gsap.killTweensOf([el, ...chars]);
+
+    gsap.to(el, {
+      opacity: active ? 1 : 0.75,
+      letterSpacing: active ? '0.03em' : '0.02em',
+      duration: 0.32,
+      ease: 'power3.out',
+    });
+
+    if (active) {
+      gsap.fromTo(chars,
+        { y: 0 },
+        {
+          y: -6,
+          duration: 0.3,
+          ease: 'power3.out',
+          stagger: 0.03,
+          yoyo: true,
+          repeat: 1,
+        }
+      );
+      return;
+    }
+
+    gsap.to(chars, {
+      y: 0,
+      duration: 0.24,
+      ease: 'power3.out',
+      stagger: 0.015,
+    });
+  }
+
+  function renderUtilityText(label: string) {
+    return (
+      <span className="contact-link-text">
+        {Array.from(label).map((char, index) => (
+          <span className="contact-link-char" key={`${char}-${index}`}>
+            {char === ' ' ? '\u00A0' : char}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -304,6 +379,49 @@ export default function Contact() {
           opacity: 1,
         }}
       >
+        <div className="contact-utility-layer" aria-label="Contact utility links">
+          <div className="contact-utility-column">
+            <p className="contact-utility-label">QUICK JUMP</p>
+            <div className="contact-utility-list">
+              {QUICK_JUMP_LINKS.map((link) => (
+                <button
+                  className="contact-utility-link"
+                  key={link.label}
+                  onClick={(e) => handleQuickJump(e, link.target)}
+                  onBlur={(e) => animateUtilityLink(e.currentTarget, false)}
+                  onFocus={(e) => animateUtilityLink(e.currentTarget, true)}
+                  onMouseEnter={(e) => animateUtilityLink(e.currentTarget, true)}
+                  onMouseLeave={(e) => animateUtilityLink(e.currentTarget, false)}
+                  type="button"
+                >
+                  {renderUtilityText(link.label)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="contact-utility-column">
+            <p className="contact-utility-label">CONNECT</p>
+            <div className="contact-utility-list">
+              {CONNECT_LINKS.map((link) => (
+                <a
+                  className="contact-utility-link"
+                  href={link.href}
+                  key={link.label}
+                  onBlur={(e) => animateUtilityLink(e.currentTarget, false)}
+                  onFocus={(e) => animateUtilityLink(e.currentTarget, true)}
+                  onMouseEnter={(e) => animateUtilityLink(e.currentTarget, true)}
+                  onMouseLeave={(e) => animateUtilityLink(e.currentTarget, false)}
+                  rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  target={link.href.startsWith('http') ? '_blank' : undefined}
+                >
+                  {renderUtilityText(link.label)}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div
           ref={titleRef}
           className="contact-title-debug"
@@ -322,13 +440,91 @@ export default function Contact() {
             </span>
           ))}
         </div>
+
+        <div className="contact-footer-meta" aria-hidden="true">
+          <span>© 2026</span>
+          <span>by (Ferry Rusly Chaniago)</span>
+        </div>
       </div>
 
       <style>{`
+        .contact-utility-layer {
+          position: absolute;
+          top: clamp(108px, 16vh, 180px);
+          left: clamp(28px, 7vw, 128px);
+          right: clamp(28px, 7vw, 128px);
+          z-index: 52;
+          display: grid;
+          grid-template-columns: minmax(120px, 1fr) minmax(220px, 1fr);
+          column-gap: clamp(48px, 12vw, 220px);
+          font-family: var(--font-roboto), sans-serif;
+          pointer-events: auto;
+        }
+
+        .contact-utility-column {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .contact-utility-label {
+          margin: 0 0 18px;
+          font-family: var(--font-roboto), sans-serif;
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.18em;
+          line-height: 1;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        .contact-utility-list {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+        }
+
+        .contact-utility-link {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          margin: 0;
+          padding: 0;
+          font-family: var(--font-roboto), sans-serif;
+          font-size: 14px;
+          font-weight: 300;
+          letter-spacing: 0.02em;
+          line-height: 1.8;
+          color: rgba(255, 255, 255, 0.75);
+          text-align: left;
+          text-decoration: none;
+          cursor: pointer;
+          opacity: 0.75;
+        }
+
+        .contact-utility-link:focus-visible {
+          outline: none;
+        }
+
+        .contact-link-text {
+          display: inline-flex;
+          align-items: baseline;
+          line-height: 1.8;
+        }
+
+        .contact-link-char {
+          display: inline-block;
+          line-height: inherit;
+          vertical-align: bottom;
+          white-space: nowrap;
+          will-change: transform;
+        }
+
         .contact-title-debug {
           position: absolute;
           left: 50%;
-          bottom: 3vh;
+          bottom: clamp(18px, 2.1vh, 26px);
           transform: translateX(-50%);
           opacity: 0;
           display: flex;
@@ -375,13 +571,63 @@ export default function Contact() {
           will-change: transform, opacity;
         }
 
+        .contact-footer-meta {
+          position: absolute;
+          left: clamp(16px, 2.2vw, 32px);
+          right: clamp(16px, 2.2vw, 32px);
+          bottom: clamp(26px, 3vh, 36px);
+          z-index: 51;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          font-family: var(--font-roboto), sans-serif;
+          font-size: clamp(11px, 0.88vw, 14px);
+          font-weight: 400;
+          letter-spacing: 0;
+          line-height: 1;
+          color: rgba(255, 255, 255, 0.72);
+          pointer-events: none;
+          white-space: nowrap;
+        }
+
         @media (max-width: 768px) {
+          .contact-utility-layer {
+            top: clamp(92px, 13vh, 132px);
+            left: clamp(18px, 5vw, 28px);
+            right: clamp(18px, 5vw, 28px);
+            grid-template-columns: 1fr 1fr;
+            column-gap: 22px;
+          }
+
+          .contact-utility-label {
+            margin-bottom: 14px;
+            font-size: 9px;
+            letter-spacing: 0.14em;
+          }
+
+          .contact-utility-link {
+            font-size: clamp(10px, 2.6vw, 12px);
+            line-height: 1.75;
+          }
+
+          .contact-link-text {
+            line-height: 1.75;
+          }
+
           .contact-title-debug {
-            bottom: 3vh;
+            bottom: clamp(20px, 3.4vh, 30px);
             gap: 0;
             width: calc(100vw - clamp(20px, 5vw, 36px));
             max-width: calc(100vw - clamp(20px, 5vw, 36px));
             font-size: clamp(5.8rem, min(20vh, 16vw), 11rem);
+          }
+
+          .contact-footer-meta {
+            left: clamp(12px, 3.5vw, 20px);
+            right: clamp(12px, 3.5vw, 20px);
+            bottom: clamp(24px, 3.7vh, 34px);
+            font-size: clamp(9px, 2.6vw, 11px);
           }
         }
       `}</style>

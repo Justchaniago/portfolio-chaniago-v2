@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa } from "next/font/google";
+import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import LenisInit from "@/components/layout/LenisInit";
@@ -29,6 +29,12 @@ const notoPhagsPa = Noto_Sans_PhagsPa({
   weight: "400",
 });
 
+const roboto = Roboto({
+  variable: "--font-roboto",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
 const bitcountGridSingle = localFont({
   src: "./fonts/bitcount-grid-single-latin.woff2",
   variable: "--font-bitcount",
@@ -49,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${bitcountGridSingle.variable} h-full antialiased`}
+      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${roboto.variable} ${bitcountGridSingle.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />
