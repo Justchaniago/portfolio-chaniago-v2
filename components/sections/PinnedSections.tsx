@@ -52,7 +52,7 @@ export default function PinnedSections() {
               const dur = tl.duration();
               if (!dur) return progress;
               const time = progress * dur;
-              
+
               // Get scroll direction and velocity
               const direction = self ? self.direction : 1; // 1 = down, -1 = up
               const velocity = self ? Math.abs(self.getVelocity()) : 0;
@@ -177,7 +177,7 @@ export default function PinnedSections() {
               setVisibility(aboutEl, true);
               setVisibility(workEl, false);
               setVisibility(contactEl, false);
-              
+
               // Cross-fade the container opacities manually based on progress for absolute smoothness
               const fadeProgress = progress / 0.05; // 0.0 -> 1.0
               heroEl.style.opacity = String(1 - fadeProgress);
@@ -328,7 +328,7 @@ export default function PinnedSections() {
         }, 0);
       });
       tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
-      tl.set('.contact-content-wrapper', { opacity: 0, y: 30 }, 0);
+      tl.set('.contact-content-wrapper', { opacity: 0 }, 0);
 
       // Transition from State 01 to State 02 (happens in transition window 3.53 -> 4.0)
       tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.3, ease: 'power2.inOut' }, 3.53);
@@ -527,20 +527,20 @@ export default function PinnedSections() {
             ease: 'power3.inOut',
           }, start + 8.5);
         } else {
-          // For the LAST project, smooth exit before Contact section
+          // For the LAST project:
+          // Keep it fully stationary (no translation y).
+          // Disable pointer events late in the transition.
           tl.to(`.project-card-container-${project.id}`, {
-            y: '-100vh',
             pointerEvents: 'none',
-            duration: 1.0,
-            ease: 'power3.inOut',
-          }, start + 8.5);
+            duration: 0.1,
+          }, 37.0);
 
-          // Fade out the entire Work section container to reveal Contact underneath
+          // Fade out the entire Work section container once viewport is covered by the circle
           tl.to('.work-section-container', {
             opacity: 0,
             duration: 0.6,
             ease: 'power2.inOut',
-          }, start + 8.7);
+          }, 37.0);
         }
 
         // Smoothly transition HTML variables back to light mode as card exits off-screen (instant toggle)
@@ -556,7 +556,7 @@ export default function PinnedSections() {
       });
 
       // =========================================================================
-      // --- PHASE 6: Work Exit + Contact reveal (36.8 -> 37.4) ---
+      // --- PHASE 6: Work Exit + Contact reveal (36.8 -> 37.6) ---
       // =========================================================================
       tl.to('.contact-section-container', {
         opacity: 1,
@@ -565,12 +565,22 @@ export default function PinnedSections() {
         ease: 'none',
       }, 36.8);
 
-      tl.to('.contact-content-wrapper', {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: 'power2.out',
-      }, 37.0);
+      // Contact content wrapper initial state is managed inside Contact.tsx via scrollTriggerProgress event.
+
+      // Circle prototype transition animation (Step 4 Motion Validation)
+      tl.fromTo('.debug-circle',
+        {
+          y: 0,
+          scale: 1,
+        },
+        {
+          y: '-200vh',
+          scale: 1.15,
+          ease: 'none',
+          duration: 2.1,
+        },
+        35.5
+      );
     });
 
     return () => {
@@ -763,6 +773,21 @@ export default function PinnedSections() {
         <Hero />
         <About />
         <ProjectShowcase />
+        <div
+          className="debug-circle"
+          style={{
+            position: 'absolute',
+            width: '220vmax',
+            height: '220vmax',
+            borderRadius: '50%',
+            background: '#0A0A0A',
+            left: '50%',
+            bottom: '-222vmax',
+            transform: 'translateX(-50%)',
+            zIndex: 2,
+            pointerEvents: 'none'
+          }}
+        />
         <Contact />
 
       </div>
