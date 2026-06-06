@@ -10,6 +10,10 @@ import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
 import { projects } from '@/data/projects';
+import { createEclipseTransition, type EclipseTransition } from '../transitions/EclipseTransition';
+import { createContactScene, type ContactScene } from '../scenes/ContactScene';
+import { createWorkScene, type WorkScene } from '../scenes/WorkScene';
+import { createExperienceDirector, type ExperienceDirector } from '../orchestration/ExperienceDirector';
 
 
 export default function PinnedSections() {
@@ -21,6 +25,11 @@ export default function PinnedSections() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    let eclipseTransition: EclipseTransition | null = null;
+    let contactScene: ContactScene | null = null;
+    let workScene: WorkScene | null = null;
+    let experienceDirector: ExperienceDirector | null = null;
 
     const ctx = gsap.context(() => {
       const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
@@ -40,6 +49,26 @@ export default function PinnedSections() {
       const cardWidth = isMobile ? '88vw' : '85vw';
       const cardHeight = isMobile ? '56vh' : '70vh';
       const cardRadius = isMobile ? '32px' : '48px';
+      const contactFadeStart = 37.34;
+      const contactPhaseProgress = contactFadeStart / 37.6;
+      eclipseTransition = createEclipseTransition();
+      contactScene = createContactScene();
+      workScene = createWorkScene();
+      contactScene.prepare();
+      workScene.prepare();
+      experienceDirector = createExperienceDirector({
+        workScene,
+        contactScene,
+        eclipseTransition,
+      });
+
+      const activateContactPhase = () => {
+        experienceDirector?.requestContact();
+      };
+
+      const deactivateContactPhase = () => {
+        experienceDirector?.requestWorkRestore();
+      };
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -169,14 +198,18 @@ export default function PinnedSections() {
               el.style.pointerEvents = visible ? 'auto' : 'none';
             };
 
+            if (progress < contactPhaseProgress) {
+              deactivateContactPhase();
+            }
+
             // To make the transition from Hero to About smooth, we allow both sections to be visible
             // simultaneously during the transition window (progress 0.0 to 0.05).
             // This prevents the sudden "pop" or harsh cut of elements.
             if (progress < 0.05) {
               setVisibility(heroEl, true);
               setVisibility(aboutEl, true);
-              setVisibility(workEl, false);
-              setVisibility(contactEl, false);
+              workScene?.exit();
+              if (!contactScene?.isActive()) setVisibility(contactEl, false);
 
               // Cross-fade the container opacities manually based on progress for absolute smoothness
               const fadeProgress = progress / 0.05; // 0.0 -> 1.0
@@ -185,19 +218,18 @@ export default function PinnedSections() {
             } else if (progress >= 0.05 && progress < 0.129) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, true);
-              setVisibility(workEl, false);
-              setVisibility(contactEl, false);
+              workScene?.exit();
+              if (!contactScene?.isActive()) setVisibility(contactEl, false);
               aboutEl.style.opacity = '1';
-            } else if (progress >= 0.129 && progress < 0.955) {
+            } else if (progress >= 0.129 && progress < contactPhaseProgress) {
               setVisibility(heroEl, false);
               setVisibility(aboutEl, false);
-              setVisibility(workEl, true);
-              setVisibility(contactEl, false);
+              workScene?.enter();
+              if (!contactScene?.isActive()) setVisibility(contactEl, false);
             } else {
+              activateContactPhase();
               setVisibility(heroEl, false);
               setVisibility(aboutEl, false);
-              setVisibility(workEl, false);
-              setVisibility(contactEl, true);
             }
           },
         },
@@ -206,6 +238,7 @@ export default function PinnedSections() {
       // Expose the master timeline so cinematicNavigate can force it to a
       // destination progress synchronously (Fix A: settle before reveal).
       timelineRef.current = tl;
+      workScene.attachToTimeline(tl);
 
       // =========================================================================
       // --- PHASE 1: Hero fade & shift out (0.0 -> 0.45) ---
@@ -267,13 +300,7 @@ export default function PinnedSections() {
         opacity: 0,
         y: 24,
       }, 0);
-      // Work and Contact initial hidden states
-      tl.set('.work-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
-      tl.set('.work-intro-container', { opacity: 1, y: '0px' }, 0);
-      tl.set('.work-intro-line-1, .work-intro-line-2', {
-        yPercent: 100,
-        opacity: 0,
-      }, 0);
+      // Project setup remains in PinnedSections until the protected Project Expansion boundary is extracted.
       projects.forEach((project) => {
         tl.set(`.project-card-container-${project.id}`, {
           top: cardTop, // Rest at stable poster position by default
@@ -327,9 +354,6 @@ export default function PinnedSections() {
           pointerEvents: 'none',
         }, 0);
       });
-      tl.set('.contact-section-container', { opacity: 0, pointerEvents: 'none' }, 0);
-      tl.set('.contact-content-wrapper', { opacity: 1 }, 0);
-
       // Transition from State 01 to State 02 (happens in transition window 3.53 -> 4.0)
       tl.to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.3, ease: 'power2.inOut' }, 3.53);
       tl.to('.about-portrait-trigger', { pointerEvents: 'none', duration: 0.1 }, 3.53);
@@ -348,32 +372,7 @@ export default function PinnedSections() {
       tl.to('.about-sub-content', { opacity: 0, pointerEvents: 'none', y: -40, duration: 0.6, ease: 'power2.in' }, 4.85);
       tl.to('.about-glass-overlay', { opacity: 0, duration: 0.6, ease: 'power1.inOut' }, 4.85);
 
-      // Enable visibility for "Our Work" container
-      tl.to('.work-section-container', { opacity: 1, pointerEvents: 'auto', duration: 0.45, ease: 'none' }, 4.85);
-
-      // 1. Line 1 ("Our") reveals upward independently
-      tl.to('.work-intro-line-1', {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.0,
-        ease: 'premiumBezier',
-      }, 5.0);
-
-      // 2. Line 2 ("Work") reveals with a 150ms staggered delay
-      tl.to('.work-intro-line-2', {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.0,
-        ease: 'premiumBezier',
-      }, 5.15);
-
-      // 3. Seamless handoff: as user scrolls past, text subtly fades and moves upward
-      tl.to('.work-intro-container', {
-        y: '-80px',
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power2.inOut',
-      }, 7.2);
+      // Work root and WorkIntro lifecycle are owned by WorkScene.
 
       // =========================================================================
       // =========================================================================
@@ -535,12 +534,6 @@ export default function PinnedSections() {
             duration: 0.1,
           }, 37.0);
 
-          // Fade out the entire Work section container once viewport is covered by the circle
-          tl.to('.work-section-container', {
-            opacity: 0,
-            duration: 0.6,
-            ease: 'power2.inOut',
-          }, 37.0);
         }
 
         // Smoothly transition HTML variables back to light mode as card exits off-screen (instant toggle)
@@ -556,34 +549,16 @@ export default function PinnedSections() {
       });
 
       // =========================================================================
-      // --- PHASE 6: Work Exit + Contact reveal (36.8 -> 37.6) ---
+      // --- PHASE 6: Eclipse takeover, blackout hold, then Contact activation ---
       // =========================================================================
-      tl.to('.contact-section-container', {
-        opacity: 1,
-        pointerEvents: 'auto',
-        duration: 0.4,
-        ease: 'none',
-      }, 36.8);
-
-      // Contact content wrapper initial state is managed inside Contact.tsx via scrollTriggerProgress event.
-
-      // Circle prototype transition animation (Step 4 Motion Validation)
-      tl.fromTo('.debug-circle',
-        {
-          y: 0,
-          scale: 1,
-        },
-        {
-          y: '-200vh',
-          scale: 1.15,
-          ease: 'none',
-          duration: 2.1,
-        },
-        35.5
-      );
+      eclipseTransition.prepare(tl);
     });
 
     return () => {
+      experienceDirector?.destroy();
+      workScene?.destroy();
+      contactScene?.destroy();
+      eclipseTransition?.destroy();
       ctx.revert();
       timelineRef.current = null;
       gsap.set('html', {

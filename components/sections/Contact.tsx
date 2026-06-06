@@ -6,7 +6,6 @@ import { gsap } from '@/lib/gsap';
 import { SECTION_ANCHORS } from '@/lib/motion';
 
 type ContactWindow = Window & {
-  __scrollTriggerProgress?: number;
   __cinematicNavigate?: (targetProgress: number) => void;
 };
 
@@ -29,7 +28,6 @@ type ContactCharInteraction = {
 };
 
 const CONTACT_TITLE = 'JUSTCHANIAGO';
-const CONTACT_TITLE_PROGRESS = 0.971;
 const TITLE_HOVER_RADIUS = 150;
 const TITLE_HOVER_MAX_RADIUS = 320;
 const TITLE_HOVER_VELOCITY_MULTIPLIER = 0.4;
@@ -52,7 +50,6 @@ export default function Contact() {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerWrapperRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  const revealedRef = useRef(false);
   const charInteractionsRef = useRef<ContactCharInteraction[]>([]);
   const interactionFrameRef = useRef<number | null>(null);
   const pointerRef = useRef({
@@ -277,79 +274,6 @@ export default function Contact() {
       }
     };
   }, [cacheTitleRects]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    let revealTween: gsap.core.Tween | null = null;
-
-    const handleProgress = (e: Event) => {
-      const progress = (e as CustomEvent).detail?.progress ?? 0;
-      const isActive = progress >= CONTACT_TITLE_PROGRESS;
-      const val = isActive ? 'auto' : 'none';
-
-      if (innerWrapperRef.current) {
-        innerWrapperRef.current.style.pointerEvents = val;
-      }
-
-      if (isActive && titleRef.current && !revealedRef.current) {
-        revealedRef.current = true;
-        if (revealTween) revealTween.kill();
-
-        const chars = titleRef.current.querySelectorAll<HTMLElement>('.contact-title-char');
-        gsap.set(titleRef.current, { opacity: 1 });
-
-        revealTween = gsap.fromTo(
-          chars,
-          {
-            y: '112%',
-            opacity: 0,
-          },
-          {
-            y: '0%',
-            opacity: 1,
-            duration: 0.82,
-            stagger: {
-              each: 0.045,
-              from: 'center',
-            },
-            ease: 'power4.out',
-          }
-        );
-      }
-
-      if (!isActive && titleRef.current && revealedRef.current) {
-        revealedRef.current = false;
-        if (revealTween) revealTween.kill();
-        const chars = titleRef.current.querySelectorAll<HTMLElement>('.contact-title-char');
-
-        revealTween = gsap.to(chars, {
-          y: '112%',
-          opacity: 0,
-          duration: 0.82,
-          stagger: {
-            each: 0.045,
-            from: 'center',
-          },
-          ease: 'power4.in',
-          onComplete: () => {
-            if (titleRef.current) {
-              gsap.set(titleRef.current, { opacity: 0 });
-            }
-          },
-        });
-      }
-    };
-
-    window.addEventListener('scrollTriggerProgress', handleProgress);
-    const initialProgress = (window as ContactWindow).__scrollTriggerProgress ?? 0;
-    handleProgress(new CustomEvent('scrollTriggerProgress', { detail: { progress: initialProgress } }));
-
-    return () => {
-      window.removeEventListener('scrollTriggerProgress', handleProgress);
-      if (revealTween) revealTween.kill();
-    };
-  }, []);
 
   return (
     <section

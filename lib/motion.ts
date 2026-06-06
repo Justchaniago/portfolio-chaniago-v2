@@ -81,6 +81,6 @@ export function getActiveSectionIndex(progress: number): number {
   // Align active section detection perfectly with the actual visual visibility thresholds in PinnedSections.tsx
   if (progress < 0.05) return 0; // Hero
   if (progress >= 0.05 && progress < 0.129) return 1; // About
-  if (progress >= 0.129 && progress < 0.971) return 2; // Work
+  if (progress >= 0.129 && progress < 37.34 / 37.6) return 2; // Work
   return 3; // Contact
 }
