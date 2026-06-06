@@ -3,14 +3,14 @@
 ## Current Task
 
 ```txt
-No active task selected.
+ARCH-007A: ScrollOrchestrator readiness and extraction planning.
 ```
 
 ## Progress
 
 Bootstrap is complete. Repository readiness audit blockers have been resolved through documentation synchronization.
 
-ARCH-001, ARCH-002, ARCH-003A, ARCH-003B, ARCH-004A, ARCH-004B, ARCH-005A, ARCH-005B, ARCH-006A, and ARCH-006B are complete.
+ARCH-001, ARCH-002, ARCH-003A, ARCH-003B, ARCH-004A, ARCH-004B, ARCH-005A, ARCH-005B, ARCH-006A, ARCH-006B, and the ARCH-006B Post-Extraction Audit are complete.
 
 ## Completed
 
@@ -31,6 +31,7 @@ docs/04_ARCHITECTURE_DECISIONS.md
 docs/05_PROGRESS_LOG.md
 docs/06_ISSUES_AND_RESOLUTIONS.md
 docs/07_HANDOFF.md
+docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md
 ```
 
 - Consolidated Phase 0A, 0B, and 0C decisions into startup/state/ADR documentation.
@@ -65,6 +66,8 @@ docs/07_HANDOFF.md
 - Completed the first runtime ExperienceDirector extraction.
 - Moved Work/Eclipse/Contact forward and reverse sequencing intent out of `PinnedSections.tsx`.
 - Reduced `PinnedSections.tsx` to threshold evaluation and director request calls for the Contact phase bridge.
+- Created `docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md`.
+- Completed ARCH-006B Post-Extraction Audit covering ownership, orchestration, state, coupling, reduction, and future scroll readiness.
 
 ## Remaining
 

@@ -18,12 +18,12 @@ Sprint 1: Architecture Contracts
 
 ## Current Objective
 
-Select the next Sprint 1 task after completing the first ExperienceDirector runtime extraction.
+Begin ARCH-007A: ScrollOrchestrator readiness and extraction planning.
 
 ## Current Status
 
 ```txt
-READY
+READY FOR ARCH-007A
 ```
 
 Completed:
@@ -46,6 +46,7 @@ Completed:
 - ARCH-005B WorkScene root lifecycle extraction completed.
 - ARCH-006A ExperienceDirector orchestration plan completed.
 - ARCH-006B ExperienceDirector orchestration adapter extraction completed.
+- ARCH-006B Post Extraction Audit completed.
 
 ## Current Branch
 
@@ -69,15 +70,12 @@ architecture/v2-motion-refactor
 
 ## Current Priorities
 
-1. Select the next task explicitly before implementation.
-2. Prefer `ARCH-007A` unless superseded by an approved task.
-3. Keep future runtime migration narrowly scoped.
-4. Preserve current UI and UX.
+1. Complete ARCH-007A planning.
+2. Keep future runtime migration narrowly scoped.
+3. Preserve current UI and UX.
 
 ## Next Actions
 
-1. Read `03_TASK_REGISTRY.md`.
-2. Confirm next active task.
-3. Read relevant ADRs only.
-4. Define objective, deliverable, and done definition.
-5. Update progress and handoff before stopping.
+1. Promote ARCH-007A to active task.
+2. Write docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md.
+3. Update progress and handoff after planning is complete.
