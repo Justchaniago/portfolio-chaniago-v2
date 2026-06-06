@@ -17,7 +17,8 @@ Inventory count:
 Existing docs audited: 43
 DEV-002 planning docs created: 2
 DEV-003 migration report created: 1
-Total docs after DEV-003: 46
+DEV-004 startup governance docs created: 2
+Total docs after DEV-004B: 48
 ```
 
 ---
@@ -60,18 +61,18 @@ Rationale:
 
 ## Category Breakdown
 
-| Category | Existing Count | DEV-002 Outputs | DEV-003 Outputs | Total After DEV-003 |
-|---|---:|---:|---:|---:|
-| Foundation | 5 | 0 | 0 | 5 |
-| Governance | 3 | 1 | 0 | 4 |
-| Architecture | 19 | 0 | 0 | 19 |
-| Audits | 7 | 0 | 0 | 7 |
-| Handoffs | 1 | 0 | 0 | 1 |
-| Project Management | 4 | 0 | 0 | 4 |
-| Development | 1 | 1 | 1 | 3 |
-| Operations | 3 | 0 | 0 | 3 |
-| Archive | 0 | 0 | 0 | 0 |
-| Total | 43 | 2 | 1 | 46 |
+| Category | Existing Count | DEV-002 Outputs | DEV-003 Outputs | DEV-004 Outputs | Total After DEV-004B |
+|---|---:|---:|---:|---:|---:|
+| Foundation | 5 | 0 | 0 | 0 | 5 |
+| Governance | 3 | 1 | 0 | 2 | 6 |
+| Architecture | 19 | 0 | 0 | 0 | 19 |
+| Audits | 7 | 0 | 0 | 0 | 7 |
+| Handoffs | 1 | 0 | 0 | 0 | 1 |
+| Project Management | 4 | 0 | 0 | 0 | 4 |
+| Development | 1 | 1 | 1 | 0 | 3 |
+| Operations | 3 | 0 | 0 | 0 | 3 |
+| Archive | 0 | 0 | 0 | 0 | 0 |
+| Total | 43 | 2 | 1 | 2 | 48 |
 
 ---
 
@@ -125,6 +126,8 @@ Rationale:
 | `docs/01-governance/DOCUMENTATION_MAP.md` | Governance | DEV-002 complete documentation inventory and classification map. | Documentation governance | New DEV-002 output | Current docs inventory | `docs/01-governance/DOCUMENTATION_MAP.md` |
 | `docs/06-development/plans/DOCUMENTATION_RESTRUCTURE_PLAN.md` | Development | DEV-002 physical migration plan and risk assessment. | Documentation governance | New DEV-002 output | Documentation map | `docs/06-development/plans/DOCUMENTATION_RESTRUCTURE_PLAN.md` |
 | `docs/31_DOCUMENTATION_MIGRATION_REPORT.md` | Development | DEV-003 physical migration report and validation summary. | Documentation governance | New DEV-003 output | Documentation map, restructure plan | `docs/31_DOCUMENTATION_MIGRATION_REPORT.md` |
+| `docs/01-governance/AGENT_STARTUP_OPTIMIZATION_PLAN.md` | Governance | DEV-004A startup loading and classification plan. | Documentation governance | New DEV-004A output | Documentation map, bootstrap, handoff, task registry | `docs/01-governance/AGENT_STARTUP_OPTIMIZATION_PLAN.md` |
+| `docs/01-governance/AGENT_STARTUP_IMPLEMENTATION_AUDIT.md` | Governance | DEV-004B startup optimization implementation audit. | Documentation governance | New DEV-004B output | Startup optimization plan, bootstrap, handoff, task registry, documentation map | `docs/01-governance/AGENT_STARTUP_IMPLEMENTATION_AUDIT.md` |
 
 ---
 
@@ -195,6 +198,99 @@ For future agents:
 3. Read `05-project-management/03_TASK_REGISTRY.md`.
 4. Read `04-handoffs/07_HANDOFF.md`.
 5. Read `01-governance/30_DEVELOPMENT_GOVERNANCE.md`.
-6. Open only the architecture/audit documents relevant to the active task.
+6. Read this documentation map.
+7. Open only the documents relevant to the active task.
+
+Agents must not scan the entire docs directory by default.
+
+---
+
+## Startup Guide
+
+Mandatory startup documents:
+
+```txt
+docs/00-foundation/00_AGENT_BOOTSTRAP.md
+docs/00-foundation/01_CONTEXT_BRIEF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/04-handoffs/07_HANDOFF.md
+docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md
+docs/01-governance/DOCUMENTATION_MAP.md
+```
+
+### Architecture Task Workflow
+
+```txt
+Mandatory startup
+→ task discovery
+→ relevant foundation contracts
+→ relevant architecture family only
+→ related audit only if validating adoption
+→ execution
+```
+
+Do not load all architecture documents by default.
+
+### Bug Fix Workflow
+
+```txt
+Mandatory startup
+→ classify as bug fix
+→ issue discovery
+→ relevant owner architecture or feature spec
+→ focused code inspection
+→ smallest safe fix
+```
+
+Do not load historical docs, unrelated audits, or operations docs by default.
+
+### Feature Workflow
+
+```txt
+Mandatory startup
+→ classify as feature
+→ relevant feature spec
+→ relevant owner architecture
+→ design principles if visual output changes
+→ execution
+```
+
+Do not load audits, operations docs, or historical phase docs by default.
+
+### Audit Workflow
+
+```txt
+Mandatory startup
+→ identify target system
+→ target architecture docs
+→ target contracts
+→ prior audit for same target only
+→ audit
+```
+
+Do not load unrelated audits by default.
+
+### Deployment Workflow
+
+```txt
+Mandatory startup
+→ relevant operations runbook
+→ environment snapshot only if diagnosing environment state
+→ deployment or troubleshooting task
+```
+
+Do not load architecture, audit, or historical docs by default.
+
+### Documentation Workflow
+
+```txt
+Mandatory startup
+→ relevant documentation plan or governance artifact
+→ affected target documents
+→ validation
+```
+
+Do not inspect runtime code unless the documentation task explicitly requires code evidence.
 
 Physical migration is complete. Use the actual paths listed in this map.

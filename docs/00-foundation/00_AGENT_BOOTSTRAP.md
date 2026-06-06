@@ -123,6 +123,104 @@ Never reconstruct context from code alone.
 
 Documentation is the source of truth.
 
+## Startup Classification System
+
+All documentation is classified for startup loading.
+
+### MANDATORY
+
+Always load during startup.
+
+Mandatory documents:
+
+```txt
+docs/00-foundation/00_AGENT_BOOTSTRAP.md
+docs/00-foundation/01_CONTEXT_BRIEF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/04-handoffs/07_HANDOFF.md
+docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md
+docs/01-governance/DOCUMENTATION_MAP.md
+```
+
+### OPTIONAL
+
+Load only when task type, owner, or affected system requires them.
+
+Examples:
+
+```txt
+Architecture docs
+Development specs
+Operations docs
+Design principles
+Relevant ADR entries
+```
+
+### ON-DEMAND
+
+Load only when directly referenced by:
+
+```txt
+user request
+active task
+handoff
+issue log
+code finding
+audit requirement
+```
+
+Examples:
+
+```txt
+Audit reports
+Runtime extraction reports
+Progress log sections
+Issue log sections
+Environment snapshots
+```
+
+### HISTORICAL
+
+Do not load by default.
+
+Load only for:
+
+```txt
+regression investigation
+ownership provenance
+decision archaeology
+migration validation
+supersession review
+```
+
+## Startup Loading Rules
+
+Agents must not scan the entire docs directory.
+
+Agents must use `docs/01-governance/DOCUMENTATION_MAP.md` for discovery.
+
+Load order:
+
+```txt
+1. Mandatory startup documents
+2. Task classification through Development Governance
+3. Documentation Map routing
+4. Task-specific optional documents
+5. On-demand evidence only when required
+6. Historical documents only for investigation
+```
+
+Forbidden default behavior:
+
+```txt
+Do not load all architecture docs.
+Do not load all audit docs.
+Do not load all historical plans.
+Do not load operations docs unless the task is operational.
+Do not use broad docs discovery as a substitute for DOCUMENTATION_MAP.
+```
+
 ## Agent Startup Sequence
 
 Before touching code:
@@ -201,6 +299,40 @@ Understand:
 Read:
 
 ```txt
+/docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md
+```
+
+Purpose:
+
+Classify the task as:
+
+```txt
+Bug Fix
+Improvement
+Feature
+Architecture
+Audit
+Deployment
+Documentation
+```
+
+### Step 6
+
+Read:
+
+```txt
+/docs/01-governance/DOCUMENTATION_MAP.md
+```
+
+Purpose:
+
+Route to only the required follow-up documentation.
+
+### Step 7
+
+Read:
+
+```txt
 /docs/01-governance/04_ARCHITECTURE_DECISIONS.md
 ```
 
@@ -210,11 +342,211 @@ Do NOT re-review all ADRs.
 
 Read only what affects current work.
 
-### Step 6
+### Step 8
 
 Read relevant code.
 
 Only after all previous steps are complete.
+
+## TASK ROUTING MATRIX
+
+### Bug Fix
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Relevant owner architecture or feature spec
+```
+
+Optional:
+
+```txt
+Issue log section
+Relevant audit for the affected owner
+Design principles if visual behavior is affected
+```
+
+Do Not Load By Default:
+
+```txt
+Historical docs
+Unrelated audits
+Operations docs
+Unrelated architecture families
+```
+
+### Feature
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Relevant feature spec
+Relevant owner architecture
+```
+
+Optional:
+
+```txt
+Design principles for visual work
+Relevant contracts
+Related issue log section
+```
+
+Do Not Load By Default:
+
+```txt
+Audit docs
+Operations docs
+Historical phase docs
+Unrelated architecture families
+```
+
+### Architecture
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Relevant contracts
+Relevant architecture family
+Relevant ADR entries
+```
+
+Optional:
+
+```txt
+Prior audit for the same owner
+Runtime implementation report for the same owner
+Historical extraction plan when ownership provenance is needed
+```
+
+Do Not Load By Default:
+
+```txt
+All architecture docs
+All audits
+Operations docs
+Unrelated historical plans
+```
+
+### Audit
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Target system architecture
+Target contracts
+```
+
+Optional:
+
+```txt
+Prior audits for the same target
+Runtime reports for the same target
+Progress log evidence
+Issue log evidence
+```
+
+Do Not Load By Default:
+
+```txt
+Unrelated audits
+Operations docs
+Historical phase docs
+Unrelated architecture families
+```
+
+### Deployment
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Relevant operations runbook
+```
+
+Optional:
+
+```txt
+Environment snapshot
+Troubleshooting runbook
+Issue log section for known deployment failures
+```
+
+Do Not Load By Default:
+
+```txt
+Architecture docs
+Audit docs
+Historical plans
+Feature specs
+```
+
+### Documentation
+
+Required:
+
+```txt
+Bootstrap
+Context Brief
+Project State
+Task Registry
+Handoff
+Development Governance
+Documentation Map
+Relevant documentation plan or governance artifact
+```
+
+Optional:
+
+```txt
+Migration report
+Progress log section
+Issue log section
+Affected target documents
+```
+
+Do Not Load By Default:
+
+```txt
+Runtime code
+Operations docs unless documenting operations
+Unrelated audits
+Historical plans not related to the documentation task
+```
 
 ## Bootstrap Checklist
 

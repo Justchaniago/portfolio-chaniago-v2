@@ -3,14 +3,43 @@
 ## Current Task
 
 ```txt
-None. DEV-003 is complete; next task has not been selected.
+None. FEATURE-005R is complete; next task is FEATURE-004.
 ```
 
 ## Progress
 
 Bootstrap and Sprint 1 are complete. Repository readiness audit blockers have been resolved through documentation synchronization.
 
-ARCH-001 through ARCH-012B and DEV-001 through DEV-003 are complete.
+ARCH-001 through ARCH-012B, DEV-001 through DEV-003, and FEATURE-005R are complete.
+
+## HANDOFF CONSUMPTION RULES
+
+Read this handoff latest-context first.
+
+Required startup read:
+
+```txt
+Current Task
+Progress
+Remaining
+Known Risks
+Blockers
+Recommended Next Action
+```
+
+Read historical task details only when:
+
+```txt
+investigating regressions
+validating ownership history
+auditing previous decisions
+confirming why a boundary exists
+recovering from conflicting documentation
+```
+
+Do not read the entire handoff history by default.
+
+Use `docs/01-governance/DOCUMENTATION_MAP.md` to route from this handoff to the specific architecture, audit, or implementation document needed for the active task.
 
 ## Completed
 
@@ -130,6 +159,17 @@ lib/rendererManager.ts
 - Updated documentation references to migrated paths.
 - Created `docs/31_DOCUMENTATION_MIGRATION_REPORT.md`.
 - Completed DEV-003 Documentation Physical Migration.
+
+## FEATURE-005R completed done definition:
+
+- `lib/projects/types.ts` exists and defines complete schemas for Project, ProjectMedia, ProjectLink, ProjectStatus, ProjectSeo, and ProjectCaseStudy.
+- `lib/projects/repository.interface.ts` defines the ProjectRepository contract.
+- `lib/projects/localSeedSource.ts` maps legacy project data dynamically to normalized schema types.
+- `lib/projects/validation.ts` implements active schema checks, duplicate slug detection, and featured state constraint checking.
+- `lib/projects/localProjectRepository.ts` implements decoupled, source-agnostic project queries.
+- Build and git check commands pass.
+- No UI changes or regressions.
+- No Firebase integrations introduced in app/components/hooks.
 
 ## Remaining
 
