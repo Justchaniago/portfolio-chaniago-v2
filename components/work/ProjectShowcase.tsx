@@ -1,35 +1,96 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { projectRepository, type Project } from '@/lib/projects';
+import { gsap } from '@/lib/gsap';
 
 export default function ProjectShowcase() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [projects, setProjects] = useState<Project[]>([]);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    projectRepository.getPublishedProjects().then(setProjects);
+    // Keep repository pathway alive and active in background
+    projectRepository.getPublishedProjects()
+      .then((data) => {
+        setProjects(data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch projects in background:', err);
+      });
+  }, []);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Subtle reveal animation when section enters viewport
+      gsap.fromTo('.work-reveal-item',
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: 'power3.out',
+          stagger: 0.12,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 60%',
+            toggleActions: 'play none none reverse',
+          }
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
   }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="work-section"
       style={{
         position: 'relative',
         width: '100%',
+        height: '100vh',
         minHeight: '100vh',
         backgroundColor: '#FFFFFF',
         color: '#0A0A0A',
-        padding: '16vh 8vw',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: '6vh',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '0 8vw',
         zIndex: 2,
+        overflow: 'hidden',
       }}
     >
-      {/* Editorial Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Structural guidelines (visual flavor matching Contact and About) */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          border: '1px dashed rgba(10, 10, 10, 0.05)',
+          margin: '32px',
+          borderRadius: '24px',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Centered Composition */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '32px',
+          zIndex: 2,
+          maxWidth: '640px',
+        }}
+      >
         <span
+          className="work-reveal-item"
           style={{
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: '11px',
@@ -37,162 +98,74 @@ export default function ProjectShowcase() {
             letterSpacing: '0.2em',
             color: 'var(--color-accent, #3F702A)',
             textTransform: 'uppercase',
+            display: 'block',
           }}
         >
           03 / WORK
         </span>
-        <h2
+
+        <div
+          className="work-reveal-item"
           style={{
-            fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-            fontSize: 'clamp(44px, 7vw, 92px)',
-            fontWeight: 800,
-            letterSpacing: '-0.04em',
-            textTransform: 'uppercase',
-            margin: 0,
-            lineHeight: 0.95,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
           }}
         >
-          Selected Projects
-        </h2>
-      </div>
-
-      <div
-        style={{
-          width: '100%',
-          height: '1px',
-          backgroundColor: 'rgba(10, 10, 10, 0.12)',
-        }}
-      />
-
-      {/* Projects List Container */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          gap: '20px',
-        }}
-      >
-        {projects.map((project, idx) => (
-          <a
-            key={project.id}
-            href={`/work/${project.slug}`}
-            className="work-project-row"
+          <h2
             style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              padding: '36px 0',
-              borderBottom: '1px solid rgba(10, 10, 10, 0.08)',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(44px, 5.5vw, 84px)',
+              fontWeight: 800,
+              letterSpacing: '-0.04em',
+              textTransform: 'uppercase',
+              margin: 0,
+              lineHeight: 0.95,
+              color: '#0A0A0A',
             }}
           >
-            {/* Left side: Num and Title */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '32px' }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  opacity: 0.35,
-                }}
-              >
-                {idx < 9 ? `0${idx + 1}` : idx + 1}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h3
-                  className="work-project-title"
-                  style={{
-                    fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
-                    fontSize: 'clamp(28px, 4vw, 56px)',
-                    fontWeight: 700,
-                    margin: 0,
-                    letterSpacing: '-0.02em',
-                    textTransform: 'uppercase',
-                    transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}
-                >
-                  {project.title}
-                </h3>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono, monospace)',
-                    fontSize: '11px',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    opacity: 0.5,
-                  }}
-                >
-                  {project.category}
-                </span>
-              </div>
-            </div>
+            Future Experience
+          </h2>
+          <h3
+            style={{
+              fontFamily: '"PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif',
+              fontSize: 'clamp(28px, 3.5vw, 52px)',
+              fontWeight: 300,
+              letterSpacing: '-0.03em',
+              textTransform: 'uppercase',
+              margin: 0,
+              lineHeight: 1.0,
+              color: 'rgba(10, 10, 10, 0.45)',
+            }}
+          >
+            Under Construction
+          </h3>
+        </div>
 
-            {/* Right side: Summary / Impact */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', maxWidth: '35%' }}>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body), sans-serif',
-                  fontSize: 'clamp(14px, 1.2vw, 18px)',
-                  lineHeight: 1.4,
-                  margin: 0,
-                  textAlign: 'right',
-                  opacity: 0.7,
-                }}
-              >
-                {project.summary}
-              </p>
-              <div className="work-project-arrow" style={{ opacity: 0, transform: 'translateX(-10px)', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </div>
-            </div>
-          </a>
-        ))}
+        <div
+          className="work-reveal-item"
+          style={{
+            width: '80px',
+            height: '1px',
+            backgroundColor: 'rgba(10, 10, 10, 0.12)',
+            margin: '8px 0',
+          }}
+        />
+
+        <p
+          className="work-reveal-item"
+          style={{
+            fontFamily: 'var(--font-body), sans-serif',
+            fontSize: 'clamp(15px, 1.2vw, 19px)',
+            lineHeight: 1.5,
+            color: '#444444',
+            margin: 0,
+            maxWidth: '32ch',
+          }}
+        >
+          A new work experience is currently being crafted.
+        </p>
       </div>
-
-      <style>{`
-        .work-project-row:hover {
-          padding-left: 20px;
-          background-color: rgba(10, 10, 10, 0.02);
-          border-bottom-color: rgba(10, 10, 10, 0.25);
-        }
-        .work-project-row:hover .work-project-title {
-          color: var(--color-accent, #3F702A);
-        }
-        .work-project-row:hover .work-project-arrow {
-          opacity: 1 !important;
-          transform: translateX(0) !important;
-          color: var(--color-accent, #3F702A);
-        }
-        @media (max-width: 768px) {
-          #work-section {
-            padding: 12vh 6vw !important;
-          }
-          .work-project-row {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 16px !important;
-            padding: 24px 0 !important;
-          }
-          .work-project-row:hover {
-            padding-left: 0 !important;
-            background-color: transparent !important;
-          }
-          .work-project-row div:last-child {
-            max-width: 100% !important;
-            align-items: flex-start !important;
-          }
-          .work-project-row p {
-            text-align: left !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
