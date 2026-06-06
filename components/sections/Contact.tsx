@@ -4,6 +4,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
 import { gsap } from '@/lib/gsap';
 import { SECTION_ANCHORS } from '@/lib/motion';
+import { HoverSweep } from '@/lib/interactionPresets';
 
 type ContactWindow = Window & {
   __cinematicNavigate?: (targetProgress: number) => void;
@@ -52,6 +53,7 @@ export default function Contact() {
   const titleRef = useRef<HTMLDivElement>(null);
   const charInteractionsRef = useRef<ContactCharInteraction[]>([]);
   const interactionFrameRef = useRef<number | null>(null);
+  const hoverSweepRef = useRef<HoverSweep | null>(null);
   const pointerRef = useRef({
     x: 0,
     y: 0,
@@ -165,11 +167,20 @@ export default function Contact() {
     const pointer = pointerRef.current;
 
     cacheTitleRects();
-    pointer.x = e.clientX;
-    pointer.y = e.clientY;
-    pointer.previousX = e.clientX;
-    pointer.previousY = e.clientY;
-    pointer.velocity = 0;
+    if (hoverSweepRef.current) {
+      const state = hoverSweepRef.current.getPointerState();
+      pointer.x = state.x;
+      pointer.y = state.y;
+      pointer.previousX = state.x;
+      pointer.previousY = state.y;
+      pointer.velocity = state.velocity;
+    } else {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.previousX = e.clientX;
+      pointer.previousY = e.clientY;
+      pointer.velocity = 0;
+    }
     pointer.active = true;
     startInteractionLoop();
   }
@@ -180,14 +191,23 @@ export default function Contact() {
     }
 
     const pointer = pointerRef.current;
-    pointer.previousX = pointer.x;
-    pointer.previousY = pointer.y;
-    pointer.x = e.clientX;
-    pointer.y = e.clientY;
-    pointer.velocity = Math.hypot(
-      pointer.x - pointer.previousX,
-      pointer.y - pointer.previousY
-    );
+    if (hoverSweepRef.current) {
+      const state = hoverSweepRef.current.getPointerState();
+      pointer.previousX = pointer.x;
+      pointer.previousY = pointer.y;
+      pointer.x = state.x;
+      pointer.y = state.y;
+      pointer.velocity = state.velocity;
+    } else {
+      pointer.previousX = pointer.x;
+      pointer.previousY = pointer.y;
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.velocity = Math.hypot(
+        pointer.x - pointer.previousX,
+        pointer.y - pointer.previousY
+      );
+    }
     pointer.active = true;
 
     startInteractionLoop();
@@ -263,11 +283,27 @@ export default function Contact() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const hoverSweep = new HoverSweep({
+      radius: TITLE_HOVER_RADIUS,
+      maxRadius: TITLE_HOVER_MAX_RADIUS,
+      velocityMultiplier: TITLE_HOVER_VELOCITY_MULTIPLIER,
+      interpolation: TITLE_HOVER_INTERPOLATION,
+      decay: TITLE_HOVER_DECAY,
+    });
+
+    if (titleRef.current) {
+      hoverSweep.initialize({ target: titleRef.current });
+      hoverSweep.activate();
+    }
+    hoverSweepRef.current = hoverSweep;
+
     const handleResize = () => cacheTitleRects();
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      hoverSweep.destroy();
+      hoverSweepRef.current = null;
       if (interactionFrameRef.current !== null) {
         window.cancelAnimationFrame(interactionFrameRef.current);
         interactionFrameRef.current = null;

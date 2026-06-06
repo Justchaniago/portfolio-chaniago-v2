@@ -37,6 +37,22 @@ CANCELLED
 | ARCH-005B | DONE | P0 | Small runtime extraction of WorkScene root lifecycle boundary | ARCH-005A | Architecture |
 | ARCH-006A | DONE | P0 | ExperienceDirector readiness and orchestration planning | ARCH-005B | Architecture |
 | ARCH-006B | DONE | P0 | Small runtime extraction of ExperienceDirector orchestration adapter | ARCH-006A | Architecture |
+| ARCH-007A | DONE | P1 | ScrollOrchestrator readiness and extraction planning | ARCH-006B | Architecture |
+| ARCH-007B | DONE | P1 | Small runtime extraction of ScrollOrchestrator progress publishing | ARCH-007A | Architecture |
+| ARCH-008A | DONE | P1 | Motion System Architecture | ARCH-007B | Architecture |
+| ARCH-008B | DONE | P1 | Motion System Runtime & Presets | ARCH-008A | Architecture |
+| ARCH-008C | DONE | P1 | Motion Adoption Audit | ARCH-008B | Architecture |
+| ARCH-009A | DONE | P1 | Interaction System Architecture | ARCH-008C | Architecture |
+| ARCH-009B | DONE | P1 | Interaction System Runtime & Presets | ARCH-009A | Architecture |
+| ARCH-009C | DONE | P1 | Interaction Adoption Audit | ARCH-009B | Architecture |
+| ARCH-010A | DONE | P1 | Renderer System Architecture | ARCH-009C | Architecture |
+| ARCH-010B | DONE | P1 | Renderer Contracts | ARCH-010A | Architecture |
+| ARCH-010C | DONE | P1 | Hero Fluid Extraction Plan | ARCH-010B | Architecture |
+| ARCH-010D | DONE | P1 | Hero Fluid Runtime Extraction | ARCH-010C | Architecture |
+| ARCH-010E | DONE | P1 | Hero Fluid Post-Extraction Audit | ARCH-010D | Architecture |
+| ARCH-011A | DONE | P1 | Renderer Manager Implementation Planning | ARCH-010E | Architecture |
+| ARCH-011B | DONE | P1 | Renderer Manager Runtime Implementation | ARCH-011A | Architecture |
+| ARCH-011C | DONE | P1 | Renderer Manager Adoption Audit | ARCH-011B | Architecture |
 
 ### ARCH-001 Objective
 
@@ -72,8 +88,7 @@ Progress log and handoff are updated.
 
 | Task ID | Status | Priority | Task | Dependencies | Owner Type |
 |---|---:|---:|---|---|---|
-| ARCH-007A | TODO | P1 | ScrollOrchestrator readiness and extraction planning | ARCH-006B | Architecture |
-| ARCH-008 | TODO | P2 | Define motion token constants and first consumer | ADR baseline | Motion |
+| ARCH-012A | TODO | P1 | Advanced Scroll System Planning | ARCH-011C | Architecture |
 
 ## Current Active Task
 
@@ -81,7 +96,7 @@ Progress log and handoff are updated.
 None.
 ```
 
-ARCH-001, ARCH-002, ARCH-003A, ARCH-003B, ARCH-004A, ARCH-004B, ARCH-005A, ARCH-005B, ARCH-006A, and ARCH-006B are complete. Select the next task before implementation begins.
+ARCH-001 through ARCH-011C are complete. Select the next task before implementation begins.
 
 ### ARCH-003B Objective
 
@@ -275,9 +290,361 @@ PinnedSections still owns ScrollTrigger, snap, thresholds, project sequence, Pro
 WorkScene is visually unchanged.
 ContactScene is visually unchanged.
 EclipseTransition is visually unchanged.
-ProjectCard and Project Expansion are unchanged.
 Build passes.
 Progress log and handoff are updated.
+```
+
+### ARCH-007A Objective
+
+```txt
+Define ScrollOrchestrator responsibilities, state model, progress publishing architecture, snapping boundaries, and ARCH-007B integration limits without runtime changes.
+```
+
+### ARCH-007A Deliverable
+
+```txt
+docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
+```
+
+### ARCH-007A Done Definition
+
+```txt
+ScrollOrchestrator responsibility model defined.
+Scroll state model defined.
+Progress publication architecture mapped.
+ExperienceDirector integration mapped.
+ARCH-007B extraction boundaries defined.
+No runtime code changed.
+Build passes.
+```
+
+### ARCH-007B Objective
+
+```txt
+Extract scroll progress, direction, velocity, and progress publication ownership out of PinnedSections and into a stateful ScrollOrchestrator module.
+```
+
+### ARCH-007B Deliverable
+
+```txt
+components/orchestration/ScrollOrchestrator.ts containing state tracking, update(), and subscribe() hooks.
+PinnedSections.tsx updated to delegate scroll progress to ScrollOrchestrator.
+```
+
+### ARCH-007B Done Definition
+
+```txt
+ScrollOrchestrator exists.
+Scroll progress/direction/velocity owned by ScrollOrchestrator.
+Progress publishing (window properties/events) handled by ScrollOrchestrator.
+ExperienceDirector integration established via subscriber.
+PinnedSections scroll state dependencies removed.
+ScrollTrigger and Snap remain in PinnedSections.
+No visual or behavioral changes.
+Build passes.
+```
+
+### ARCH-008A Objective
+
+```txt
+Define a unified Motion System, token taxonomy, layering hierarchy, GSAP governance standards, premium motion principles, and the ARCH-008B runtime scope without runtime code changes.
+```
+
+### ARCH-008A Deliverable
+
+```txt
+docs/16_MOTION_SYSTEM_ARCHITECTURE.md
+```
+
+### ARCH-008A Done Definition
+
+```txt
+Motion audit completed.
+Motion responsibility model defined.
+Duration, Easing, Distance, and Stagger tokens established.
+Motion layers defined.
+GSAP governance guidelines set.
+Awwwards-quality premium motion principles documented.
+ARCH-008B implementation scope defined.
+No runtime code changed.
+Build passes.
+```
+
+### ARCH-008C Objective
+
+```txt
+Conduct a comprehensive Motion Adoption Audit to validate token centralization, preset reuse quality, motion system scalability, governance compliance, remaining motion debt, and Phase 2 planning without runtime changes.
+```
+
+### ARCH-008C Deliverable
+
+```txt
+docs/17_MOTION_ADOPTION_AUDIT.md
+```
+
+### ARCH-008C Done Definition
+
+```txt
+Motion System centralization validated.
+Preset scalability and reusability evaluated.
+GSAP governance audited.
+Motion debt inventory mapped.
+Future adds stress-tested.
+Sprint 1 completion reviewed and Phase 2 focus recommended.
+No runtime code changed.
+Build passes.
+```
+
+### ARCH-009A Objective
+
+```txt
+Define an Interaction System responsibility model, layered hierarchy, interaction presets, and the ARCH-009B runtime scope without runtime code changes.
+```
+
+### ARCH-009A Deliverable
+
+```txt
+docs/18_INTERACTION_SYSTEM_ARCHITECTURE.md
+```
+
+### ARCH-009A Done Definition
+
+```txt
+Interaction audit completed.
+Interaction ownership model defined.
+Interaction layers defined.
+Interaction presets evaluated.
+Premium interaction principles documented.
+ARCH-009B implementation scope defined.
+No runtime code changed.
+Build passes.
+```
+
+### ARCH-009B Objective
+
+```txt
+Create the centralized pointer tracking in InteractionSystem and HoverSweep preset, and adapt the Contact Hover Sweep to consume them with zero regressions and no legacy cleanup.
+```
+
+### ARCH-009B Deliverable
+
+```txt
+lib/interactionSystem.ts
+lib/interactionPresets.ts
+Contact.tsx modified to use Adapter integration
+```
+
+### ARCH-009B Done Definition
+
+```txt
+InteractionSystem exists.
+HoverSweep preset exists.
+Contact Hover Sweep consumes InteractionSystem via Adapter.
+Visual, motion, and decay parity is 100% identical.
+No legacy code cleanup is performed in Contact.tsx (deferred to ARCH-009C).
+Build passes.
+```
+
+### ARCH-009C Objective
+
+```txt
+Validate and audit the adoption of InteractionSystem, identify remaining interaction debt, formulate plans to migrate other interactions, and execute legacy cleanups.
+```
+
+### ARCH-009C Deliverable
+
+```txt
+docs/19_INTERACTION_ADOPTION_AUDIT.md
+Legacy cleanup in Contact.tsx (removal of redundant refs and event handlers)
+```
+
+### ARCH-009C Done Definition
+
+```txt
+Interaction System adoption validated.
+Remaining interaction debt listed and categorized.
+Contact.tsx legacy pointer tracking and refs removed.
+No visual or behavioral changes.
+Build passes.
+```
+
+### ARCH-010A Objective
+
+```txt
+Determine whether the portfolio requires a centralized Renderer System, audit current loops, define rendering boundaries, and structure technology strategy for future features without runtime modifications.
+```
+
+### ARCH-010A Deliverable
+
+```txt
+docs/20_RENDERER_SYSTEM_ARCHITECTURE.md
+```
+
+### ARCH-010A Done Definition
+
+```txt
+Uncoordinated render loops audited.
+Centralized Renderer System boundaries defined.
+WebGL/canvas performance governance rules established.
+TypeScript contract interfaces proposed.
+Build passes.
+```
+
+### ARCH-010B Objective
+
+```txt
+Define the formal TypeScript contracts and mock configurations for the central Renderer Manager and its first consumer (Hero fluid simulation) without runtime changes.
+```
+
+### ARCH-010B Deliverable
+
+```txt
+lib/rendererContracts.ts (or core contracts additions)
+Mock RendererManager structure
+```
+
+### ARCH-010B Done Definition
+
+```txt
+RendererModuleContract defined in codebase.
+RendererManagerContract defined in codebase.
+Mock/stub configurations verified for HeroFluidRenderer.
+Build passes.
+```
+
+### ARCH-010C Objective
+
+```txt
+Document the extraction plan for the first renderer consumer (Hero fluid simulation), outlining how the Float32Array physics steps and pixel-rendering operations will be wrapped in a compliant RendererModule class.
+```
+
+### ARCH-010C Deliverable
+
+```txt
+docs/22_HERO_FLUID_EXTRACTION_PLAN.md
+```
+
+### ARCH-010C Done Definition
+
+```txt
+HeroFluidRenderer class extraction boundaries defined.
+Data-flow and event-flow maps for mouse disturbances established.
+Visual and performance regression risks analyzed.
+No runtime code modified.
+Build passes.
+```
+
+### ARCH-010D Objective
+
+```txt
+Extract the Hero fluid simulation from hooks/useFluidSim.ts into a separate class module HeroFluidRenderer conforming to the RendererModuleContract.
+```
+
+### ARCH-010D Deliverable
+
+```txt
+lib/renderers/HeroFluidRenderer.ts
+hooks/useFluidSim.ts (refactored as adapter or removed)
+```
+
+### ARCH-010D Done Definition
+
+```txt
+HeroFluidRenderer class exists and implements RendererModuleContract.
+Wave equation logic and Float32Array arrays owned by the class.
+Canvas repainting logic encapsulated.
+Visual and performance parity is 100% identical.
+Build passes.
+```
+
+### ARCH-010E Objective
+
+```txt
+Perform a detailed post-extraction verification audit of HeroFluidRenderer, validating visual parity, memory lifecycle safety, and contract gaps.
+```
+
+### ARCH-010E Deliverable
+
+```txt
+docs/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
+```
+
+### ARCH-010E Done Definition
+
+```txt
+Verification audit completed.
+LOC metrics counted and mapped.
+Lifecycle memory safety verified.
+Remaining coupling analyzed and documented.
+Readiness verdict declared.
+```
+
+### ARCH-011A Objective
+
+```txt
+Define the RendererManager architecture, lifecycle model, registration model, visibility sleep, resize flow, and performance guidelines without implementation.
+```
+
+### ARCH-011A Deliverable
+
+```txt
+docs/25_RENDERER_MANAGER_ARCHITECTURE.md
+```
+
+### ARCH-011A Done Definition
+
+```txt
+Architecture defined.
+Lifecycle model, registration, visibility sleep, and resize flow mapped.
+Performance limits specified.
+HeroFluidRenderer compatibility verified.
+```
+
+### ARCH-011B Objective
+
+```txt
+Create a central RendererManager coordinating registration, requestAnimationFrame ticks, ResizeObservers, and Visibility Sleep gating for all modules.
+```
+
+### ARCH-011B Deliverable
+
+```txt
+lib/rendererManager.ts
+```
+
+### ARCH-011B Done Definition
+
+```txt
+RendererManager exists and manages RendererModuleContracts.
+Unified RAF tick coordinates registered modules.
+Quality policies and Visibility Sleep gating documented as contract gaps for follow-up.
+HeroFluidRenderer registered under the manager.
+Build passes.
+```
+
+### ARCH-011C Objective
+
+```txt
+Perform a code-level adoption audit of the RendererManager implementation introduced in ARCH-011B.
+```
+
+### ARCH-011C Deliverable
+
+```txt
+docs/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
+```
+
+### ARCH-011C Done Definition
+
+```txt
+RAF ownership audited.
+Ownership boundaries audited.
+Renderer independence audited.
+Registration lifecycle audited.
+Remaining renderer debt classified.
+Contract gaps documented without fixes.
+Visual parity status remains UNVERIFIED.
+Build passes.
 ```
 
 ## Completed Planning Tasks

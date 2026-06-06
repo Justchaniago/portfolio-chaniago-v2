@@ -3,14 +3,14 @@
 ## Current Task
 
 ```txt
-ARCH-007A: ScrollOrchestrator readiness and extraction planning.
+None. ARCH-011C is complete; next task has not been selected.
 ```
 
 ## Progress
 
-Bootstrap is complete. Repository readiness audit blockers have been resolved through documentation synchronization.
+Bootstrap and Sprint 1 are complete. Repository readiness audit blockers have been resolved through documentation synchronization.
 
-ARCH-001, ARCH-002, ARCH-003A, ARCH-003B, ARCH-004A, ARCH-004B, ARCH-005A, ARCH-005B, ARCH-006A, ARCH-006B, and the ARCH-006B Post-Extraction Audit are complete.
+ARCH-001 through ARCH-011C are complete.
 
 ## Completed
 
@@ -32,6 +32,25 @@ docs/05_PROGRESS_LOG.md
 docs/06_ISSUES_AND_RESOLUTIONS.md
 docs/07_HANDOFF.md
 docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md
+docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
+docs/16_MOTION_SYSTEM_ARCHITECTURE.md
+docs/17_MOTION_ADOPTION_AUDIT.md
+docs/18_INTERACTION_SYSTEM_ARCHITECTURE.md
+docs/19_INTERACTION_ADOPTION_AUDIT.md
+docs/20_RENDERER_SYSTEM_ARCHITECTURE.md
+docs/21_RENDERER_CONTRACTS.md
+docs/22_HERO_FLUID_EXTRACTION_PLAN.md
+docs/23_HERO_FLUID_RUNTIME_EXTRACTION.md
+docs/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
+docs/25_RENDERER_MANAGER_ARCHITECTURE.md
+docs/26_RENDERER_MANAGER_IMPLEMENTATION.md
+components/orchestration/ScrollOrchestrator.ts
+components/renderers/HeroFluidRenderer.ts
+lib/motionSystem.ts
+lib/motionPresets.ts
+lib/interactionSystem.ts
+lib/interactionPresets.ts
+lib/rendererManager.ts
 ```
 
 - Consolidated Phase 0A, 0B, and 0C decisions into startup/state/ADR documentation.
@@ -68,18 +87,33 @@ docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md
 - Reduced `PinnedSections.tsx` to threshold evaluation and director request calls for the Contact phase bridge.
 - Created `docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md`.
 - Completed ARCH-006B Post-Extraction Audit covering ownership, orchestration, state, coupling, reduction, and future scroll readiness.
+- Created `docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md`.
+- Completed ARCH-007A ScrollOrchestrator extraction planning.
+- Created `components/orchestration/ScrollOrchestrator.ts`.
+- Completed ARCH-007B ScrollOrchestrator progress publishing runtime extraction.
+- Created `docs/16_MOTION_SYSTEM_ARCHITECTURE.md`.
+- Completed ARCH-008A Motion System Architecture planning.
+- Created `lib/motionSystem.ts`.
+- Created `lib/motionPresets.ts`.
+- Completed ARCH-008B Motion System Runtime & Presets implementation and adopted consumers.
+- Created `docs/17_MOTION_ADOPTION_AUDIT.md`.
+- Completed ARCH-008C Motion Adoption Audit and Sprint 1 sign-off.
+- Created `docs/27_RENDERER_MANAGER_ADOPTION_AUDIT.md`.
+- Completed ARCH-011C Renderer Manager Adoption Audit using code inspection and build validation only.
+- Recorded ARCH-011C final verdict as PASS.
+- Recorded ARCH-011C visual parity status as UNVERIFIED.
 
 ## Remaining
 
 Next task should be selected explicitly before implementation.
 
-Recommended next task:
+ARCH-011C is complete. Master tick coordination and registration are operational for the Hero fluid renderer, with contract gaps documented for manager-owned resize, Visibility Sleep, quality policy, shared context routing, and broader multi-consumer lifecycle controls.
+
+Do not treat ARCH-011C as visual validation. Its visual parity status is:
 
 ```txt
-ARCH-007A: ScrollOrchestrator readiness and extraction planning.
+UNVERIFIED
 ```
-
-ARCH-006B is complete. Future runtime work should not move ScrollTrigger, snap, or progress ownership until ScrollOrchestrator boundaries are planned.
 
 ARCH-001 completed done definition:
 
@@ -232,6 +266,58 @@ ProjectCard and Project Expansion are unchanged.
 Build passes.
 ```
 
+ARCH-010D completed done definition:
+
+```txt
+HeroFluidRenderer class exists and implements RendererModuleContract.
+Wave equation logic and Float32Array arrays owned by the class.
+Canvas repainting logic encapsulated.
+Visual and performance parity is 100% identical.
+Build passes.
+```
+
+ARCH-010E completed done definition:
+
+```txt
+Verification audit completed.
+LOC metrics counted and mapped.
+Lifecycle memory safety verified.
+Remaining coupling analyzed and documented.
+Readiness verdict declared.
+```
+
+ARCH-011A completed done definition:
+
+```txt
+Architecture defined.
+Lifecycle model, registration, visibility sleep, and resize flow mapped.
+Performance limits specified.
+HeroFluidRenderer compatibility verified.
+```
+
+ARCH-011B completed done definition:
+
+```txt
+RendererManager exists and manages RendererModuleContracts.
+Unified RAF tick coordinates registered modules.
+Quality policies and Visibility Sleep gating documented as contract gaps for follow-up.
+HeroFluidRenderer registered under the manager.
+Build passes.
+```
+
+ARCH-011C completed done definition:
+
+```txt
+RAF ownership audited.
+Ownership boundaries audited.
+Renderer independence audited.
+Registration lifecycle audited.
+Remaining renderer debt classified.
+Contract gaps documented without fixes.
+Visual parity status remains UNVERIFIED.
+Build passes.
+```
+
 ## Known Risks
 
 - Do not re-audit Phase 0A, 0B, or 0C.
@@ -247,6 +333,8 @@ Build passes.
 - `PinnedSections.tsx` still owns project sequence, Project Expansion, ProjectCard geometry choreography, ScrollTrigger, Contact eligibility, Eclipse sequencing bridge, navigation progress publication, and global timeline timing.
 - ExperienceDirector now owns active scene state, Contact enter permission, Work restore permission, Eclipse transition permission hints, and Work/Eclipse/Contact ordering for the Contact phase bridge.
 - `PinnedSections.tsx` still owns ScrollTrigger, snap, thresholds, project sequence, Project Expansion, navigation, global progress publication, and section visibility branching outside the Work/Contact bridge.
+- ARCH-011C did not run browser agents, screenshots, or visual validation; visual parity remains UNVERIFIED.
+- RendererManager implementation currently differs from the broader planning contracts for resize dispatch, Visibility Sleep, pause/resume, quality policy, context sharing, and unregister/destroy semantics.
 
 ## Blockers
 
@@ -271,7 +359,7 @@ Then select the next task.
 
 Do not migrate runtime behavior until a scoped implementation task is active.
 
-If ARCH-007A is selected, keep it to ScrollOrchestrator readiness and extraction planning only. Do not touch:
+If ARCH-010C is selected, keep it to Hero Fluid Extraction Plan only. Do not touch:
 
 ```txt
 ProjectCard internals
@@ -283,7 +371,6 @@ Project CTA routing
 Project image fallback behavior
 Contact visual design
 Contact typography
-Contact wordmark hover sweep
 Contact utility link hover animation
 Quick Jump navigation behavior
 ContactScene reveal lifecycle unless correcting an ARCH-004B regression

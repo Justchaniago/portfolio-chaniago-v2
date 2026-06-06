@@ -18,12 +18,12 @@ Sprint 1: Architecture Contracts
 
 ## Current Objective
 
-Begin ARCH-007A: ScrollOrchestrator readiness and extraction planning.
+ARCH-011C Renderer Manager Adoption Audit complete. Next task not started.
 
 ## Current Status
 
 ```txt
-READY FOR ARCH-007A
+DONE
 ```
 
 Completed:
@@ -47,6 +47,22 @@ Completed:
 - ARCH-006A ExperienceDirector orchestration plan completed.
 - ARCH-006B ExperienceDirector orchestration adapter extraction completed.
 - ARCH-006B Post Extraction Audit completed.
+- ARCH-007A ScrollOrchestrator extraction planning completed.
+- ARCH-007B ScrollOrchestrator progress publishing extraction completed.
+- ARCH-008A Motion System Architecture completed.
+- ARCH-008B Motion System Runtime & Presets completed.
+- ARCH-008C Motion Adoption Audit completed.
+- ARCH-009A Interaction System Architecture completed.
+- ARCH-009B Interaction System Runtime & Presets completed.
+- ARCH-009C Interaction Adoption Audit completed.
+- ARCH-010A Renderer System Architecture completed.
+- ARCH-010B Renderer Contracts completed.
+- ARCH-010C Hero Fluid Extraction Plan completed.
+- ARCH-010D Hero Fluid Runtime Extraction completed.
+- ARCH-010E Hero Fluid Post-Extraction Audit completed.
+- ARCH-011A Renderer Manager Implementation Planning completed.
+- ARCH-011B Renderer Manager Runtime Implementation completed.
+- ARCH-011C Renderer Manager Adoption Audit completed.
 
 ## Current Branch
 
@@ -60,22 +76,28 @@ architecture/v2-motion-refactor
 - Current refactor targets are `components/sections/Contact.tsx`, `components/sections/PinnedSections.tsx`, and `lib/motion.ts`.
 - Future implementation must avoid large speculative abstractions.
 - Future runtime extractions must preserve current UI and visual behavior.
-- `PinnedSections.tsx` still owns scroll triggering, Contact activation, Work visibility, and navigation progress publication.
+- `PinnedSections.tsx` still owns ScrollTrigger setup and Snap calculations.
 - Contact reveal lifecycle ownership has been extracted into `ContactScene`.
-- `PinnedSections.tsx` still owns Contact eligibility, Work visibility, ScrollTrigger, and global progress publication.
 - Work root lifecycle ownership has been extracted into `WorkScene`.
 - Project Expansion and ProjectCard remain protected and unmigrated.
-- ExperienceDirector now owns Work/Eclipse/Contact orchestration intent for the Contact phase bridge.
-- PinnedSections still owns ScrollTrigger, snap, thresholds, project sequence, Project Expansion, navigation, and global progress publication.
+- ExperienceDirector owns Work/Eclipse/Contact orchestration intent.
+- ScrollOrchestrator owns scroll progress, direction, velocity tracking, and progress publication.
+- Motion System owns duration, ease, stagger, and distance tokens.
+- Interaction System tracks central pointer coordinates, velocity, and active status.
+- Contact Hover Sweep consumes centralized Interaction System via HoverSweep preset with zero legacy cleanup.
+- Refactoring the remaining legacy components (and cleaning up duplicated mouse trackers in Contact) is audited in ARCH-009C.
+- Centralized Renderer System specified to coordinate WebGL and Canvas loops in ARCH-010A.
+- Renderer contracts and module interfaces defined in ARCH-010B.
+- Hero fluid extraction boundaries and 4-phase sequence planned in ARCH-010C.
+- RendererManager adoption passed code inspection in ARCH-011C; visual parity remains UNVERIFIED.
+- RendererManager currently satisfies Hero fluid timing ownership, but documented resize, visibility sleep, quality policy, and shared context contracts remain implementation gaps.
 
 ## Current Priorities
 
-1. Complete ARCH-007A planning.
-2. Keep future runtime migration narrowly scoped.
-3. Preserve current UI and UX.
+1. Keep ARCH-011C visual parity status as UNVERIFIED unless browser/screenshot validation is explicitly run in a later task.
+2. Select the next architecture task explicitly before starting new planning or runtime implementation.
 
 ## Next Actions
 
-1. Promote ARCH-007A to active task.
-2. Write docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md.
-3. Update progress and handoff after planning is complete.
+1. Review ARCH-011C documented RendererManager contract gaps before adding the next renderer consumer.
+2. Select the next task explicitly; ARCH-012A has not been started by ARCH-011C.

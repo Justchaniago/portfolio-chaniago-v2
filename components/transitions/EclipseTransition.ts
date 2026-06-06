@@ -1,4 +1,6 @@
 import { gsap } from '@/lib/gsap';
+import { motionPresets } from '@/lib/motionPresets';
+import { MOTION_SCALES } from '@/lib/motionSystem';
 
 export type EclipseTransitionState =
   | 'IDLE'
@@ -52,33 +54,24 @@ export function createEclipseTransition(
       timeline.set(target, {
         opacity: 0,
         y: '8vmax',
-        scale: 0.82,
+        scale: MOTION_SCALES.eclipseStart,
       }, 0);
 
       timeline.to(target, {
-        opacity: 1,
-        y: '-18vmax',
-        scale: 0.9,
-        ease: 'power4.inOut',
-        duration: ECLIPSE_TRANSITION_TIMING.riseStart - ECLIPSE_TRANSITION_TIMING.arcStart,
+        ...motionPresets.eclipseRise,
         onStart: transition.enter,
         onReverseComplete: transition.reset,
       }, ECLIPSE_TRANSITION_TIMING.arcStart);
 
       timeline.to(target, {
-        y: '-230vmax',
-        scale: 1.08,
-        ease: 'expo.inOut',
-        duration: ECLIPSE_TRANSITION_TIMING.fullCover - ECLIPSE_TRANSITION_TIMING.riseStart,
+        ...motionPresets.eclipseCover,
         onStart: transition.enter,
         onComplete: transition.cover,
         onReverseComplete: transition.enter,
       }, ECLIPSE_TRANSITION_TIMING.riseStart);
 
       timeline.to(target, {
-        opacity: 1,
-        duration: ECLIPSE_TRANSITION_TIMING.blackoutEnd - ECLIPSE_TRANSITION_TIMING.fullCover,
-        ease: 'none',
+        ...motionPresets.eclipseBlackout,
         onStart: transition.cover,
         onComplete: transition.complete,
         onReverseComplete: transition.cover,

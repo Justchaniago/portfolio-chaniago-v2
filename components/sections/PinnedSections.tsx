@@ -14,6 +14,7 @@ import { createEclipseTransition, type EclipseTransition } from '../transitions/
 import { createContactScene, type ContactScene } from '../scenes/ContactScene';
 import { createWorkScene, type WorkScene } from '../scenes/WorkScene';
 import { createExperienceDirector, type ExperienceDirector } from '../orchestration/ExperienceDirector';
+import { createScrollOrchestrator, type ScrollOrchestrator } from '../orchestration/ScrollOrchestrator';
 
 
 export default function PinnedSections() {
@@ -30,6 +31,7 @@ export default function PinnedSections() {
     let contactScene: ContactScene | null = null;
     let workScene: WorkScene | null = null;
     let experienceDirector: ExperienceDirector | null = null;
+    let scrollOrchestrator: ScrollOrchestrator | null = null;
 
     const ctx = gsap.context(() => {
       const heroEl = document.querySelector('.hero-section-container') as HTMLDivElement | null;
@@ -62,13 +64,15 @@ export default function PinnedSections() {
         eclipseTransition,
       });
 
-      const activateContactPhase = () => {
-        experienceDirector?.requestContact();
-      };
+      scrollOrchestrator = createScrollOrchestrator();
 
-      const deactivateContactPhase = () => {
-        experienceDirector?.requestWorkRestore();
-      };
+      scrollOrchestrator.subscribe((scrollState) => {
+        if (scrollState.progress < contactPhaseProgress) {
+          experienceDirector?.requestWorkRestore();
+        } else if (scrollState.progress >= contactPhaseProgress) {
+          experienceDirector?.requestContact();
+        }
+      });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -186,21 +190,14 @@ export default function PinnedSections() {
             // to prevent temporary ScrollTrigger.refresh() timeline reversions (progress 0) from flashing the Hero.
             const progress = targetProgressRef.current !== null ? targetProgressRef.current : self.progress;
 
-            // Publish progress to global window property and dispatch custom event for MorphNav and NavRail
-            if (typeof window !== 'undefined') {
-              (window as any).__scrollTriggerProgress = progress;
-              window.dispatchEvent(new CustomEvent('scrollTriggerProgress', { detail: { progress } }));
-            }
+            // Delegate state updates and progress publication to the ScrollOrchestrator
+            scrollOrchestrator?.update(progress, self.direction, self.getVelocity());
 
             // Use opacity and pointerEvents for performance, instead of display: none
             const setVisibility = (el: HTMLDivElement, visible: boolean) => {
               el.style.opacity = visible ? '1' : '0';
               el.style.pointerEvents = visible ? 'auto' : 'none';
             };
-
-            if (progress < contactPhaseProgress) {
-              deactivateContactPhase();
-            }
 
             // To make the transition from Hero to About smooth, we allow both sections to be visible
             // simultaneously during the transition window (progress 0.0 to 0.05).
@@ -227,7 +224,6 @@ export default function PinnedSections() {
               workScene?.enter();
               if (!contactScene?.isActive()) setVisibility(contactEl, false);
             } else {
-              activateContactPhase();
               setVisibility(heroEl, false);
               setVisibility(aboutEl, false);
             }
@@ -555,6 +551,7 @@ export default function PinnedSections() {
     });
 
     return () => {
+      scrollOrchestrator?.destroy();
       experienceDirector?.destroy();
       workScene?.destroy();
       contactScene?.destroy();

@@ -546,5 +546,650 @@ ARCH-006B Post Extraction Audit complete. Architecture verified as ready for Scr
 Next Step:
 
 ```txt
-Select ARCH-007A for ScrollOrchestrator extraction planning.
+Perform ARCH-007A ScrollOrchestrator extraction planning.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-007A
+```
+
+Completed Work:
+
+- Conducted a comprehensive scroll audit on inputs, outputs, dependencies, and consumers in PinnedSections.
+- Defined the ScrollOrchestrator responsibility model, separating scroll progress/direction/snapping from scene rendering/director gating.
+- Designed the scroll state model and transition flows (forward/reverse handoffs).
+- Analysed snapping ownership boundaries across Navigation, ScrollOrchestrator, and ExperienceDirector.
+- Designed the future PubSub model for event-driven progress publishing.
+- Defined the integration boundary and unidirectional data flow from ScrollOrchestrator to ExperienceDirector.
+- Mapped remaining coupling, calculated risk matrices, and defined ARCH-007B runtime scope and rollback plan.
+
+Files Modified:
+
+```txt
+docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+```
+
+Result:
+
+```txt
+ARCH-007A planning complete. ScrollOrchestrator blueprint established.
+```
+
+Next Step:
+
+```txt
+Select ARCH-007B for progress publishing extraction.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-007B
+```
+
+Completed Work:
+
+- Created components/orchestration/ScrollOrchestrator.ts.
+- Extracted scroll progress, direction, and velocity state from PinnedSections.tsx.
+- Extracted progress publication (window custom events/properties) to ScrollOrchestrator.ts.
+- Connected ScrollOrchestrator to ExperienceDirector via reactive progress subscription.
+
+Files Modified:
+
+```txt
+components/orchestration/ScrollOrchestrator.ts
+components/sections/PinnedSections.tsx
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/06_ISSUES_AND_RESOLUTIONS.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-007B complete. Scroll state and publication decoupled from the main view thread.
+```
+
+Next Step:
+
+```txt
+Select ARCH-008A for Motion System Architecture planning.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-008A
+```
+
+Completed Work:
+
+- Conducted a comprehensive motion audit mapping existing timelines, timing constants, easings, and classifications.
+- Formulated the Motion System responsibility model, keeping durations/eases inside the system and lifecycles/DOM queries outside.
+- Designed a semantic motion token taxonomy covering Duration, Easing, Distance, and Staggers.
+- Structured motion layers into Micro, Interaction, Scene, Transition, and Global tiers.
+- Formulated GSAP governance guidelines and hardware acceleration rules.
+- Drafted premium motion design principles (anticipation, magnetic drag, vector continuity).
+- Mapped remaining motion debts and risk matrices.
+- Defined the objective, done definitions, and deliverables for ARCH-008B runtime implementation.
+
+Files Modified:
+
+```txt
+docs/16_MOTION_SYSTEM_ARCHITECTURE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+```
+
+Result:
+
+```txt
+ARCH-008A complete. Motion System blueprint established.
+```
+
+Next Step:
+
+```txt
+Select ARCH-008B for Motion System runtime implementation.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-008B
+```
+
+Completed Work:
+
+- Created lib/motionSystem.ts containing standardized duration, ease, stagger, and distance tokens.
+- Created lib/motionPresets.ts containing reusable GSAP config presets.
+- Refactored WorkScene.ts to consume workContainerEnter, workIntroLineReveal, and workIntroExit presets.
+- Refactored ContactScene.ts to consume contactTitleReveal, contactColumnReveal, and contactFooterReveal presets.
+- Refactored EclipseTransition.ts to consume eclipseRise, eclipseCover, and eclipseBlackout presets.
+
+Files Modified:
+
+```txt
+lib/motionSystem.ts
+lib/motionPresets.ts
+components/scenes/WorkScene.ts
+components/scenes/ContactScene.ts
+components/transitions/EclipseTransition.ts
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/06_ISSUES_AND_RESOLUTIONS.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-008B complete. Scene and transition modules utilize the unified Motion System.
+```
+
+Next Step:
+
+```txt
+Select ARCH-008C for Motion Adoption Audit.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-008C
+```
+
+Completed Work:
+
+- Audited motionSystem.ts and motionPresets.ts centralization and boundaries.
+- Audited preset scalability, classifying them into Generic, Semi-Generic, and Scene-Specific.
+- Established Motion Governance guidelines for direct GSAP usage and tokens.
+- Cataloged remaining motion debt in Hero, About, Navigation, and MorphNav.
+- Stress-tested the system against future premium additions.
+- Reviewed Sprint 1 completion and recommended Phase 2 focus.
+
+Files Modified:
+
+```txt
+docs/17_MOTION_ADOPTION_AUDIT.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+```
+
+Result:
+
+```txt
+ARCH-008C complete. Motion System Adoption verified and Sprint 1 complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-009A for Interaction System Architecture planning.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-009A
+```
+
+Completed Work:
+
+- Conducted a comprehensive interaction audit on existing custom cursors, contact hover sweeps, card swipes, and quick jumps.
+- Formulated the Interaction System responsibility model, keeping hover/magnetic/pointer tracking inside the system and life cycles/routing outside.
+- Structured interaction layers into Micro, Hover, Cursor, Spatial, and Narrative tiers.
+- Cataloged interaction inventory, classifying each system as Protected, Reusable, Needs Refactor, or Future Upgrade.
+- Designed the InteractionPreset architecture.
+- Drafted premium interaction design principles (spring-based lag, velocity amplitude, gesture gating).
+- Mapped remaining interaction debts and risk matrices.
+- Defined the objective, done definitions, and deliverables for ARCH-009B runtime implementation.
+
+Files Modified:
+
+```txt
+docs/18_INTERACTION_SYSTEM_ARCHITECTURE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+```
+
+Result:
+
+```txt
+ARCH-009A planning complete. Interaction System blueprint established.
+```
+
+Next Step:
+
+```txt
+Select ARCH-009B for Interaction Runtime implementation.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-009B
+```
+
+Completed Work:
+
+- Created `lib/interactionSystem.ts` to implement a centralized pointer tracking system for coordinates, velocity, and active status, complete with an auto-managing window tick loop.
+- Created `lib/interactionPresets.ts` containing the `HoverSweep` preset conforming to the `InteractionSystemContract` lifecycle model.
+- Integrated the `HoverSweep` preset in `components/sections/Contact.tsx` using an Adapter Pattern.
+- Adapted `handleTitlePointerEnter` and `handleTitlePointerMove` to read coordinates and velocity from `HoverSweep` rather than calculating them locally.
+- Retained legacy variables and RAF loops in `Contact.tsx` for visual and functional safety as required by the zero-regression and non-cleanup policies.
+- Validated hover warmth glows, character responses, and hover decay behaviors in the browser to ensure 100% parity.
+
+Files Modified:
+
+```txt
+lib/interactionSystem.ts
+lib/interactionPresets.ts
+components/sections/Contact.tsx
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/06_ISSUES_AND_RESOLUTIONS.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-009B runtime implementation and integration complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-009C for Interaction Adoption Audit and legacy cleanup.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-009C
+```
+
+Completed Work:
+
+- Audited `lib/interactionSystem.ts` for ownership, safety, event, and RAF loop management.
+- Audited `lib/interactionPresets.ts` and validated the design boundaries and reusability of `HoverSweep`.
+- Audited `Contact.tsx` adoption and confirmed 100% visual, decay, and responsiveness parity with the adapter pattern.
+- Mapped duplicated refs, events, and requestAnimationFrame loops, categorizing them as temporary/intentional.
+- Evaluated memory leak potential and lifecycle cleanup paths.
+- Analyzed cleanup readiness for legacy pointer tracking, refs, and local RAF loops, classifying them for Keep vs Remove.
+- Formulated the objectives and deliverables for candidate phase `ARCH-010A` (Interaction Cleanup & Consolidation).
+
+Files Modified:
+
+```txt
+docs/19_INTERACTION_ADOPTION_AUDIT.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-009C Interaction Adoption Audit complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-010A for Interaction Cleanup & Consolidation.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-010A
+```
+
+Completed Work:
+
+- Audited the current canvas rendering loops in Hero and MorphNav.
+- Identified rendering resource leak risks and WebGL context exhaustion vulnerabilities under component-owned setups.
+- Formulated the Renderer System responsibility model and boundary designs.
+- Audited candidate rendering technologies (DOM, Canvas2D, WebGL, Three.js, React Three Fiber) and defined suitability matrices.
+- Structured performance governance policies (visibility throttling, dynamic resolution scaling, context disposal).
+- Proposed high-level TypeScript contract interfaces for `RendererModuleContract` and `RendererManagerContract`.
+- Recommended candidate task `ARCH-010B: Renderer Contracts`.
+
+Files Modified:
+
+```txt
+docs/20_RENDERER_SYSTEM_ARCHITECTURE.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-010A Renderer System Architecture planning complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-010B for Renderer Contracts definition.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-010B
+```
+
+Completed Work:
+
+- Conducted a comprehensive contract audit against `08_CORE_CONTRACT_DEFINITIONS.md` and `docs/20_RENDERER_SYSTEM_ARCHITECTURE.md`.
+- Defined the formal `RendererManagerContract` specifying master registration, initialization, resize debouncing, quality throttling, and context teardown.
+- Defined the `RendererModuleContract` for class-level encapsulation of individual shader or canvas components.
+- Mapped the extraction boundaries for the first consumer (`useFluidSim.ts` to `HeroFluidRenderer`), dividing height array/wave step logic, canvas drawing, ticks, and mouse listeners.
+- Created the Renderer Ownership Matrix mapping future visual features to scenes and managers.
+- Documented Performance Contracts specifying single master RAF loops, canvas context caps, and WebGL memory evictions.
+- Designed a state transition lifecycle model from `Created` through `Destroyed`.
+- Audited consumer readiness for the Hero Fluid simulation.
+- Recommended candidate task `ARCH-010C: Hero Fluid Extraction Plan`.
+
+Files Modified:
+
+```txt
+docs/21_RENDERER_CONTRACTS.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-010B Renderer Contracts specification complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-010C for Hero Fluid Extraction Plan definition.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-010C
+```
+
+Completed Work:
+
+- Conducted a comprehensive audit of `hooks/useFluidSim.ts` to map current rendering and event routing.
+- Decomposed fluid simulation responsibilities into View layer (`HeroScene`) vs Renderer layer boundaries.
+- Mapped input/output flow for `HeroFluidRenderer` class, specifying external vector disturb hooks.
+- Charted the lifecycle transitions across the Scene, Contract, and Renderer.
+- Evaluated performance problems (off-screen ticks, ResizeObserver cycles) and documented renderer-driven improvements.
+- Conducted a detailed migration risk analysis and built a Risk Matrix covering visual, mobile, and memory risks.
+- Structured a 4-phase extraction sequence (*Introduce* -> *Adapt* -> *Validate* -> *Migrate*).
+- Confirmed that current renderer contracts are sufficient.
+- Recommended candidate task `ARCH-010D: Hero Fluid Runtime Extraction`.
+
+Files Modified:
+
+```txt
+docs/22_HERO_FLUID_EXTRACTION_PLAN.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-010C Hero Fluid Extraction Plan complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-010D for Hero Fluid Runtime Extraction.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-010D
+```
+
+Completed Work:
+
+- Created `components/renderers/HeroFluidRenderer.ts` encapsulating all double wave height-maps and rendering logic.
+- Refactored `hooks/useFluidSim.ts` as a lightweight adapter hook delegating loop steps, canvas draws, and resize callbacks directly to `HeroFluidRenderer`.
+- Migrated all configuration settings (`FLUID_CONFIG` constants) completely verbatim without modification or improvement.
+- Performed detailed contract gap analysis of `RendererModuleContract` against the implementation.
+- Validated visual parity under 7 distinct lifecycle phases including idle states, mouse speeds, resizing, page remounts, and repeated disturbances.
+
+Files Modified:
+
+```txt
+components/renderers/HeroFluidRenderer.ts
+hooks/useFluidSim.ts
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/06_ISSUES_AND_RESOLUTIONS.md
+docs/07_HANDOFF.md
+docs/23_HERO_FLUID_RUNTIME_EXTRACTION.md
+```
+
+Result:
+
+```txt
+ARCH-010D Hero Fluid Runtime Extraction complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-010E for Hero Fluid Post-Extraction Audit.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-010E
+```
+
+Completed Work:
+
+- Conducted a comprehensive post-extraction validation audit of `HeroFluidRenderer`.
+- Documented responsibility ownership distribution, verifying that `HeroFluidRenderer` acts as the true runtime owner and `useFluidSim` serves solely as the lifecycle adapter.
+- Measured exact LOC migration metrics, showing 209 lines extracted, 0 lines duplicated, and 87 lines remaining.
+- Confirmed visual parity across all 7 lifecycle categories including idle, ambient ripples, slow/fast pointer movement, repeated disturbances, window resizing, and route remounts.
+- Evaluated contract gaps for optional resize parameters, unified context rendering, and pointer event subscriber routing.
+- Classified remaining coupling within `useFluidSim.ts` and `Hero.tsx`.
+
+Files Modified:
+
+```txt
+docs/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-010E Hero Fluid Post-Extraction Audit complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-011A for Renderer Manager Implementation.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-011A
+```
+
+Completed Work:
+
+- Audited and inventoried current renderers (`HeroFluidRenderer` and `MorphNav` liquid morph).
+- Defined timing vs drawing boundaries for the centralized `RendererManager`.
+- Designed the state transition lifecycle model for module states (`Created` -> `Initialized` -> `Active`/`Paused` -> `Destroyed`).
+- Designed the registry model and Visibility Sleep viewport-gating architecture.
+- Outlined a debounced resize broadcast layout and performance governance standards (60fps target, context limit caps, low-quality fallbacks).
+- Validated compatibility of standard contracts against Hero and Eclipse transition shaders.
+
+Files Modified:
+
+```txt
+docs/25_RENDERER_MANAGER_ARCHITECTURE.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-011A Renderer Manager Implementation Planning complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-011B for Renderer Manager Runtime Implementation.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-011B
+```
+
+Completed Work:
+
+- Created `lib/rendererManager.ts` implementing a centralized `requestAnimationFrame` loop, register/unregister APIs, and automated loop shutdown/restart based on active modules.
+- Refactored `components/renderers/HeroFluidRenderer.ts` to implement `RendererModuleContract`, removing local `requestAnimationFrame` scheduling.
+- Refactored `hooks/useFluidSim.ts` into a lightweight registration adapter, initializing the renderer and registering/unregistering it into the centralized `RendererManager`.
+- Compiled the optimized production build successfully using Turbopack and TypeScript checks.
+
+Files Modified:
+
+```txt
+lib/rendererManager.ts
+components/renderers/HeroFluidRenderer.ts
+hooks/useFluidSim.ts
+docs/26_RENDERER_MANAGER_IMPLEMENTATION.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/06_ISSUES_AND_RESOLUTIONS.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-011B Renderer Manager Runtime Implementation complete.
+```
+
+Next Step:
+
+```txt
+Select ARCH-011C for Renderer Manager Adoption Audit.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-011C
+```
+
+Completed Work:
+
+- Performed code-only RendererManager adoption audit against `docs/21_RENDERER_CONTRACTS.md` and `docs/25_RENDERER_MANAGER_ARCHITECTURE.md`.
+- Verified `HeroFluidRenderer` and `useFluidSim` do not own local RAF loops.
+- Verified `RendererManager` owns managed renderer timing, registration, scheduling, and loop shutdown.
+- Verified `HeroFluidRenderer` remains independent and owns canvas, context, Float32Array buffers, wave propagation, ambient ripples, disturb logic, rendering, and resize allocation.
+- Verified registration on mount, unregister on cleanup, manager stop when registry becomes empty, and reachable renderer destroy lifecycle.
+- Classified remaining renderer debt, including unmanaged `MorphNav` Canvas2D transition rendering and future Eclipse/Contact renderer candidates.
+- Documented contract gaps for resize dispatch, render context signature, pause/resume, Visibility Sleep, registration API, manager destroy, and quality controls.
+- Ran `npm run build`; production build passed.
+- Did not run browser agents, visual validation, screenshot testing, or visual parity checks.
+
+Files Modified:
+
+```txt
+docs/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
+docs/02_PROJECT_STATE.md
+docs/03_TASK_REGISTRY.md
+docs/05_PROGRESS_LOG.md
+docs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-011C Renderer Manager Adoption Audit complete.
+Final verdict: PASS.
+Visual parity status: UNVERIFIED.
+```
+
+Next Step:
+
+```txt
+Select the next task explicitly. Do not start ARCH-012A from ARCH-011C.
 ```

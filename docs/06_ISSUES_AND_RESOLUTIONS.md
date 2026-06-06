@@ -368,3 +368,181 @@ Status:
 ```txt
 Partially resolved.
 ```
+
+## Issue-009: Scroll State and Progress Publication Coupled to View Layer
+
+Impact:
+
+```txt
+Global window updates, progress custom events, and scroll direction/velocity tracking were hardcoded within the main scroll trigger lifecycle of PinnedSections.tsx, making it impossible to decouple the scroll layer from the view layer.
+```
+
+Root Cause:
+
+```txt
+No standalone ScrollOrchestrator existed to act as a stateful event-driven publisher for progress, direction, and velocity data.
+```
+
+Resolution:
+
+```txt
+ARCH-007B created components/orchestration/ScrollOrchestrator.ts and extracted scroll progress, direction, velocity tracking, and PubSub progress publication.
+```
+
+Extracted Ownership:
+
+```txt
+ScrollOrchestrator now owns:
+- scrollProgress state
+- scrollDirection state
+- scrollVelocity state
+- progress subscription registry
+- window.__scrollTriggerProgress updates
+- scrollTriggerProgress event dispatches
+```
+
+Remaining Coupling:
+
+```txt
+PinnedSections still owns ScrollTrigger instantiation, snap calculations, project responsive card geometries, morph animation timelines, and cinematicNavigate jump animations.
+```
+
+Status:
+
+```txt
+Partially resolved (Scroll state & publication extracted; ScrollTrigger setup remains in PinnedSections).
+```
+
+## Issue-010: Animation Sprawl and Magic Motion Numbers
+
+Impact:
+
+```txt
+Animation durations, easing curves, stagger offsets, and movement distances were declared as raw numbers or strings directly inside scene modules, creating inconsistency and risking visual motion drift.
+```
+
+Root Cause:
+
+```txt
+Lack of a unified runtime motion configuration and preset system to govern all UI and scene animations.
+```
+
+Resolution:
+
+```txt
+ARCH-008B implemented lib/motionSystem.ts (exporting standard duration, easing, stagger, scale, and distance tokens) and lib/motionPresets.ts (exporting reusable GSAP animations).
+```
+
+Extracted Ownership:
+
+```txt
+Motion System now owns:
+- unified duration, ease, stagger, and distance tokens.
+- reusable presets (fadeIn, workContainerEnter, contactTitleReveal, eclipseRise, etc.).
+```
+
+Migrated Consumers:
+
+```txt
+WorkScene, ContactScene, and EclipseTransition have been refactored to consume Motion System tokens and presets.
+```
+
+Status:
+
+```txt
+Resolved for Sprint 1 scene and transition components. Remaining motion debt exists in Hero, About, and MorphNav.
+```
+
+## Issue-011: Scattered Pointer Tracking and Interaction Drift
+
+Impact:
+
+```txt
+Pointer coordinates, velocity, and hover tracking calculations were implemented locally inside individual visual components (e.g. Contact.tsx), leading to code duplication, scattered event listeners, and potential frame lag due to multiple RAF loops.
+```
+
+Root Cause:
+
+```txt
+Lack of a centralized interaction state manager and reusable interaction presets.
+```
+
+Resolution:
+
+```txt
+ARCH-009B implemented a centralized interactionSystem.ts (which manages global pointer coordinates, velocity, active status, and ticks via a single RAF loop) and a HoverSweep preset in interactionPresets.ts.
+```
+
+Extracted Ownership:
+
+```txt
+Interaction System now owns:
+- Centralized pointer x and y coordinates.
+- Centralized velocity tracking and auto-decay physics.
+- Global active state tracking.
+- Reusable HoverSweep preset logic.
+```
+
+Migrated Consumers:
+
+```txt
+Contact.tsx hover sweep has been refactored to consume the centralized Interaction System and HoverSweep preset via an Adapter Pattern.
+```
+
+Status:
+
+```txt
+Resolved in ARCH-009C by executing the cleanups and removing redundant local pointer states/listeners in Contact.tsx.
+```
+
+## Issue-012: Uncoordinated Canvas Simulation Loops and CPU Overhead
+
+Impact:
+
+```txt
+The fluid simulation in hooks/useFluidSim.ts coordinated its own local requestAnimationFrame loops, double height-map buffers, and Canvas2D pixels calculations directly inside the React hook cycle, exposing the application to performance stalls and rendering leaks.
+```
+
+Root Cause:
+
+```txt
+No separate class module existed to encapsulate height-map logic, wave propagation steps, and canvas repaints.
+```
+
+Resolution:
+
+```txt
+ARCH-010D created components/renderers/HeroFluidRenderer.ts encapsulating all wave propagation calculations and double Float32Array buffers. Refactored hooks/useFluidSim.ts into a lightweight adapter hook delegating loop steps and draws directly to the class instance.
+```
+
+Status:
+
+```txt
+Resolved. Fluid simulation math is fully extracted from the hook lifecycle.
+```
+
+## Issue-013: Centralized Tick Coordination and Loop Scheduling
+
+Impact:
+
+```txt
+Running multiple parallel requestAnimationFrame loops increases CPU usage and can lead to unsynchronized visual update ticks.
+```
+
+Root Cause:
+
+```txt
+HeroFluidRenderer was driven by its own local rendering lifecycle adapter, scheduling ticks independently.
+```
+
+Resolution:
+
+```txt
+ARCH-011B implemented the centralized RendererManager coordinating all registered RendererModuleContract instances through a single global requestAnimationFrame tick loop. HeroFluidRenderer was migrated to be driven by this central scheduler.
+```
+
+Status:
+
+```txt
+Resolved. Master loop coordinates HeroFluidRenderer.
+```

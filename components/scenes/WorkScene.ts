@@ -1,4 +1,5 @@
 import { gsap } from '@/lib/gsap';
+import { motionPresets } from '@/lib/motionPresets';
 
 export type WorkSceneState =
   | 'UNPREPARED'
@@ -67,35 +68,18 @@ export function createWorkScene(): WorkScene {
       }, 0);
 
       timeline.to('.work-section-container', {
-        opacity: 1,
+        ...motionPresets.workContainerEnter,
         pointerEvents: 'auto',
-        duration: 0.45,
-        ease: 'none',
         onStart: scene.enter,
         onComplete: scene.activate,
         onReverseComplete: scene.exit,
       }, 4.85);
 
-      timeline.to('.work-intro-line-1', {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.0,
-        ease: 'premiumBezier',
-      }, 5.0);
+      timeline.to('.work-intro-line-1', motionPresets.workIntroLineReveal, 5.0);
 
-      timeline.to('.work-intro-line-2', {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.0,
-        ease: 'premiumBezier',
-      }, 5.15);
+      timeline.to('.work-intro-line-2', motionPresets.workIntroLineReveal, 5.15);
 
-      timeline.to('.work-intro-container', {
-        y: '-80px',
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power2.inOut',
-      }, 7.2);
+      timeline.to('.work-intro-container', motionPresets.workIntroExit, 7.2);
     },
 
     enter() {

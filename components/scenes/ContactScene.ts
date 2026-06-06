@@ -1,4 +1,6 @@
 import { gsap } from '@/lib/gsap';
+import { motionPresets } from '@/lib/motionPresets';
+import { MOTION_STAGGERS } from '@/lib/motionSystem';
 
 export type ContactSceneState =
   | 'UNPREPARED'
@@ -67,35 +69,21 @@ export function createContactScene(): ContactScene {
         .set('.contact-content-wrapper', { pointerEvents: 'auto' }, 0)
         .set('.contact-title-debug', { opacity: 1 }, 0.04)
         .to('.contact-title-char', {
-          y: '0%',
-          opacity: 1,
-          duration: 0.82,
+          ...motionPresets.contactTitleReveal,
           stagger: {
-            each: 0.045,
+            each: MOTION_STAGGERS.textChar,
             from: 'center',
           },
-          ease: 'power4.out',
         }, 0.08)
         .to('.contact-utility-column:first-child', {
-          opacity: 1,
-          y: 0,
+          ...motionPresets.contactColumnReveal,
           pointerEvents: 'auto',
-          duration: 0.34,
-          ease: 'power3.out',
         }, 0.68)
         .to('.contact-utility-column:nth-child(2)', {
-          opacity: 1,
-          y: 0,
+          ...motionPresets.contactColumnReveal,
           pointerEvents: 'auto',
-          duration: 0.34,
-          ease: 'power3.out',
         }, 0.73)
-        .to('.contact-footer-meta', {
-          opacity: 1,
-          y: 0,
-          duration: 0.3,
-          ease: 'power3.out',
-        }, 0.78);
+        .to('.contact-footer-meta', motionPresets.contactFooterReveal, 0.78);
 
       setState('HIDDEN');
     },
