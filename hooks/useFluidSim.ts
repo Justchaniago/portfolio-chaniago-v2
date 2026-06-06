@@ -48,7 +48,7 @@ export function useFluidSim(
 
     // Initialize module and register into central loop manager
     renderer.initialize(canvas);
-    rendererManager.register(renderer);
+    rendererManager.register(renderer, { container: canvas });
 
     const ro = new ResizeObserver(() => {
       renderer.resize();
