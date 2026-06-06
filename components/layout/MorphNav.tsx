@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getActiveSectionIndex } from '@/lib/motion';
+// getActiveSectionIndex progress calculation removed
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -206,7 +206,7 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Scroll tracking — isCollapsed + activeSection (using shared ScrollTrigger progress as SSOT)
+  // Scroll tracking — isCollapsed + activeSection
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -215,29 +215,23 @@ export default function MorphNav() {
       setIsCollapsed(y > 80);
     };
 
-    const handleProgressUpdate = (e: Event) => {
-      const progress = (e as CustomEvent).detail.progress;
-      const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
-      setActiveSection(() => {
-        const nextIdx = getActiveSectionIndex(progress);
-        return SECTION_IDS[nextIdx];
-      });
+    const handleActiveSectionChange = (e: Event) => {
+      const activeSectionId = (e as CustomEvent).detail.activeSection;
+      setActiveSection(activeSectionId);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
+    window.addEventListener('activeSectionChange', handleActiveSectionChange);
 
     // Initial values
     handleScroll();
-    if ((window as any).__scrollTriggerProgress !== undefined) {
-      const initialProgress = (window as any).__scrollTriggerProgress;
-      const SECTION_IDS = ['hero', 'about', 'work', 'contact'] as const;
-      setActiveSection(SECTION_IDS[getActiveSectionIndex(initialProgress)]);
+    if ((window as any).__activeSection) {
+      setActiveSection((window as any).__activeSection);
     }
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
+      window.removeEventListener('activeSectionChange', handleActiveSectionChange);
     };
   }, []);
 
@@ -387,42 +381,44 @@ export default function MorphNav() {
   const isAnimating = navState === 'opening' || navState === 'closing';
   const hideCollapsedTriggerOnContact = activeSection === 'contact' && navState === 'closed';
 
-  // Unified navigation click handler — uses cinematic chapter-transition system
+  // Unified navigation click handler — scrolls directly to target section
   const handleNavigationClick = useCallback((e: React.MouseEvent, href: string, isFromOverlay: boolean = false) => {
     e.preventDefault();
 
-    let targetProgress = 0.0;
+    const targetIdMap: Record<string, string> = {
+      '/hero': 'hero-section',
+      '/about': 'about-section',
+      '/work': 'work-section',
+      '/contact': 'contact-section',
+    };
 
-    if (href === '/about') {
-      targetProgress = 1.85 / 37.6;
-    } else if (href === '/work') {
-      targetProgress = 6.5 / 37.6;
-    } else if (href === '/contact') {
-      targetProgress = 1.0;
-    }
-
-    const cinematicNavigate = (window as any).__cinematicNavigate;
+    const targetId = targetIdMap[href] || (href === '/' ? 'hero-section' : href.substring(1) + '-section');
+    const targetEl = document.getElementById(targetId);
 
     // Handle closing the full-screen menu overlay first if clicked from inside the curtain menu
     if (isFromOverlay && navState === 'open') {
       handleClose();
-      // Delay cinematic transition slightly so overlay close animation doesn't conflict
+      // Delay transition slightly so overlay close animation doesn't conflict
       setTimeout(() => {
-        if (cinematicNavigate) {
-          cinematicNavigate(targetProgress);
-        } else {
-          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-          window.scrollTo({ top: scrollHeight * targetProgress, behavior: 'auto' });
+        if (targetEl) {
+          const lenis = (window as any).lenis;
+          if (lenis) {
+            lenis.scrollTo(targetEl, { duration: 1.2 });
+          } else {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
         }
       }, 350);
       return;
     }
 
-    if (cinematicNavigate) {
-      cinematicNavigate(targetProgress);
-    } else {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo({ top: scrollHeight * targetProgress, behavior: 'auto' });
+    if (targetEl) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.scrollTo(targetEl, { duration: 1.2 });
+      } else {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }, [navState, handleClose]);
 

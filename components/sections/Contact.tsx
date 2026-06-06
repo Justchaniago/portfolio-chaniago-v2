@@ -3,7 +3,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
 import { gsap } from '@/lib/gsap';
-import { SECTION_ANCHORS } from '@/lib/motion';
 import { HoverSweep } from '@/lib/interactionPresets';
 
 type ContactWindow = Window & {
@@ -36,9 +35,9 @@ const TITLE_HOVER_INTERPOLATION = 0.15;
 const TITLE_HOVER_DECAY = 0.92;
 
 const QUICK_JUMP_LINKS = [
-  { label: 'HOME', target: SECTION_ANCHORS.hero },
-  { label: 'ABOUT', target: SECTION_ANCHORS.about },
-  { label: 'WORK', target: SECTION_ANCHORS.work },
+  { label: 'HOME', target: 'hero-section' },
+  { label: 'ABOUT', target: 'about-section' },
+  { label: 'WORK', target: 'work-section' },
 ] as const;
 
 const CONNECT_LINKS = [
@@ -219,19 +218,17 @@ export default function Contact() {
     startInteractionLoop();
   }
 
-  function handleQuickJump(e: MouseEvent<HTMLButtonElement>, target: number) {
+  function handleQuickJump(e: MouseEvent<HTMLButtonElement>, target: string) {
     e.preventDefault();
-    const navigate = (window as ContactWindow).__cinematicNavigate;
-
-    if (navigate) {
-      navigate(target);
-      return;
+    const targetEl = document.getElementById(target);
+    if (targetEl) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.scrollTo(targetEl, { duration: 1.2 });
+      } else {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-
-    window.scrollTo({
-      top: target * Math.max(document.body.scrollHeight - window.innerHeight, 0),
-      behavior: 'smooth',
-    });
   }
 
   function animateUtilityLink(el: HTMLElement, active: boolean) {

@@ -69,18 +69,28 @@ export const motion = {
   },
 } as const;
 
-// Section anchor progress values (timeline time / 37.6)
+// Section element ID mapping
+export const SECTION_IDS = {
+  hero: 'hero-section',
+  about: 'about-section',
+  work: 'work-section',
+  contact: 'contact-section',
+} as const;
+
+export type SectionId = keyof typeof SECTION_IDS;
+
+/** @deprecated progress-based SECTION_ANCHORS is deprecated. Use SECTION_IDS instead. */
 export const SECTION_ANCHORS: Record<string, number> = {
   hero: 0.0,
-  about: 1.85 / 37.6,
-  work: 6.5 / 37.6,
+  about: 0.33,
+  work: 0.66,
   contact: 1.0,
 };
 
+/** @deprecated progress-based getActiveSectionIndex is deprecated. Use visible-area active section detection instead. */
 export function getActiveSectionIndex(progress: number): number {
-  // Align active section detection perfectly with the actual visual visibility thresholds in PinnedSections.tsx
-  if (progress < 0.05) return 0; // Hero
-  if (progress >= 0.05 && progress < 0.129) return 1; // About
-  if (progress >= 0.129 && progress < 37.34 / 37.6) return 2; // Work
-  return 3; // Contact
+  if (progress < 0.16) return 0;
+  if (progress >= 0.16 && progress < 0.5) return 1;
+  if (progress >= 0.5 && progress < 0.83) return 2;
+  return 3;
 }

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { getActiveSectionIndex, SECTION_ANCHORS } from '@/lib/motion';
+import { SECTION_IDS } from '@/lib/motion';
 
 const SECTIONS = [
-  { id: 'hero', label: 'Hero', num: '01', progress: SECTION_ANCHORS.hero },
-  { id: 'about', label: 'About', num: '02', progress: SECTION_ANCHORS.about }, 
-  { id: 'work', label: 'Work', num: '03', progress: SECTION_ANCHORS.work },  
-  { id: 'contact', label: 'Contact', num: '04', progress: SECTION_ANCHORS.contact }, 
+  { id: 'hero', label: 'Hero', num: '01' },
+  { id: 'about', label: 'About', num: '02' },
+  { id: 'work', label: 'Work', num: '03' },
+  { id: 'contact', label: 'Contact', num: '04' },
 ];
 
 const SECTION_GAP = 56; // gap in pixels between dots
@@ -45,87 +45,66 @@ export default function NavRail() {
   const baseTargetYRef = useRef(0);
   const mouseYRef = useRef<number | null>(null);
 
-  // Track ScrollTrigger progress and determine current active index (using shared ScrollTrigger progress as SSOT)
+  // Track active section changes and global scroll progress
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handleProgressUpdate = (e: Event) => {
-      const progress = (e as CustomEvent).detail.progress;
+    const handleActiveSectionChange = (e: Event) => {
+      const activeSectionId = (e as CustomEvent).detail.activeSection;
+      const index = SECTIONS.findIndex((s) => s.id === activeSectionId);
+      if (index !== -1) {
+        setActiveIndex(index);
 
-      const activeIndex = getActiveSectionIndex(progress);
-      setActiveIndex(activeIndex);
+        const targetY = index * SECTION_GAP;
+        baseTargetYRef.current = targetY;
 
-      // Active Dot snaps exactly to the active section's dot position
-      const targetY = activeIndex * SECTION_GAP;
-      baseTargetYRef.current = targetY;
-
-      // Update position factoring in mouse hover ref status
-      if (mouseYRef.current !== null) {
-        const diff = mouseYRef.current - targetY;
-        y.set(targetY + diff * 0.25);
-      } else {
-        y.set(targetY);
-      }
-
-      // Calculate local progress within the current section group
-      const sectionProgresses = Object.values(SECTION_ANCHORS);
-      const nextIndex = Math.min(activeIndex + 1, SECTIONS.length - 1);
-      const sectionStartProgress = sectionProgresses[activeIndex];
-      const sectionEndProgress = sectionProgresses[nextIndex];
-
-      let localProgress = 0;
-      if (activeIndex < sectionProgresses.length - 1) {
-        const range = sectionEndProgress - sectionStartProgress;
-        localProgress = range > 0 ? (progress - sectionStartProgress) / range : 0;
-      }
-      const clampedLocalProgress = Math.max(0, Math.min(1, localProgress));
-
-      const fillTop = activeIndex * SECTION_GAP;
-      const fillHeight = clampedLocalProgress * SECTION_GAP;
-
-      // Dynamically position and size the local progress segment
-      const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
-      if (fillLine) {
-        fillLine.style.top = `${fillTop}px`;
-        fillLine.style.height = `${fillHeight}px`;
+        // Update position factoring in mouse hover ref status
+        if (mouseYRef.current !== null) {
+          const diff = mouseYRef.current - targetY;
+          y.set(targetY + diff * 0.25);
+        } else {
+          y.set(targetY);
+        }
       }
     };
 
-    window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
-
-    // Initial call to set correct initial state
-    if ((window as any).__scrollTriggerProgress !== undefined) {
-      const initialProgress = (window as any).__scrollTriggerProgress;
-      const activeIndex = getActiveSectionIndex(initialProgress);
-      setActiveIndex(activeIndex);
-
-      const targetY = activeIndex * SECTION_GAP;
-      baseTargetYRef.current = targetY;
-      y.set(targetY);
-
-      const sectionProgresses = Object.values(SECTION_ANCHORS);
-      const nextIndex = Math.min(activeIndex + 1, SECTIONS.length - 1);
-      const sectionStartProgress = sectionProgresses[activeIndex];
-      const sectionEndProgress = sectionProgresses[nextIndex];
-
-      let localProgress = 0;
-      if (activeIndex < sectionProgresses.length - 1) {
-        const range = sectionEndProgress - sectionStartProgress;
-        localProgress = range > 0 ? (initialProgress - sectionStartProgress) / range : 0;
-      }
-      const clampedLocalProgress = Math.max(0, Math.min(1, localProgress));
-
-      const fillTop = activeIndex * SECTION_GAP;
-      const fillHeight = clampedLocalProgress * SECTION_GAP;
-
+    const handleProgressUpdate = (e: Event) => {
+      const progress = (e as CustomEvent).detail.progress;
       const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
       if (fillLine) {
-        fillLine.style.top = `${fillTop}px`;
-        fillLine.style.height = `${fillHeight}px`;
+        fillLine.style.top = '0px';
+        fillLine.style.height = `${progress * (SECTION_GAP * 3)}px`;
+      }
+    };
+
+    window.addEventListener('activeSectionChange', handleActiveSectionChange);
+    window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
+
+    // Initial check to set correct initial state
+    if ((window as any).__activeSection) {
+      const activeSectionId = (window as any).__activeSection;
+      const index = SECTIONS.findIndex((s) => s.id === activeSectionId);
+      if (index !== -1) {
+        setActiveIndex(index);
+        const targetY = index * SECTION_GAP;
+        baseTargetYRef.current = targetY;
+        y.set(targetY);
       }
     }
 
-    return () => window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
+    if ((window as any).__scrollTriggerProgress !== undefined) {
+      const progress = (window as any).__scrollTriggerProgress;
+      const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
+      if (fillLine) {
+        fillLine.style.top = '0px';
+        fillLine.style.height = `${progress * (SECTION_GAP * 3)}px`;
+      }
+    }
+
+    return () => {
+      window.removeEventListener('activeSectionChange', handleActiveSectionChange);
+      window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
+    };
   }, [y]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -151,15 +130,16 @@ export default function NavRail() {
     y.set(baseTargetYRef.current);
   };
 
-  const handleSectionClick = (progressVal: number) => {
+  const handleSectionClick = (sectionId: string) => {
     if (typeof window === 'undefined') return;
-    const cinematicNavigate = (window as any).__cinematicNavigate;
-    if (cinematicNavigate) {
-      cinematicNavigate(progressVal);
-    } else {
-      // Fallback: instant scroll if cinematic system not ready
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo({ top: scrollHeight * progressVal, behavior: 'auto' });
+    const targetEl = document.getElementById(`${sectionId}-section`);
+    if (targetEl) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.scrollTo(targetEl, { duration: 1.2 });
+      } else {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -263,7 +243,7 @@ export default function NavRail() {
           {SECTIONS.map((section, idx) => (
             <div
               key={section.id}
-              onClick={() => handleSectionClick(section.progress)}
+              onClick={() => handleSectionClick(section.id)}
               data-cursor="button"
               style={{
                 position: 'relative',
