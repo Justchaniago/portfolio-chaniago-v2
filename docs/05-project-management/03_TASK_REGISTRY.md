@@ -10,6 +10,38 @@ DONE
 CANCELLED
 ```
 
+## TASK REGISTRY CONSUMPTION RULES
+
+Read:
+
+```txt
+Current Active Task
+Next Candidate Tasks
+Relevant task definition for the active or requested task
+Direct dependencies of the active or requested task
+```
+
+Skip by default:
+
+```txt
+completed task definitions
+historical deliverables
+historical done definitions
+unrelated task families
+```
+
+Read skipped sections only when:
+
+```txt
+investigating regressions
+validating ownership history
+auditing prior decisions
+confirming dependency provenance
+recovering from ambiguous task status
+```
+
+Do not read the entire task registry by default.
+
 ## Completed Bootstrap Tasks
 
 | Task ID | Status | Priority | Task | Dependencies | Owner Type |
@@ -91,9 +123,11 @@ Progress log and handoff are updated.
 
 ## Next Candidate Tasks
 
-| Task ID | Status | Priority | Task | Dependencies | Owner Type |
+Task ID | Status | Priority | Task | Dependencies | Owner Type |
 |---|---:|---:|---|---|---|
-| DEV-004A | TODO | P1 | Documentation Startup Chain Optimization | DEV-003 | Documentation |
+DEV-004A | TODO | P1 | Documentation Startup Chain Optimization | DEV-003 | Documentation |
+FEATURE-003B | DONE | P0 | Work Experience Visual Direction & Interaction Blueprint | FEATURE-003A | Documentation |
+FEATURE-003 | TODO | P0 | Work Reimagined Runtime Implementation | FEATURE-003B, FEATURE-005R | Feature |
 
 ## Current Active Task
 
@@ -101,7 +135,7 @@ Progress log and handoff are updated.
 None.
 ```
 
-ARCH-001 through ARCH-012B and DEV-001 through DEV-003 are complete. Select the next task before implementation begins.
+ARCH-001 through ARCH-012B, DEV-001 through DEV-003, and FEATURE-003A are complete. Select the next task before implementation begins.
 
 ### ARCH-003B Objective
 
