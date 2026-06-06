@@ -164,7 +164,7 @@ To extract the scroll layer into `ScrollOrchestrator`, we evaluated the remainin
 Document the current ScrollTrigger, Snapping, and Progress Publishing implementation in `PinnedSections.tsx`. Define the contracts for `ScrollOrchestrator` and plan the extraction details without making runtime code changes.
 
 ### Deliverables
-1. Creating `docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md` with:
+1. Creating `docs/02-architecture/scene-systems/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md` with:
    - Audit of scroll-based behaviors, inputs, and outputs.
    - Contract definitions for the Scroll Orchestration layer.
    - Verification procedures.

@@ -33,9 +33,9 @@ Architecture approved. Implementation pending.
 Related Files:
 
 ```txt
-docs/portfolio-v2-motion-architecture-proposal.md
-docs/portfolio-v2-motion-architecture-addendum-phase-0b.md
-docs/portfolio-v2-motion-architecture-foundation-phase-0c.md
+docs/02-architecture/phase-0/portfolio-v2-motion-architecture-proposal.md
+docs/02-architecture/phase-0/portfolio-v2-motion-architecture-addendum-phase-0b.md
+docs/02-architecture/phase-0/portfolio-v2-motion-architecture-foundation-phase-0c.md
 ```
 
 ## Issue-002: Missing Repository Memory
@@ -55,7 +55,7 @@ Important decisions existed in chat and ad hoc reports, not in a mandatory start
 Resolution:
 
 ```txt
-Created docs/00_AGENT_BOOTSTRAP.md and required supporting documents 01 through 07.
+Created docs/00-foundation/00_AGENT_BOOTSTRAP.md and required supporting documents 01 through 07.
 ```
 
 Status:
@@ -67,13 +67,13 @@ Resolved.
 Related Files:
 
 ```txt
-docs/00_AGENT_BOOTSTRAP.md
-docs/01_CONTEXT_BRIEF.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/04_ARCHITECTURE_DECISIONS.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/00-foundation/00_AGENT_BOOTSTRAP.md
+docs/00-foundation/01_CONTEXT_BRIEF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/01-governance/04_ARCHITECTURE_DECISIONS.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 ## Issue-003: Branch Policy Alignment
@@ -198,6 +198,42 @@ Status:
 Partially resolved.
 ```
 
+## Issue-014: Hero Scene Activation Signal Missing For Renderer Sleep
+
+Impact:
+
+```txt
+RendererManager can sleep HeroFluidRenderer for offscreen and hidden-tab states, but cannot yet consume a real Hero scene-active lifecycle signal.
+```
+
+Root Cause:
+
+```txt
+Hero is not currently represented by an extracted SceneModule lifecycle with explicit active/inactive state.
+```
+
+Resolution:
+
+```txt
+ARCH-012B added RendererManager.setSceneActive(moduleId, isActive) as a bounded external eligibility input.
+
+No Hero scene-active signal was wired because doing so would require inventing a new lifecycle system outside the consumer-driven ARCH-012B scope.
+```
+
+Status:
+
+```txt
+Documented non-blocking limitation.
+```
+
+Related Files:
+
+```txt
+lib/rendererManager.ts
+docs/03-audits/29_VISIBILITY_SLEEP_RUNTIME.md
+docs/02-architecture/renderer/28_VISIBILITY_SLEEP_ARCHITECTURE.md
+```
+
 ## Issue-008: Orchestration Still Embedded In PinnedSections
 
 Impact:
@@ -215,7 +251,7 @@ Runtime scene and transition extraction happened before a director existed, so P
 Resolution:
 
 ```txt
-ARCH-006A documented the ExperienceDirector orchestration plan in docs/13_EXPERIENCE_DIRECTOR_PLAN.md.
+ARCH-006A documented the ExperienceDirector orchestration plan in docs/02-architecture/scene-systems/13_EXPERIENCE_DIRECTOR_PLAN.md.
 ARCH-006B created components/orchestration/ExperienceDirector.ts and moved Work/Eclipse/Contact sequencing intent out of PinnedSections.
 ```
 
@@ -266,7 +302,7 @@ PinnedSections owns the master Work timeline, including Work root visibility, Wo
 Resolution:
 
 ```txt
-ARCH-005A documented the WorkScene extraction plan in docs/12_WORK_SCENE_EXTRACTION_PLAN.md.
+ARCH-005A documented the WorkScene extraction plan in docs/02-architecture/scene-systems/12_WORK_SCENE_EXTRACTION_PLAN.md.
 ARCH-005B created components/scenes/WorkScene.ts and moved Work root lifecycle, restoration, pointer-events, and WorkIntro lifecycle ownership out of PinnedSections.
 ```
 
@@ -338,7 +374,7 @@ Contact visual/interaction presentation lives in Contact.tsx, but scene activati
 Resolution:
 
 ```txt
-ARCH-004A documented the ContactScene extraction plan in docs/11_CONTACT_SCENE_EXTRACTION_PLAN.md.
+ARCH-004A documented the ContactScene extraction plan in docs/02-architecture/scene-systems/11_CONTACT_SCENE_EXTRACTION_PLAN.md.
 ARCH-004B created components/scenes/ContactScene.ts and moved Contact reveal lifecycle ownership out of PinnedSections.
 ```
 

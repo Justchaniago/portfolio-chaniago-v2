@@ -215,8 +215,8 @@ No ARCH-011C fixes were made. Gaps are documented only.
 
 Documents:
 
-- `docs/21_RENDERER_CONTRACTS.md` specifies `resize(width, height, dpr): void`.
-- `docs/25_RENDERER_MANAGER_ARCHITECTURE.md` describes manager-side debounced resize dispatch.
+- `docs/00-foundation/21_RENDERER_CONTRACTS.md` specifies `resize(width, height, dpr): void`.
+- `docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md` describes manager-side debounced resize dispatch.
 
 Implementation:
 
@@ -237,7 +237,7 @@ The current Hero fluid migration is internally consistent, but the implementatio
 
 Documents:
 
-- `docs/21_RENDERER_CONTRACTS.md` specifies `render(ctx: CanvasRenderingContext2D | WebGLRenderingContext): void`.
+- `docs/00-foundation/21_RENDERER_CONTRACTS.md` specifies `render(ctx: CanvasRenderingContext2D | WebGLRenderingContext): void`.
 
 Implementation:
 
@@ -256,8 +256,8 @@ This preserves renderer independence, but it diverges from the documented manage
 
 Documents:
 
-- `docs/21_RENDERER_CONTRACTS.md` specifies module `pause()` and `resume()`.
-- `docs/25_RENDERER_MANAGER_ARCHITECTURE.md` specifies IntersectionObserver-based Visibility Sleep and tab blur suspension.
+- `docs/00-foundation/21_RENDERER_CONTRACTS.md` specifies module `pause()` and `resume()`.
+- `docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md` specifies IntersectionObserver-based Visibility Sleep and tab blur suspension.
 
 Implementation:
 
@@ -276,7 +276,7 @@ The first consumer works, but future off-screen renderer consumers will need thi
 
 Documents:
 
-- `docs/25_RENDERER_MANAGER_ARCHITECTURE.md` proposes `register(module, container)` and `unregister(id)`.
+- `docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md` proposes `register(module, container)` and `unregister(id)`.
 
 Implementation:
 
@@ -295,8 +295,8 @@ Current lifecycle is safe for the single Hero fluid consumer, but multi-consumer
 
 Documents:
 
-- `docs/21_RENDERER_CONTRACTS.md` includes `initialize()`, `start()`, `pause()`, `resume()`, `resize(width, height, dpr)`, `setQuality()`, and `destroy()` on the manager contract.
-- `docs/25_RENDERER_MANAGER_ARCHITECTURE.md` includes quality throttling.
+- `docs/00-foundation/21_RENDERER_CONTRACTS.md` includes `initialize()`, `start()`, `pause()`, `resume()`, `resize(width, height, dpr)`, `setQuality()`, and `destroy()` on the manager contract.
+- `docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md` includes quality throttling.
 
 Implementation:
 

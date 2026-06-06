@@ -109,9 +109,9 @@ empty abstractions without consumers
 
 Approved architecture documents:
 
-- `docs/portfolio-v2-motion-architecture-proposal.md`
-- `docs/portfolio-v2-motion-architecture-addendum-phase-0b.md`
-- `docs/portfolio-v2-motion-architecture-foundation-phase-0c.md`
+- `docs/02-architecture/phase-0/portfolio-v2-motion-architecture-proposal.md`
+- `docs/02-architecture/phase-0/portfolio-v2-motion-architecture-addendum-phase-0b.md`
+- `docs/02-architecture/phase-0/portfolio-v2-motion-architecture-foundation-phase-0c.md`
 
 Approved verdict:
 

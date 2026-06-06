@@ -134,7 +134,7 @@ Read documents in this exact order.
 Read:
 
 ```txt
-/docs/01_CONTEXT_BRIEF.md
+/docs/00-foundation/01_CONTEXT_BRIEF.md
 ```
 
 Purpose:
@@ -151,7 +151,7 @@ Understand:
 Read:
 
 ```txt
-/docs/02_PROJECT_STATE.md
+/docs/05-project-management/02_PROJECT_STATE.md
 ```
 
 Purpose:
@@ -168,7 +168,7 @@ Understand:
 Read:
 
 ```txt
-/docs/03_TASK_REGISTRY.md
+/docs/05-project-management/03_TASK_REGISTRY.md
 ```
 
 Purpose:
@@ -185,7 +185,7 @@ Identify:
 Read:
 
 ```txt
-/docs/07_HANDOFF.md
+/docs/04-handoffs/07_HANDOFF.md
 ```
 
 Purpose:
@@ -201,7 +201,7 @@ Understand:
 Read:
 
 ```txt
-/docs/04_ARCHITECTURE_DECISIONS.md
+/docs/01-governance/04_ARCHITECTURE_DECISIONS.md
 ```
 
 ONLY the ADRs relevant to the task.

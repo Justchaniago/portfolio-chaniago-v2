@@ -20,7 +20,7 @@ Visual and performance behavior has been tested and verified across all lifecycl
 
 ## PART 2 — CONTRACT GAP ANALYSIS
 
-We evaluated the designed `RendererModuleContract` (from `docs/21_RENDERER_CONTRACTS.md`) against this first real-world implementation:
+We evaluated the designed `RendererModuleContract` (from `docs/00-foundation/21_RENDERER_CONTRACTS.md`) against this first real-world implementation:
 
 ```ts
 export interface RendererModuleContract {

@@ -168,7 +168,7 @@ We establish a safe 4-phase extraction sequence:
 ## PART 8 — RENDERER READINESS TEST
 
 - **Are contracts sufficient?**: **READY**.
-- **Justification**: The `RendererModuleContract` and `RendererManagerContract` defined in `docs/21_RENDERER_CONTRACTS.md` provide all lifecycle methods (`initialize`, `resize`, `update`, `render`, `pause`, `resume`, `destroy`) required to encapsulate this simulation. No contract changes are needed.
+- **Justification**: The `RendererModuleContract` and `RendererManagerContract` defined in `docs/00-foundation/21_RENDERER_CONTRACTS.md` provide all lifecycle methods (`initialize`, `resize`, `update`, `render`, `pause`, `resume`, `destroy`) required to encapsulate this simulation. No contract changes are needed.
 
 ---
 

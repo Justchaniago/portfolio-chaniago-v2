@@ -18,7 +18,7 @@ Sprint 1: Architecture Contracts
 
 ## Current Objective
 
-ARCH-011C Renderer Manager Adoption Audit complete. Next task not started.
+DEV-003 Documentation Physical Migration complete. Next task not started.
 
 ## Current Status
 
@@ -63,6 +63,11 @@ Completed:
 - ARCH-011A Renderer Manager Implementation Planning completed.
 - ARCH-011B Renderer Manager Runtime Implementation completed.
 - ARCH-011C Renderer Manager Adoption Audit completed.
+- ARCH-012A Visibility Sleep Architecture completed.
+- ARCH-012B Visibility Sleep Runtime Implementation completed.
+- DEV-001 Development Governance Foundation completed.
+- DEV-002 Documentation Governance & Repository Restructure completed.
+- DEV-003 Documentation Physical Migration completed.
 
 ## Current Branch
 
@@ -91,13 +96,19 @@ architecture/v2-motion-refactor
 - Hero fluid extraction boundaries and 4-phase sequence planned in ARCH-010C.
 - RendererManager adoption passed code inspection in ARCH-011C; visual parity remains UNVERIFIED.
 - RendererManager currently satisfies Hero fluid timing ownership, but documented resize, visibility sleep, quality policy, and shared context contracts remain implementation gaps.
+- Visibility Sleep architecture is defined in ARCH-012A for existing consumers only: RendererManager and HeroFluidRenderer.
+- ARCH-012A recommends `IntersectionObserver + scene activation + document.visibilityState` as the runtime sleep source model.
+- ARCH-012B implemented runtime Visibility Sleep for HeroFluidRenderer through RendererManager-owned sleep state, IntersectionObserver, and document visibility handling.
+- Scene-active eligibility is supported by RendererManager, but no existing Hero scene lifecycle signal is wired.
+- Development Governance is now defined in `docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md` as the master guidance for future bug fixes, improvements, features, ROI evaluation, and agent workflow.
+- Documentation has been physically migrated into the permanent hierarchy under `docs/00-foundation`, `docs/01-governance`, `docs/02-architecture`, `docs/03-audits`, `docs/04-handoffs`, `docs/05-project-management`, `docs/06-development`, and `docs/07-operations`.
 
 ## Current Priorities
 
-1. Keep ARCH-011C visual parity status as UNVERIFIED unless browser/screenshot validation is explicitly run in a later task.
-2. Select the next architecture task explicitly before starting new planning or runtime implementation.
+1. Apply `docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md` before future implementation work.
+2. Use the migrated startup chain in `docs/00-foundation`, `docs/05-project-management`, `docs/04-handoffs`, and `docs/01-governance`.
 
 ## Next Actions
 
-1. Review ARCH-011C documented RendererManager contract gaps before adding the next renderer consumer.
-2. Select the next task explicitly; ARCH-012A has not been started by ARCH-011C.
+1. Classify the next task as Bug Fix, Improvement, or Feature before coding.
+2. Select DEV-004A only if startup-chain optimization is approved.

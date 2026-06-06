@@ -75,7 +75,7 @@ We verified memory reallocation and references:
 
 ## PART 5 — RENDERER CONTRACT GAP ANALYSIS
 
-We evaluated `HeroFluidRenderer` compatibility with the designed contracts in `docs/21_RENDERER_CONTRACTS.md`:
+We evaluated `HeroFluidRenderer` compatibility with the designed contracts in `docs/00-foundation/21_RENDERER_CONTRACTS.md`:
 
 | Contract Area | Status | Notes |
 |---|---|---|

@@ -53,6 +53,11 @@ CANCELLED
 | ARCH-011A | DONE | P1 | Renderer Manager Implementation Planning | ARCH-010E | Architecture |
 | ARCH-011B | DONE | P1 | Renderer Manager Runtime Implementation | ARCH-011A | Architecture |
 | ARCH-011C | DONE | P1 | Renderer Manager Adoption Audit | ARCH-011B | Architecture |
+| ARCH-012A | DONE | P1 | Visibility Sleep Architecture | ARCH-011C | Architecture |
+| ARCH-012B | DONE | P1 | Visibility Sleep Runtime Implementation | ARCH-012A | Architecture |
+| DEV-001 | DONE | P1 | Development Governance Foundation | ARCH-012B | Documentation |
+| DEV-002 | DONE | P1 | Documentation Governance & Repository Restructure Plan | DEV-001 | Documentation |
+| DEV-003 | DONE | P1 | Documentation Physical Migration | DEV-002 | Documentation |
 
 ### ARCH-001 Objective
 
@@ -88,7 +93,7 @@ Progress log and handoff are updated.
 
 | Task ID | Status | Priority | Task | Dependencies | Owner Type |
 |---|---:|---:|---|---|---|
-| ARCH-012A | TODO | P1 | Advanced Scroll System Planning | ARCH-011C | Architecture |
+| DEV-004A | TODO | P1 | Documentation Startup Chain Optimization | DEV-003 | Documentation |
 
 ## Current Active Task
 
@@ -96,7 +101,7 @@ Progress log and handoff are updated.
 None.
 ```
 
-ARCH-001 through ARCH-011C are complete. Select the next task before implementation begins.
+ARCH-001 through ARCH-012B and DEV-001 through DEV-003 are complete. Select the next task before implementation begins.
 
 ### ARCH-003B Objective
 
@@ -132,7 +137,7 @@ Document current and future Contact ownership, lifecycle, reverse-scroll behavio
 ### ARCH-004A Deliverable
 
 ```txt
-docs/11_CONTACT_SCENE_EXTRACTION_PLAN.md
+docs/02-architecture/scene-systems/11_CONTACT_SCENE_EXTRACTION_PLAN.md
 ```
 
 ### ARCH-004A Done Definition
@@ -187,7 +192,7 @@ Document current and future Work ownership, lifecycle, reverse-scroll behavior, 
 ### ARCH-005A Deliverable
 
 ```txt
-docs/12_WORK_SCENE_EXTRACTION_PLAN.md
+docs/02-architecture/scene-systems/12_WORK_SCENE_EXTRACTION_PLAN.md
 ```
 
 ### ARCH-005A Done Definition
@@ -247,7 +252,7 @@ Define ExperienceDirector orchestration responsibilities, state model, permissio
 ### ARCH-006A Deliverable
 
 ```txt
-docs/13_EXPERIENCE_DIRECTOR_PLAN.md
+docs/02-architecture/scene-systems/13_EXPERIENCE_DIRECTOR_PLAN.md
 ```
 
 ### ARCH-006A Done Definition
@@ -303,7 +308,7 @@ Define ScrollOrchestrator responsibilities, state model, progress publishing arc
 ### ARCH-007A Deliverable
 
 ```txt
-docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
+docs/02-architecture/scene-systems/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
 ```
 
 ### ARCH-007A Done Definition
@@ -353,7 +358,7 @@ Define a unified Motion System, token taxonomy, layering hierarchy, GSAP governa
 ### ARCH-008A Deliverable
 
 ```txt
-docs/16_MOTION_SYSTEM_ARCHITECTURE.md
+docs/02-architecture/motion-interaction/16_MOTION_SYSTEM_ARCHITECTURE.md
 ```
 
 ### ARCH-008A Done Definition
@@ -379,7 +384,7 @@ Conduct a comprehensive Motion Adoption Audit to validate token centralization, 
 ### ARCH-008C Deliverable
 
 ```txt
-docs/17_MOTION_ADOPTION_AUDIT.md
+docs/03-audits/17_MOTION_ADOPTION_AUDIT.md
 ```
 
 ### ARCH-008C Done Definition
@@ -404,7 +409,7 @@ Define an Interaction System responsibility model, layered hierarchy, interactio
 ### ARCH-009A Deliverable
 
 ```txt
-docs/18_INTERACTION_SYSTEM_ARCHITECTURE.md
+docs/02-architecture/motion-interaction/18_INTERACTION_SYSTEM_ARCHITECTURE.md
 ```
 
 ### ARCH-009A Done Definition
@@ -454,7 +459,7 @@ Validate and audit the adoption of InteractionSystem, identify remaining interac
 ### ARCH-009C Deliverable
 
 ```txt
-docs/19_INTERACTION_ADOPTION_AUDIT.md
+docs/03-audits/19_INTERACTION_ADOPTION_AUDIT.md
 Legacy cleanup in Contact.tsx (removal of redundant refs and event handlers)
 ```
 
@@ -477,7 +482,7 @@ Determine whether the portfolio requires a centralized Renderer System, audit cu
 ### ARCH-010A Deliverable
 
 ```txt
-docs/20_RENDERER_SYSTEM_ARCHITECTURE.md
+docs/02-architecture/renderer/20_RENDERER_SYSTEM_ARCHITECTURE.md
 ```
 
 ### ARCH-010A Done Definition
@@ -521,7 +526,7 @@ Document the extraction plan for the first renderer consumer (Hero fluid simulat
 ### ARCH-010C Deliverable
 
 ```txt
-docs/22_HERO_FLUID_EXTRACTION_PLAN.md
+docs/02-architecture/renderer/22_HERO_FLUID_EXTRACTION_PLAN.md
 ```
 
 ### ARCH-010C Done Definition
@@ -566,7 +571,7 @@ Perform a detailed post-extraction verification audit of HeroFluidRenderer, vali
 ### ARCH-010E Deliverable
 
 ```txt
-docs/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
+docs/03-audits/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
 ```
 
 ### ARCH-010E Done Definition
@@ -588,7 +593,7 @@ Define the RendererManager architecture, lifecycle model, registration model, vi
 ### ARCH-011A Deliverable
 
 ```txt
-docs/25_RENDERER_MANAGER_ARCHITECTURE.md
+docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md
 ```
 
 ### ARCH-011A Done Definition
@@ -631,7 +636,7 @@ Perform a code-level adoption audit of the RendererManager implementation introd
 ### ARCH-011C Deliverable
 
 ```txt
-docs/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
+docs/03-audits/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
 ```
 
 ### ARCH-011C Done Definition
@@ -645,6 +650,169 @@ Remaining renderer debt classified.
 Contract gaps documented without fixes.
 Visual parity status remains UNVERIFIED.
 Build passes.
+```
+
+### ARCH-012A Objective
+
+```txt
+Define centralized Visibility Sleep ownership, contracts, lifecycle, source model, and adoption strategy for existing RendererManager and HeroFluidRenderer consumers without runtime changes.
+```
+
+### ARCH-012A Deliverable
+
+```txt
+docs/02-architecture/renderer/28_VISIBILITY_SLEEP_ARCHITECTURE.md
+```
+
+### ARCH-012A Done Definition
+
+```txt
+Repository audit completed.
+Ownership boundaries documented.
+Lifecycle states documented.
+Visibility source recommendation documented.
+ARCH-012B defined.
+No runtime code changed.
+No browser testing.
+No visual parity validation.
+```
+
+### ARCH-012B Objective
+
+```txt
+Implement centralized Visibility Sleep in RendererManager for the existing HeroFluidRenderer consumer only.
+```
+
+### ARCH-012B Deliverable
+
+```txt
+lib/rendererManager.ts
+hooks/useFluidSim.ts
+docs/03-audits/29_VISIBILITY_SLEEP_RUNTIME.md
+tracking doc updates
+```
+
+### ARCH-012B Done Definition
+
+```txt
+RendererManager tracks per-module sleep state.
+RendererManager observes the registered Hero renderer container.
+RendererManager responds to document.visibilityState.
+RendererManager accepts explicit scene-active eligibility for the Hero renderer.
+Sleeping modules do not receive update() or render() calls.
+HeroFluidRenderer remains owner of canvas, context, buffers, physics, resize allocation, disturbance, and rendering.
+RendererManager remains the only managed renderer timing owner.
+No MorphNav migration.
+No WebGL/shader/particle design or implementation.
+Build passes.
+```
+
+### DEV-001 Objective
+
+```txt
+Create the permanent Development Governance framework for future bug fixes, improvements, features, ROI evaluation, and agent workflow.
+```
+
+### DEV-001 Deliverable
+
+```txt
+docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md
+tracking doc updates
+```
+
+### DEV-001 Done Definition
+
+```txt
+Development philosophy documented.
+Engineering decision framework documented.
+Anti over-engineering rules documented.
+Bug fix governance documented.
+Feature delivery governance documented.
+Agent workflow governance documented.
+ROI framework documented.
+Feature readiness criteria documented.
+No runtime code changed.
+No feature implementation.
+No new abstractions.
+```
+
+### DEV-002 Objective
+
+```txt
+Audit and classify all documentation, design the permanent hierarchy, and create a physical migration plan without moving files.
+```
+
+### DEV-002 Deliverable
+
+```txt
+docs/01-governance/DOCUMENTATION_MAP.md
+docs/06-development/plans/DOCUMENTATION_RESTRUCTURE_PLAN.md
+```
+
+### DEV-002 Done Definition
+
+```txt
+Complete document inventory created.
+Category map created.
+Purpose, owner, lifecycle status, dependencies, and target locations documented.
+Migration sequence documented.
+Dependency risks documented.
+No file moves.
+No runtime code changed.
+git diff --check passes.
+```
+
+### DEV-003 Objective
+
+```txt
+Physically migrate documentation into the approved hierarchy, update references, and validate migrated paths.
+```
+
+### DEV-003 Deliverable
+
+```txt
+Folder hierarchy created.
+Files moved to target locations.
+References updated.
+docs/31_DOCUMENTATION_MIGRATION_REPORT.md
+```
+
+### DEV-003 Done Definition
+
+```txt
+Folder hierarchy created.
+Files physically migrated.
+References updated.
+Bootstrap chain valid.
+Handoff references valid.
+Project management references valid.
+Validation completed.
+No runtime code changed.
+Repository remains uncommitted.
+```
+
+### DEV-004A Objective
+
+```txt
+Optimize the documentation startup chain over the migrated hierarchy to reduce future agent context loading cost.
+```
+
+### DEV-004A Deliverable
+
+```txt
+Startup read path update.
+Handoff read path update.
+Documentation map startup guidance update.
+```
+
+### DEV-004A Done Definition
+
+```txt
+Minimal startup chain defined.
+Required read order documented.
+Optional deep-dive paths documented.
+No runtime code changed.
+No documentation files moved.
 ```
 
 ## Completed Planning Tasks

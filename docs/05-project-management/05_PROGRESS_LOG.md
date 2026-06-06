@@ -22,14 +22,14 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/00_AGENT_BOOTSTRAP.md
-docs/01_CONTEXT_BRIEF.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/04_ARCHITECTURE_DECISIONS.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/00-foundation/00_AGENT_BOOTSTRAP.md
+docs/00-foundation/01_CONTEXT_BRIEF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/01-governance/04_ARCHITECTURE_DECISIONS.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -63,11 +63,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -103,11 +103,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/08_CORE_CONTRACT_DEFINITIONS.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/00-foundation/08_CORE_CONTRACT_DEFINITIONS.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -142,11 +142,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/09_CONSUMER_MAPPING_AND_MIGRATION_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/09_CONSUMER_MAPPING_AND_MIGRATION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -182,11 +182,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/10_ECLIPSE_TRANSITION_EXTRACTION_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/scene-systems/10_ECLIPSE_TRANSITION_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -222,12 +222,12 @@ Files Modified:
 ```txt
 components/transitions/EclipseTransition.ts
 components/sections/PinnedSections.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
-docs/10_ECLIPSE_TRANSITION_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+docs/02-architecture/scene-systems/10_ECLIPSE_TRANSITION_EXTRACTION_PLAN.md
 ```
 
 Result:
@@ -262,11 +262,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/11_CONTACT_SCENE_EXTRACTION_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/scene-systems/11_CONTACT_SCENE_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -303,12 +303,12 @@ Files Modified:
 ```txt
 components/scenes/ContactScene.ts
 components/sections/PinnedSections.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
-docs/11_CONTACT_SCENE_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+docs/02-architecture/scene-systems/11_CONTACT_SCENE_EXTRACTION_PLAN.md
 ```
 
 Result:
@@ -350,12 +350,12 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/12_WORK_SCENE_EXTRACTION_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/02-architecture/scene-systems/12_WORK_SCENE_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -393,12 +393,12 @@ Files Modified:
 ```txt
 components/scenes/WorkScene.ts
 components/sections/PinnedSections.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
-docs/12_WORK_SCENE_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+docs/02-architecture/scene-systems/12_WORK_SCENE_EXTRACTION_PLAN.md
 ```
 
 Result:
@@ -443,12 +443,12 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/13_EXPERIENCE_DIRECTOR_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/02-architecture/scene-systems/13_EXPERIENCE_DIRECTOR_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -486,12 +486,12 @@ Files Modified:
 ```txt
 components/orchestration/ExperienceDirector.ts
 components/sections/PinnedSections.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
-docs/13_EXPERIENCE_DIRECTOR_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+docs/02-architecture/scene-systems/13_EXPERIENCE_DIRECTOR_PLAN.md
 ```
 
 Result:
@@ -533,8 +533,8 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md
-docs/05_PROGRESS_LOG.md
+docs/03-audits/14_EXPERIENCE_DIRECTOR_POST_EXTRACTION_AUDIT.md
+docs/05-project-management/05_PROGRESS_LOG.md
 ```
 
 Result:
@@ -570,9 +570,9 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
+docs/02-architecture/scene-systems/15_SCROLL_ORCHESTRATOR_EXTRACTION_PLAN.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
 ```
 
 Result:
@@ -607,11 +607,11 @@ Files Modified:
 ```txt
 components/orchestration/ScrollOrchestrator.ts
 components/sections/PinnedSections.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -648,9 +648,9 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/16_MOTION_SYSTEM_ARCHITECTURE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
+docs/02-architecture/motion-interaction/16_MOTION_SYSTEM_ARCHITECTURE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
 ```
 
 Result:
@@ -689,11 +689,11 @@ lib/motionPresets.ts
 components/scenes/WorkScene.ts
 components/scenes/ContactScene.ts
 components/transitions/EclipseTransition.ts
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -728,9 +728,9 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/17_MOTION_ADOPTION_AUDIT.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
+docs/03-audits/17_MOTION_ADOPTION_AUDIT.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
 ```
 
 Result:
@@ -767,9 +767,9 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/18_INTERACTION_SYSTEM_ARCHITECTURE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
+docs/02-architecture/motion-interaction/18_INTERACTION_SYSTEM_ARCHITECTURE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
 ```
 
 Result:
@@ -807,11 +807,11 @@ Files Modified:
 lib/interactionSystem.ts
 lib/interactionPresets.ts
 components/sections/Contact.tsx
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -847,11 +847,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/19_INTERACTION_ADOPTION_AUDIT.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/03-audits/19_INTERACTION_ADOPTION_AUDIT.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -887,11 +887,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/20_RENDERER_SYSTEM_ARCHITECTURE.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/renderer/20_RENDERER_SYSTEM_ARCHITECTURE.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -916,7 +916,7 @@ ARCH-010B
 
 Completed Work:
 
-- Conducted a comprehensive contract audit against `08_CORE_CONTRACT_DEFINITIONS.md` and `docs/20_RENDERER_SYSTEM_ARCHITECTURE.md`.
+- Conducted a comprehensive contract audit against `08_CORE_CONTRACT_DEFINITIONS.md` and `docs/02-architecture/renderer/20_RENDERER_SYSTEM_ARCHITECTURE.md`.
 - Defined the formal `RendererManagerContract` specifying master registration, initialization, resize debouncing, quality throttling, and context teardown.
 - Defined the `RendererModuleContract` for class-level encapsulation of individual shader or canvas components.
 - Mapped the extraction boundaries for the first consumer (`useFluidSim.ts` to `HeroFluidRenderer`), dividing height array/wave step logic, canvas drawing, ticks, and mouse listeners.
@@ -929,11 +929,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/21_RENDERER_CONTRACTS.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/00-foundation/21_RENDERER_CONTRACTS.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -971,11 +971,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/22_HERO_FLUID_EXTRACTION_PLAN.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/renderer/22_HERO_FLUID_EXTRACTION_PLAN.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -1011,12 +1011,12 @@ Files Modified:
 ```txt
 components/renderers/HeroFluidRenderer.ts
 hooks/useFluidSim.ts
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
-docs/23_HERO_FLUID_RUNTIME_EXTRACTION.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+docs/02-architecture/renderer/23_HERO_FLUID_RUNTIME_EXTRACTION.md
 ```
 
 Result:
@@ -1051,11 +1051,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/03-audits/24_HERO_FLUID_POST_EXTRACTION_AUDIT.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -1090,11 +1090,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/25_RENDERER_MANAGER_ARCHITECTURE.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -1130,12 +1130,12 @@ Files Modified:
 lib/rendererManager.ts
 components/renderers/HeroFluidRenderer.ts
 hooks/useFluidSim.ts
-docs/26_RENDERER_MANAGER_IMPLEMENTATION.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/06_ISSUES_AND_RESOLUTIONS.md
-docs/07_HANDOFF.md
+docs/02-architecture/renderer/26_RENDERER_MANAGER_IMPLEMENTATION.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -1160,7 +1160,7 @@ ARCH-011C
 
 Completed Work:
 
-- Performed code-only RendererManager adoption audit against `docs/21_RENDERER_CONTRACTS.md` and `docs/25_RENDERER_MANAGER_ARCHITECTURE.md`.
+- Performed code-only RendererManager adoption audit against `docs/00-foundation/21_RENDERER_CONTRACTS.md` and `docs/02-architecture/renderer/25_RENDERER_MANAGER_ARCHITECTURE.md`.
 - Verified `HeroFluidRenderer` and `useFluidSim` do not own local RAF loops.
 - Verified `RendererManager` owns managed renderer timing, registration, scheduling, and loop shutdown.
 - Verified `HeroFluidRenderer` remains independent and owns canvas, context, Float32Array buffers, wave propagation, ambient ripples, disturb logic, rendering, and resize allocation.
@@ -1173,11 +1173,11 @@ Completed Work:
 Files Modified:
 
 ```txt
-docs/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
-docs/02_PROJECT_STATE.md
-docs/03_TASK_REGISTRY.md
-docs/05_PROGRESS_LOG.md
-docs/07_HANDOFF.md
+docs/03-audits/27_RENDERER_MANAGER_ADOPTION_AUDIT.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
 ```
 
 Result:
@@ -1192,4 +1192,245 @@ Next Step:
 
 ```txt
 Select the next task explicitly. Do not start ARCH-012A from ARCH-011C.
+```
+
+## 2026-06-06
+
+Task:
+
+```txt
+ARCH-012A
+```
+
+Completed Work:
+
+- Audited current rendering consumers: `HeroFluidRenderer`, `RendererManager`, `MorphNav` Canvas2D transitions, `public/fluid-test.html`, and WebGL usage.
+- Audited current visibility mechanisms: ProjectCard-local `IntersectionObserver`, ExperienceDirector scene activation, WorkScene/ContactScene pause/resume lifecycles, ScrollOrchestrator progress publication, and absence of `document.visibilityState` handling.
+- Documented RendererManager Visibility Sleep responsibilities and explicit non-ownership boundaries.
+- Documented renderer module responsibilities and optional `pause()` / `resume()` lifecycle hooks.
+- Defined the `Created -> Initialized -> Active <-> Sleeping -> Destroyed` lifecycle model with valid and invalid transitions.
+- Evaluated Visibility Source Options A, B, and C.
+- Recommended Option C: `IntersectionObserver + scene activation + document.visibilityState`.
+- Defined ARCH-012B runtime implementation scope for existing HeroFluidRenderer adoption only.
+- Did not implement runtime code, browser testing, screenshot testing, visual parity validation, or performance benchmarking.
+
+Files Modified:
+
+```txt
+docs/02-architecture/renderer/28_VISIBILITY_SLEEP_ARCHITECTURE.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-012A Visibility Sleep Architecture complete.
+Final verdict: PASS.
+```
+
+Next Step:
+
+```txt
+Select ARCH-012B only if runtime Visibility Sleep implementation is approved.
+```
+
+## 2026-06-07
+
+Task:
+
+```txt
+ARCH-012B
+```
+
+Completed Work:
+
+- Implemented RendererManager-owned Visibility Sleep runtime support for the existing `HeroFluidRenderer` consumer.
+- Added per-module `ACTIVE` / `SLEEPING` state tracking in `lib/rendererManager.ts`.
+- Added optional module lifecycle hooks `pause()` and `resume()` to the public renderer contract.
+- Added manager-level `pause(module)`, `resume(module)`, and `setSceneActive(moduleId, isActive)` coordination APIs.
+- Added `IntersectionObserver` coordination for registered renderer visibility targets.
+- Added `document.visibilityState` / `visibilitychange` handling for hidden-tab sleep and visible-tab wake.
+- Updated the manager tick so sleeping modules do not receive `update()` or `render()`.
+- Updated `hooks/useFluidSim.ts` to register the existing Hero canvas as the visibility target.
+- Left `HeroFluidRenderer` ownership unchanged; it still owns canvas, ctx, buffers, physics, resize allocation, disturbance, and rendering.
+- Did not migrate MorphNav, WebGL, shaders, particles, quality scaling, resize governance, or future renderer support.
+- Did not run browser agents, visual testing, screenshots, or visual parity validation.
+
+Verification:
+
+```txt
+npm run build: PASS
+grep -R "requestAnimationFrame" hooks components/renderers lib: PASS
+grep -R "getContext" lib/rendererManager.ts: PASS, 0 matches
+```
+
+Files Modified:
+
+```txt
+lib/rendererManager.ts
+hooks/useFluidSim.ts
+docs/03-audits/29_VISIBILITY_SLEEP_RUNTIME.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/05-project-management/06_ISSUES_AND_RESOLUTIONS.md
+docs/04-handoffs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+ARCH-012B Visibility Sleep Runtime Implementation complete.
+Final verdict: PASS.
+Visual parity status: UNVERIFIED.
+```
+
+Next Step:
+
+```txt
+Select the next scoped task explicitly before further runtime changes.
+```
+
+## 2026-06-07
+
+Task:
+
+```txt
+DEV-001
+```
+
+Completed Work:
+
+- Created the permanent Development Governance master document.
+- Defined development philosophy for consumer-driven delivery, adaptation over abstraction, extraction over rewrites, validation before optimization, and anti-speculative architecture.
+- Added examples from Motion System, Interaction System, and Renderer System.
+- Defined Tier 1 Bug Fix, Tier 2 Improvement, and Tier 3 Feature decision framework.
+- Documented anti over-engineering rules.
+- Documented formal bug fix workflow and severity levels.
+- Documented feature delivery workflow.
+- Documented agent workflow governance before, during, and after coding.
+- Defined ROI scoring across user value, architectural value, risk, complexity, and maintenance cost.
+- Defined feature readiness criteria.
+- Did not modify runtime code, create abstractions, or implement features.
+
+Files Modified:
+
+```txt
+docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md
+docs/05-project-management/02_PROJECT_STATE.md
+docs/05-project-management/03_TASK_REGISTRY.md
+docs/05-project-management/05_PROGRESS_LOG.md
+docs/04-handoffs/07_HANDOFF.md
+```
+
+Result:
+
+```txt
+DEV-001 Development Governance Foundation complete.
+```
+
+Next Step:
+
+```txt
+Select the next scoped task explicitly and apply docs/01-governance/30_DEVELOPMENT_GOVERNANCE.md before coding.
+```
+
+## 2026-06-07
+
+Task:
+
+```txt
+DEV-002
+```
+
+Completed Work:
+
+- Audited every top-level document in `docs/`.
+- Created complete documentation classification map.
+- Created permanent documentation hierarchy plan.
+- Created physical migration plan with sequence and dependency risks.
+- Did not move, delete, rename, or update references during planning.
+
+Files Modified:
+
+```txt
+docs/01-governance/DOCUMENTATION_MAP.md
+docs/06-development/plans/DOCUMENTATION_RESTRUCTURE_PLAN.md
+```
+
+Result:
+
+```txt
+DEV-002 Documentation Governance & Repository Restructure Plan complete.
+Readiness verdict: READY FOR DEV-003.
+```
+
+Next Step:
+
+```txt
+Select DEV-003 only if physical documentation migration is approved.
+```
+
+## 2026-06-07
+
+Task:
+
+```txt
+DEV-003
+```
+
+Completed Work:
+
+- Created the permanent documentation folder hierarchy.
+- Moved 44 existing documentation files to approved target locations.
+- Updated literal documentation path references across documentation.
+- Updated startup chain references.
+- Updated handoff and project-management references.
+- Updated `DOCUMENTATION_MAP.md` from planned locations to actual locations.
+- Updated `DOCUMENTATION_RESTRUCTURE_PLAN.md` to mark migration complete.
+- Created `docs/31_DOCUMENTATION_MIGRATION_REPORT.md`.
+- Did not modify runtime code.
+- Did not delete or archive documents.
+- Did not run git add, git commit, or git push.
+
+Validation:
+
+```txt
+find docs -type f | sort: PASS
+rg "docs/[A-Za-z0-9_./-]+\\.md" docs: PASS
+Reference resolution check: PASS, 0 unresolved references
+Old startup top-level references: PASS, 0 stale matches
+git diff --check: PASS
+```
+
+Files Modified:
+
+```txt
+docs/00-foundation/
+docs/01-governance/
+docs/02-architecture/
+docs/03-audits/
+docs/04-handoffs/
+docs/05-project-management/
+docs/06-development/
+docs/07-operations/
+docs/archive/
+docs/31_DOCUMENTATION_MIGRATION_REPORT.md
+```
+
+Result:
+
+```txt
+DEV-003 Documentation Physical Migration complete.
+Final verdict: PASS.
+Readiness verdict: READY FOR DEV-004A.
+```
+
+Next Step:
+
+```txt
+Select DEV-004A only if documentation startup-chain optimization is approved.
 ```
