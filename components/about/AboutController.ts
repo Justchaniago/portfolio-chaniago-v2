@@ -40,15 +40,15 @@ export function createAboutController({
         ScrollTrigger.create({
           trigger: ABOUT_SELECTORS.section,
           start: 'top top',
-          end: '+=100%',
+          end: '+=60%',
           pin: true,
           onUpdate: (self) => {
             if (!isTransitionComplete) {
               gsap.killTweensOf(aboutTl);
               aboutTl.progress(0);
             } else {
-              // Scale progress from [0.05, 1.0] of scroll trigger to [0.0, 1.0] of timeline progress
-              const p = Math.max(0, (self.progress - 0.05) / 0.95);
+              // Scale progress from [0.02, 1.0] of scroll trigger to [0.0, 1.0] of timeline progress
+              const p = Math.max(0, (self.progress - 0.02) / 0.98);
               gsap.to(aboutTl, { progress: p, duration: 0.15, overwrite: 'auto' });
             }
           }
@@ -57,9 +57,9 @@ export function createAboutController({
         // Phase 1: Reveal About Intro (0.0 -> 0.35)
         aboutTl
           .to(ABOUT_SELECTORS.portrait, { clipPath: 'inset(0% 0% 0% 0%)', y: 0, opacity: 1, duration: 0.4 }, 0.0)
-          .to(ABOUT_SELECTORS.eyebrow, { opacity: 1, y: 0, duration: 0.2 }, 0.1)
-          .to(ABOUT_SELECTORS.chars, { yPercent: 0, opacity: 1, stagger: 0.015, duration: 0.4 }, 0.12)
-          .to(ABOUT_SELECTORS.description, { opacity: 1, y: 0, duration: 0.2 }, 0.25);
+          .to(ABOUT_SELECTORS.eyebrow, { opacity: 1, y: 0, duration: 0.2 }, 0.02)
+          .to(ABOUT_SELECTORS.chars, { yPercent: 0, opacity: 1, stagger: 0.015, duration: 0.4 }, 0.05)
+          .to(ABOUT_SELECTORS.description, { opacity: 1, y: 0, duration: 0.2 }, 0.10);
 
         // Phase 2: Transition from Intro to Deep Dive (0.55 -> 1.0)
         aboutTl
