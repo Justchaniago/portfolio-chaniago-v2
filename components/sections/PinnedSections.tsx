@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 
 import Hero from './Hero';
@@ -9,7 +9,9 @@ import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
 import { createAboutController } from '../about/AboutController';
+import { createAboutEnvironmentLifecycle } from '../about/AboutEnvironmentLifecycle';
 import { createContactScene } from '../scenes/ContactScene';
+import EnvironmentTransitionLayer from '../transitions/EnvironmentTransitionLayer';
 
 type PortfolioWindow = Window & {
   __activeSection?: string;
@@ -17,11 +19,33 @@ type PortfolioWindow = Window & {
 };
 
 export default function PinnedSections() {
+  const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
+  const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
+
+  if (aboutEnvironmentRef.current === null) {
+    aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
+  }
+
+  const handleEnvironmentHandoff = useCallback(() => {
+    aboutEnvironmentRef.current?.activate();
+  }, []);
+
+  const handleEnvironmentReset = useCallback(() => {
+    aboutEnvironmentRef.current?.deactivate();
+  }, []);
+
+  const handleTransitionComplete = useCallback((complete: boolean) => {
+    aboutControllerRef.current?.setTransitionComplete(complete);
+  }, []);
+
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
     const portfolioWindow = window as PortfolioWindow;
-    const aboutController = createAboutController();
+    const aboutController = createAboutController({
+      environment: aboutEnvironmentRef.current ?? undefined,
+    });
+    aboutControllerRef.current = aboutController;
     const contactScene = createContactScene();
     contactScene.prepare();
 
@@ -81,11 +105,11 @@ export default function PinnedSections() {
       ease: 'none',
     });
 
-    gsap.to('.hero-fluid-canvas', {
+    gsap.to('#hero-section', {
       scrollTrigger: {
         trigger: '#hero-section',
         start: 'top top',
-        end: 'bottom top',
+        end: 'bottom 20%',
         scrub: true,
       },
       opacity: 0,
@@ -114,6 +138,7 @@ export default function PinnedSections() {
           '--color-text-2': '#444444',
           '--color-border': 'rgba(10, 10, 10, 0.15)',
           '--color-accent': '#3F702A',
+          '--about-env-opacity': '1',
           duration: 0.3,
         });
       }
@@ -131,8 +156,13 @@ export default function PinnedSections() {
   }, []);
 
   return (
-    <div className="w-full relative bg-void">
+    <div className="w-full relative bg-[var(--color-bg)]">
       <NavRail />
+      <EnvironmentTransitionLayer
+        onEnvironmentHandoff={handleEnvironmentHandoff}
+        onEnvironmentReset={handleEnvironmentReset}
+        onTransitionComplete={handleTransitionComplete}
+      />
 
       <div id="hero-section" className="w-full h-screen relative overflow-hidden">
         <Hero />

@@ -1,4 +1,4 @@
-import { gsap } from '@/lib/gsap';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
 
 import {
   createAboutEnvironmentLifecycle,
@@ -13,6 +13,9 @@ export function createAboutController({
   environment = createAboutEnvironmentLifecycle(),
 }: AboutControllerDependencies = {}) {
   const mm = gsap.matchMedia();
+  let isTransitionComplete = false;
+  let aboutTimeline: gsap.core.Timeline | null = null;
+  let introTimelineMobile: gsap.core.Timeline | null = null;
 
   return {
     prepare() {
@@ -24,15 +27,31 @@ export function createAboutController({
         gsap.set(ABOUT_SELECTORS.description, { opacity: 0, y: 20 });
         gsap.set(ABOUT_SELECTORS.portraitLeft, { xPercent: 50, opacity: 0 });
         gsap.set(ABOUT_SELECTORS.subContent, { opacity: 0 });
+        gsap.set(ABOUT_SELECTORS.subEyebrow, { opacity: 0, y: 15 });
+        gsap.set(ABOUT_SELECTORS.subFocus, { opacity: 0, y: 20 });
+        gsap.set(ABOUT_SELECTORS.subMetrics, { opacity: 0, y: 20 });
+        gsap.set(ABOUT_SELECTORS.subStack, { opacity: 0, y: 20 });
 
         const aboutTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: ABOUT_SELECTORS.section,
-            start: 'top top',
-            end: '+=100%',
-            scrub: 0.5,
-            pin: true,
-          },
+          paused: true,
+        });
+        aboutTimeline = aboutTl;
+
+        ScrollTrigger.create({
+          trigger: ABOUT_SELECTORS.section,
+          start: 'top top',
+          end: '+=100%',
+          pin: true,
+          onUpdate: (self) => {
+            if (!isTransitionComplete) {
+              gsap.killTweensOf(aboutTl);
+              aboutTl.progress(0);
+            } else {
+              // Scale progress from [0.05, 1.0] of scroll trigger to [0.0, 1.0] of timeline progress
+              const p = Math.max(0, (self.progress - 0.05) / 0.95);
+              gsap.to(aboutTl, { progress: p, duration: 0.15, overwrite: 'auto' });
+            }
+          }
         });
 
         // Phase 1: Reveal About Intro (0.0 -> 0.35)
@@ -63,11 +82,19 @@ export function createAboutController({
         gsap.set(ABOUT_SELECTORS.chars, { opacity: 0, yPercent: 100 });
         gsap.set(ABOUT_SELECTORS.subContent, { opacity: 0, y: 40 });
 
-        const introTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: ABOUT_SELECTORS.section,
-            start: 'top 75%',
-            toggleActions: 'play none none reverse',
+        const introTl = gsap.timeline({ paused: true });
+        introTimelineMobile = introTl;
+
+        ScrollTrigger.create({
+          trigger: ABOUT_SELECTORS.section,
+          start: 'top 75%',
+          onEnter: () => {
+            if (isTransitionComplete) {
+              introTl.play();
+            }
+          },
+          onLeaveBack: () => {
+            introTl.reverse();
           }
         });
 
@@ -91,9 +118,30 @@ export function createAboutController({
       });
     },
 
+    setTransitionComplete(complete: boolean) {
+      isTransitionComplete = complete;
+      if (isTransitionComplete) {
+        if (aboutTimeline?.scrollTrigger) {
+          aboutTimeline.scrollTrigger.update();
+        }
+        if (introTimelineMobile) {
+          introTimelineMobile.play();
+        }
+      } else {
+        if (aboutTimeline) {
+          aboutTimeline.progress(0);
+        }
+        if (introTimelineMobile) {
+          introTimelineMobile.pause(0);
+        }
+      }
+    },
+
     destroy() {
       mm.revert();
       environment.destroy();
+      aboutTimeline = null;
+      introTimelineMobile = null;
     },
   };
 }

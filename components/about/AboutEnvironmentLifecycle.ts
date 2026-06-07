@@ -18,6 +18,7 @@ const ABOUT_THEME_VARS = {
   '--color-card-shadow': '0 8px 32px rgba(10, 10, 10, 0.03)',
   '--color-card-shadow-hover': '0 12px 40px rgba(10, 10, 10, 0.05)',
   '--color-text-reveal-bg': 'rgba(10, 10, 10, 0.12)',
+  '--about-env-opacity': '1',
   ease: 'power2.inOut',
   duration: 0.3,
 } as const;
@@ -38,15 +39,16 @@ export function createAboutEnvironmentLifecycle() {
 
   return {
     activate(options: AboutEnvironmentActivationOptions = {}) {
-      state = 'activating';
-
       if (options.timeline) {
-        options.timeline.to('html', {
-          ...ABOUT_THEME_VARS,
-        }, options.position ?? DEFAULT_ACTIVATION_POSITION);
+        // Gated: only consume activation when handoff is received from transition card
         return;
       }
 
+      if (state === 'active' || state === 'activating') {
+        return;
+      }
+
+      state = 'activating';
       activeTween = gsap.to('html', {
         ...ABOUT_THEME_VARS,
         onComplete: setActive,

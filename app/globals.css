@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --about-env-opacity: 0;
   /* === BACKGROUNDS === */
   --color-void: #0A0A0A;
   /* Background utama */

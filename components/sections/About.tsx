@@ -18,7 +18,7 @@ export default function About() {
         width: '100%',
         height: '100%',
         backgroundColor: 'var(--color-bg)',
-        transition: 'background-color 0.4s ease, color 0.4s ease',
+        transition: 'color 0.4s ease',
         zIndex: 1,
         pointerEvents: 'auto',
         display: 'flex',
@@ -35,6 +35,7 @@ export default function About() {
           alt="About Portrait"
           className="about-portrait-img"
           style={{
+            opacity: 0,
             position: 'absolute',
             bottom: '-10vh', // Anchors the portrait visually to the bottom viewport edge, grounding the subject
             right: '0vw', // Shifted 6% to the right (from 6vw to 0vw) to align exactly with the right edge
