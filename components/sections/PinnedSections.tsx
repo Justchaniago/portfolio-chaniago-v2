@@ -8,6 +8,7 @@ import About from './About';
 import ProjectShowcase from '../work/ProjectShowcase';
 import Contact from './Contact';
 import NavRail from '../layout/NavRail';
+import { createAboutController } from '../about/AboutController';
 import { createContactScene } from '../scenes/ContactScene';
 
 type PortfolioWindow = Window & {
@@ -20,10 +21,9 @@ export default function PinnedSections() {
     if (typeof window === 'undefined') return;
 
     const portfolioWindow = window as PortfolioWindow;
+    const aboutController = createAboutController();
     const contactScene = createContactScene();
     contactScene.prepare();
-
-    const mm = gsap.matchMedia();
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
     const dispatchActiveSection = (sectionId: string) => {
@@ -92,94 +92,8 @@ export default function PinnedSections() {
       ease: 'none',
     });
 
-    // 4. About Section Local Timelines & Pinning (matchMedia for desktop vs mobile)
-    // Desktop: Pinned details morph
-    mm.add('(min-width: 769px)', () => {
-      gsap.set('.about-portrait-img', { clipPath: 'inset(100% 0% 0% 0%)', y: 120, opacity: 0 });
-      gsap.set('.about-eyebrow', { opacity: 0, y: 15 });
-      gsap.set('.about-char', { yPercent: 100, opacity: 0 });
-      gsap.set('.about-description', { opacity: 0, y: 20 });
-      gsap.set('.about-portrait-left-img', { xPercent: 50, opacity: 0 });
-      gsap.set('.about-sub-content', { opacity: 0 });
-
-      const aboutTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '#about-section',
-          start: 'top top',
-          end: '+=100%',
-          scrub: 0.5,
-          pin: true,
-        },
-      });
-
-      // Phase 1: Reveal About Intro (0.0 -> 0.35)
-      aboutTl
-        .to('.about-portrait-img', { clipPath: 'inset(0% 0% 0% 0%)', y: 0, opacity: 1, duration: 0.4 }, 0.0)
-        .to('.about-eyebrow', { opacity: 1, y: 0, duration: 0.2 }, 0.1)
-        .to('.about-char', { yPercent: 0, opacity: 1, stagger: 0.015, duration: 0.4 }, 0.12)
-        .to('.about-description', { opacity: 1, y: 0, duration: 0.2 }, 0.25);
-
-      // Phase 2: Transition from Intro to Deep Dive (0.55 -> 1.0)
-      aboutTl
-        .to('.about-editorial-text', { opacity: 0, y: -80, duration: 0.35, ease: 'power2.inOut' }, 0.55)
-        .to('.about-portrait-img', { xPercent: -50, opacity: 0, duration: 0.35, ease: 'power2.inOut' }, 0.55)
-        .to('.about-portrait-left-img', { xPercent: 0, opacity: 1, duration: 0.35, ease: 'power2.inOut' }, 0.55)
-        .to('.about-sub-content', { opacity: 1, pointerEvents: 'auto', duration: 0.35, ease: 'none' }, 0.6)
-        .to('.sub-section-eyebrow', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.65)
-        .to('.sub-section-focus', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.7)
-        .to('.sub-section-metrics', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.75)
-        .to('.sub-section-stack', { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.75);
-
-      // Transition HTML theme variables on scroll
-      aboutTl.to('html', {
-        '--color-bg': '#FFFFFF',
-        '--color-text-1': '#0A0A0A',
-        '--color-text-2': '#444444',
-        '--color-border': 'rgba(10, 10, 10, 0.15)',
-        '--color-accent': '#3F702A',
-        '--text-shadow-glow': '0 2px 12px rgba(10, 10, 10, 0.02)',
-        '--color-card-bg': 'rgba(255, 255, 255, 0.35)',
-        '--color-card-shadow': '0 8px 32px rgba(10, 10, 10, 0.03)',
-        '--color-card-shadow-hover': '0 12px 40px rgba(10, 10, 10, 0.05)',
-        '--color-text-reveal-bg': 'rgba(10, 10, 10, 0.12)',
-        ease: 'power2.inOut',
-        duration: 0.3,
-      }, 0.1);
-    });
-
-    // Mobile: Flowing vertical layout with simple reveals
-    mm.add('(max-width: 768px)', () => {
-      gsap.set('.about-portrait-img', { opacity: 0, y: 60 });
-      gsap.set('.about-eyebrow, .about-description', { opacity: 0, y: 20 });
-      gsap.set('.about-char', { opacity: 0, yPercent: 100 });
-      gsap.set('.about-sub-content', { opacity: 0, y: 40 });
-
-      const introTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '#about-section',
-          start: 'top 75%',
-          toggleActions: 'play none none reverse',
-        }
-      });
-
-      introTl
-        .to('.about-portrait-img', { opacity: 1, y: 0, duration: 0.6 })
-        .to('.about-eyebrow', { opacity: 1, y: 0, duration: 0.3 }, 0.2)
-        .to('.about-char', { opacity: 1, yPercent: 0, stagger: 0.01, duration: 0.5 }, 0.3)
-        .to('.about-description', { opacity: 1, y: 0, duration: 0.3 }, 0.4);
-
-      gsap.to('.about-sub-content', {
-        scrollTrigger: {
-          trigger: '.about-sub-content',
-          start: 'top 80%',
-          toggleActions: 'play none none reverse',
-        },
-        opacity: 1,
-        y: 0,
-        pointerEvents: 'auto',
-        duration: 0.5,
-      });
-    });
+    // 4. About Section Local Timelines & Pinning
+    aboutController.prepare();
 
     // 5. Contact Section ScrollTrigger Reveal
     ScrollTrigger.create({
@@ -208,7 +122,7 @@ export default function PinnedSections() {
     return () => {
       ScrollTrigger.getAll().forEach((st) => st.kill());
       contactScene.destroy();
-      mm.revert();
+      aboutController.destroy();
       if (typeof window !== 'undefined') {
         delete portfolioWindow.__activeSection;
         delete portfolioWindow.__scrollTriggerProgress;
