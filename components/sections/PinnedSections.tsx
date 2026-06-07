@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 
 import Hero from './Hero';
@@ -10,18 +10,24 @@ import Contact from './Contact';
 import NavRail from '../layout/NavRail';
 import { createContactScene } from '../scenes/ContactScene';
 
+type PortfolioWindow = Window & {
+  __activeSection?: string;
+  __scrollTriggerProgress?: number;
+};
+
 export default function PinnedSections() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let contactScene = createContactScene();
+    const portfolioWindow = window as PortfolioWindow;
+    const contactScene = createContactScene();
     contactScene.prepare();
 
     const mm = gsap.matchMedia();
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
     const dispatchActiveSection = (sectionId: string) => {
-      (window as any).__activeSection = sectionId;
+      portfolioWindow.__activeSection = sectionId;
       window.dispatchEvent(
         new CustomEvent('activeSectionChange', {
           detail: { activeSection: sectionId },
@@ -53,7 +59,7 @@ export default function PinnedSections() {
       end: 'bottom bottom',
       scrub: true,
       onUpdate: (self) => {
-        (window as any).__scrollTriggerProgress = self.progress;
+        portfolioWindow.__scrollTriggerProgress = self.progress;
         window.dispatchEvent(
           new CustomEvent('scrollTriggerProgress', {
             detail: { progress: self.progress },
@@ -204,8 +210,8 @@ export default function PinnedSections() {
       contactScene.destroy();
       mm.revert();
       if (typeof window !== 'undefined') {
-        delete (window as any).__activeSection;
-        delete (window as any).__scrollTriggerProgress;
+        delete portfolioWindow.__activeSection;
+        delete portfolioWindow.__scrollTriggerProgress;
       }
     };
   }, []);
