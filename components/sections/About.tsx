@@ -74,8 +74,6 @@ export default function About() {
         {/* Precise Portrait Hover Trigger Zone (Prevents early hover activation over empty transparent pixels) */}
         <div
           className="about-portrait-trigger"
-          data-cursor="image"
-          data-cursor-text="VIEW"
           style={{
             position: 'absolute',
             bottom: 0,

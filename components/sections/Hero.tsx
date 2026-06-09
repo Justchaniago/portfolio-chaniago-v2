@@ -203,7 +203,6 @@ export default function Hero() {
         height: '100%',
         background: '#060606',
         overflow: 'hidden',
-        cursor: 'none',
         zIndex: 2,
       }}
     >
@@ -336,7 +335,7 @@ export default function Hero() {
                     color: hovered ? '#C9F0A8' : 'rgba(255,255,255,0.38)',
                     transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
                     pointerEvents: 'auto',
-                    cursor: 'none',
+                    cursor: 'pointer',
                   }}
                 >
                   {COPY.highlight}

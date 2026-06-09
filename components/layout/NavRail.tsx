@@ -244,7 +244,6 @@ export default function NavRail() {
             <div
               key={section.id}
               onClick={() => handleSectionClick(section.id)}
-              data-cursor="button"
               style={{
                 position: 'relative',
                 width: '100%',

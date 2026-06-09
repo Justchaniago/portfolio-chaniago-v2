@@ -453,8 +453,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
     <div
       ref={cardRef}
       className={`project-card-container project-card-container-${project.id}`}
-      data-cursor="image"
-      data-cursor-text="CASE STUDY"
       aria-label={`${project.title} project gallery`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -472,7 +470,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
     >
       {/* Dedicated CTA Case Study Button (Visible when fully expanded, isolates events and forces native precision cursor) */}
       <div
-        data-cursor="native"
         style={{
           position: 'absolute',
           top: '68px',
@@ -642,7 +639,6 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           <div
             ref={pillRef}
             className={`project-gallery-pill project-gallery-pill-${project.id} ${isLight ? 'is-light' : 'is-dark'}`}
-            data-cursor="native"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onPointerDown={(e) => e.stopPropagation()}

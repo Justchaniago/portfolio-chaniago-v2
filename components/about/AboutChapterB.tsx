@@ -44,7 +44,6 @@ export default function AboutChapterB() {
 
         {/* Integrated Contextual VIEW Action Belongs to Section Header */}
         <span
-          data-cursor="button"
           onClick={() => {
             if (typeof window !== 'undefined') {
               const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
