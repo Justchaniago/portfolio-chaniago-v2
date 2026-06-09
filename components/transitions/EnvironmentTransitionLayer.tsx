@@ -55,6 +55,7 @@ export default function EnvironmentTransitionLayer({
         onLeaveBack: () => {
           handoffComplete = false;
           onEnvironmentReset?.();
+          onTransitionComplete?.(false);
           gsap.set(layer, { autoAlpha: 0 });
         },
         onUpdate: (self) => {
@@ -101,15 +102,14 @@ export default function EnvironmentTransitionLayer({
         scrub: true,
         onEnter: () => {
           gsap.set(layer, { visibility: 'visible' });
-          onTransitionComplete?.(false);
+          onTransitionComplete?.(true);
         },
         onEnterBack: () => {
           gsap.set(layer, { visibility: 'visible' });
-          onTransitionComplete?.(false);
+          onTransitionComplete?.(true);
         },
         onLeave: () => {
           gsap.set(layer, { visibility: 'hidden' });
-          onTransitionComplete?.(true);
         },
         onLeaveBack: () => {
           gsap.set(layer, { visibility: 'visible' });

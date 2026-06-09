@@ -33,8 +33,6 @@ export default function Hero() {
 
   const [on, setOn] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [cursor, setCursor] = useState({ x: -100, y: -100 });
-  const [cursorOn, setCursorOn] = useState(false);
 
   const { disturb, resetLastPos } = useFluidSim(canvasRef, FLUID_CONFIG);
 
@@ -44,7 +42,8 @@ export default function Hero() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (document.documentElement.classList.contains('is-loaded')) {
-        setLoaded(true);
+        const frame = window.requestAnimationFrame(() => setLoaded(true));
+        return () => window.cancelAnimationFrame(frame);
       } else {
         const handleComplete = () => setLoaded(true);
         document.addEventListener('loaderComplete', handleComplete);
@@ -114,10 +113,6 @@ export default function Hero() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Cursor visual — use raw clientX/Y
-    setCursor({ x: e.clientX, y: e.clientY });
-    setCursorOn(true);
-
     // Fluid coords — scale to canvas pixel space
     const rect = canvas.getBoundingClientRect();
     const scX = canvas.width / rect.width;
@@ -136,15 +131,11 @@ export default function Hero() {
     lyRef.current = my;
   }, [disturb]);
 
-  const onMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    setCursor({ x: e.clientX, y: e.clientY });
-    setCursorOn(true);
-  }, []);
+  const onMouseEnter = useCallback(() => {}, []);
 
   const onMouseLeave = useCallback(() => {
     lxRef.current = -1;
     lyRef.current = -1; // Correctly reset lyRef coordinate to prevent ripples from freezing!
-    setCursorOn(false);
     resetLastPos();
   }, [resetLastPos]);
 
@@ -295,13 +286,22 @@ export default function Hero() {
             }}
           >
             <span
+              className="hero-line-reveal"
               style={{
                 display: 'block',
                 transform: on ? 'translateY(0)' : 'translateY(105%)',
                 transition: `transform ${T.dur}ms ${T.ease} ${T.line1}ms`,
               }}
             >
-              {COPY.line1}
+              <span
+                className="hero-line-scroll hero-line-scroll-left"
+                style={{
+                  display: 'block',
+                  willChange: 'transform',
+                }}
+              >
+                {COPY.line1}
+              </span>
             </span>
           </span>
 
@@ -314,44 +314,53 @@ export default function Hero() {
             }}
           >
             <span
+              className="hero-line-reveal"
               style={{
                 display: 'block',
                 transform: on ? 'translateY(0)' : 'translateY(105%)',
                 transition: `transform ${T.dur}ms ${T.ease} ${T.line2}ms`,
               }}
             >
-              <em
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
+              <span
+                className="hero-line-scroll hero-line-scroll-right"
                 style={{
-                  fontStyle: 'italic',
-                  color: hovered ? '#C9F0A8' : 'rgba(255,255,255,0.38)',
-                  transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
-                  pointerEvents: 'auto',
-                  cursor: 'none',
+                  display: 'block',
+                  willChange: 'transform',
                 }}
               >
-                {COPY.highlight}
-              </em>
-              <span style={{ color: 'rgba(255,255,255,0.22)' }}>
-                {(() => {
-                  const parts = COPY.line2.replace(COPY.highlight, '').split('—');
-                  if (parts.length === 2) {
-                    return (
-                      <>
-                        {parts[0]}
-                        <span style={{
-                          display: 'inline-block',
-                          transform: 'translateY(0.08em)',
-                          verticalAlign: 'middle',
-                          lineHeight: 1,
-                        }}>—</span>
-                        {parts[1]}
-                      </>
-                    );
-                  }
-                  return COPY.line2.replace(COPY.highlight, '');
-                })()}
+                <em
+                  onMouseEnter={() => setHovered(true)}
+                  onMouseLeave={() => setHovered(false)}
+                  style={{
+                    fontStyle: 'italic',
+                    color: hovered ? '#C9F0A8' : 'rgba(255,255,255,0.38)',
+                    transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
+                    pointerEvents: 'auto',
+                    cursor: 'none',
+                  }}
+                >
+                  {COPY.highlight}
+                </em>
+                <span style={{ color: 'rgba(255,255,255,0.22)' }}>
+                  {(() => {
+                    const parts = COPY.line2.replace(COPY.highlight, '').split('—');
+                    if (parts.length === 2) {
+                      return (
+                        <>
+                          {parts[0]}
+                          <span style={{
+                            display: 'inline-block',
+                            transform: 'translateY(0.08em)',
+                            verticalAlign: 'middle',
+                            lineHeight: 1,
+                          }}>—</span>
+                          {parts[1]}
+                        </>
+                      );
+                    }
+                    return COPY.line2.replace(COPY.highlight, '');
+                  })()}
+                </span>
               </span>
             </span>
           </span>
