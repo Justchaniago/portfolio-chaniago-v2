@@ -17,12 +17,28 @@ export function initLenis(): Lenis {
     smoothWheel: true,
   });
 
+  const updateScrollTrigger = () => {
+    ScrollTrigger.update();
+  };
+
+  const tickLenis = (time: number) => {
+    lenis.raf(time * 1000);
+  };
+
+  const destroyLenis = lenis.destroy.bind(lenis);
+
   // Sync Lenis RAF with GSAP ticker — MANDATORY
-  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  gsap.ticker.add(tickLenis);
   gsap.ticker.lagSmoothing(0);
 
   // Sync Lenis scroll position with ScrollTrigger
-  lenis.on('scroll', ScrollTrigger.update);
+  lenis.on('scroll', updateScrollTrigger);
+
+  lenis.destroy = () => {
+    gsap.ticker.remove(tickLenis);
+    lenis.off('scroll', updateScrollTrigger);
+    destroyLenis();
+  };
 
   return lenis;
 }

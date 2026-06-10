@@ -21,6 +21,7 @@ type PortfolioWindow = Window & {
 export default function PinnedSections() {
   const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
   const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
+  const contactScrollSpacerRef = useRef<HTMLDivElement>(null);
 
   if (aboutEnvironmentRef.current === null) {
     aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
@@ -47,6 +48,7 @@ export default function PinnedSections() {
     });
     aboutControllerRef.current = aboutController;
     const contactScene = createContactScene();
+    let contactThemeResetDelay: gsap.core.Tween | null = null;
     contactScene.prepare();
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
@@ -121,27 +123,57 @@ export default function PinnedSections() {
     // 4. About Section Local Timelines & Pinning
     aboutController.prepare();
 
-    // 5. Contact Section ScrollTrigger Reveal
+    const updateContactOverlayProgress = () => {
+      const workSection = document.getElementById('work-section');
+      if (!workSection) return;
+
+      const workBounds = workSection.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const contactScrollDistance = contactScrollSpacerRef.current?.offsetHeight || viewportHeight;
+      const progress = contactScrollDistance > 0
+        ? gsap.utils.clamp(0, 1, (viewportHeight - workBounds.bottom) / contactScrollDistance)
+        : 0;
+
+      contactScene.setProgress(progress);
+    };
+
+    // 5. Contact Section Overlay Reveal
     ScrollTrigger.create({
-      trigger: '#contact-section',
-      start: 'top 70%',
-      onEnter: () => contactScene?.enter(),
-      onLeaveBack: () => contactScene?.exit(),
+      trigger: '#work-section',
+      start: 'bottom bottom',
+      end: () => `+=${contactScrollSpacerRef.current?.offsetHeight || window.innerHeight}`,
+      scrub: true,
+      onEnter: updateContactOverlayProgress,
+      onEnterBack: updateContactOverlayProgress,
+      onUpdate: updateContactOverlayProgress,
+      onRefresh: updateContactOverlayProgress,
+      onLeave: () => contactScene?.setProgress(1),
+      onLeaveBack: () => contactScene?.setProgress(0),
     });
+    window.addEventListener('resize', updateContactOverlayProgress);
+    updateContactOverlayProgress();
 
     // Trigger theme variables to revert when exiting contact section upwards
     ScrollTrigger.create({
       trigger: '#contact-section',
       start: 'top bottom',
+      onEnter: () => {
+        contactThemeResetDelay?.kill();
+        contactThemeResetDelay = null;
+      },
       onLeaveBack: () => {
-        gsap.to('html', {
-          '--color-bg': '#FFFFFF',
-          '--color-text-1': '#0A0A0A',
-          '--color-text-2': '#444444',
-          '--color-border': 'rgba(10, 10, 10, 0.15)',
-          '--color-accent': '#3F702A',
-          '--about-env-opacity': '1',
-          duration: 0.3,
+        contactThemeResetDelay?.kill();
+        contactThemeResetDelay = gsap.delayedCall(0.4, () => {
+          gsap.to('html', {
+            '--color-bg': '#FFFFFF',
+            '--color-text-1': '#0A0A0A',
+            '--color-text-2': '#444444',
+            '--color-border': 'rgba(10, 10, 10, 0.15)',
+            '--color-accent': '#3F702A',
+            '--about-env-opacity': '1',
+            duration: 0.3,
+          });
+          contactThemeResetDelay = null;
         });
       }
     });
@@ -170,6 +202,8 @@ export default function PinnedSections() {
 
     return () => {
       window.removeEventListener('scroll', handleScrollUpdate);
+      window.removeEventListener('resize', updateContactOverlayProgress);
+      contactThemeResetDelay?.kill();
       ScrollTrigger.getAll().forEach((st) => st.kill());
       contactScene.destroy();
       aboutController.destroy();
@@ -201,7 +235,33 @@ export default function PinnedSections() {
         <ProjectShowcase />
       </div>
 
-      <div id="contact-section" className="w-full min-h-screen relative overflow-hidden">
+      <div
+        className="contact-transition-underlay"
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: '-2px',
+          backgroundColor: '#050505',
+          opacity: 0,
+          visibility: 'hidden',
+          pointerEvents: 'none',
+          zIndex: 840,
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+          contain: 'paint',
+          willChange: 'opacity',
+        }}
+      />
+
+      <div
+        id="contact-section"
+        ref={contactScrollSpacerRef}
+        className="w-full relative overflow-visible"
+        style={{
+          height: '64vh',
+          minHeight: '480px',
+        }}
+      >
         <Contact />
       </div>
 

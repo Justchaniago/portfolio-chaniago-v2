@@ -5,8 +5,10 @@ import type { MouseEvent, PointerEvent } from 'react';
 import { gsap } from '@/lib/gsap';
 import { HoverSweep } from '@/lib/interactionPresets';
 
-type ContactWindow = Window & {
-  __cinematicNavigate?: (targetProgress: number) => void;
+type ContactWindowWithLenis = {
+  lenis?: {
+    scrollTo(target: Element, options?: { duration?: number }): void;
+  };
 };
 
 type ContactCharRect = {
@@ -162,6 +164,24 @@ export default function Contact() {
     interactionFrameRef.current = window.requestAnimationFrame(runInteractionFrame);
   }
 
+  const resetHoverField = useCallback(() => {
+    pointerRef.current.active = false;
+    pointerRef.current.velocity = 0;
+
+    if (interactionFrameRef.current !== null) {
+      window.cancelAnimationFrame(interactionFrameRef.current);
+      interactionFrameRef.current = null;
+    }
+
+    charInteractionsRef.current.forEach((item) => {
+      item.energy = 0;
+      item.wrapper.style.setProperty('--contact-energy-scale', '1');
+      item.char.style.setProperty('--contact-hover-stop', '0%');
+      item.char.style.setProperty('--contact-hover-warm-stop', '0%');
+      item.char.style.setProperty('--contact-hover-white-stop', '0%');
+    });
+  }, []);
+
   function handleTitlePointerEnter(e: PointerEvent<HTMLDivElement>) {
     const pointer = pointerRef.current;
 
@@ -222,8 +242,8 @@ export default function Contact() {
     e.preventDefault();
     const targetEl = document.getElementById(target);
     if (targetEl) {
-      const lenis = (window as any).lenis;
-      if (lenis) {
+      const lenis = (window as unknown as ContactWindowWithLenis).lenis;
+      if (typeof lenis?.scrollTo === 'function') {
         lenis.scrollTo(targetEl, { duration: 1.2 });
       } else {
         targetEl.scrollIntoView({ behavior: 'smooth' });
@@ -296,9 +316,11 @@ export default function Contact() {
 
     const handleResize = () => cacheTitleRects();
     window.addEventListener('resize', handleResize);
+    window.addEventListener('contactSceneReset', resetHoverField);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('contactSceneReset', resetHoverField);
       hoverSweep.destroy();
       hoverSweepRef.current = null;
       if (interactionFrameRef.current !== null) {
@@ -306,23 +328,24 @@ export default function Contact() {
         interactionFrameRef.current = null;
       }
     };
-  }, [cacheTitleRects]);
+  }, [cacheTitleRects, resetHoverField]);
 
   return (
     <section
       ref={containerRef}
       className="contact-section-container"
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
-        width: '100%',
-        height: '100%',
+        width: '100vw',
+        height: '100vh',
         minHeight: '100vh',
         backgroundColor: '#050505',
-        zIndex: 3,
+        zIndex: 850,
         pointerEvents: 'none',
         overflow: 'hidden',
         opacity: 0,
+        willChange: 'transform',
       }}
     >
       <div
@@ -416,6 +439,15 @@ export default function Contact() {
           column-gap: clamp(48px, 12vw, 220px);
           font-family: var(--font-roboto), sans-serif;
           pointer-events: auto;
+        }
+
+        .contact-content-wrapper,
+        .contact-title-debug,
+        .contact-title-char,
+        .contact-title-char-wrap,
+        .contact-utility-column,
+        .contact-footer-meta {
+          transition: none !important;
         }
 
         .contact-utility-column {
