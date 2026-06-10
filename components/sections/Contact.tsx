@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
-import { gsap } from '@/lib/gsap';
 import { HoverSweep } from '@/lib/interactionPresets';
 
 type ContactWindowWithLenis = {
@@ -35,6 +34,8 @@ const TITLE_HOVER_MAX_RADIUS = 320;
 const TITLE_HOVER_VELOCITY_MULTIPLIER = 0.4;
 const TITLE_HOVER_INTERPOLATION = 0.15;
 const TITLE_HOVER_DECAY = 0.92;
+const UTILITY_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/@._-↗';
+const UTILITY_SCRAMBLE_DURATION = 520;
 
 const QUICK_JUMP_LINKS = [
   { label: 'HOME', target: 'hero-section' },
@@ -54,6 +55,8 @@ export default function Contact() {
   const titleRef = useRef<HTMLDivElement>(null);
   const charInteractionsRef = useRef<ContactCharInteraction[]>([]);
   const interactionFrameRef = useRef<number | null>(null);
+  const utilityScrambleFramesRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
+  const activeUtilityScramblesRef = useRef<Set<HTMLElement>>(new Set());
   const hoverSweepRef = useRef<HoverSweep | null>(null);
   const pointerRef = useRef({
     x: 0,
@@ -164,6 +167,72 @@ export default function Contact() {
     interactionFrameRef.current = window.requestAnimationFrame(runInteractionFrame);
   }
 
+  const getUtilityTextElement = (el: HTMLElement) => {
+    return el.querySelector<HTMLElement>('.contact-link-text');
+  };
+
+  const restoreUtilityText = useCallback((el: HTMLElement) => {
+    const frame = utilityScrambleFramesRef.current.get(el);
+    if (frame !== undefined) {
+      window.cancelAnimationFrame(frame);
+      utilityScrambleFramesRef.current.delete(el);
+    }
+
+    const label = el.dataset.label ?? '';
+    const textEl = getUtilityTextElement(el);
+    if (textEl) {
+      textEl.textContent = label;
+    }
+
+    activeUtilityScramblesRef.current.delete(el);
+  }, []);
+
+  const resetUtilityScrambles = useCallback(() => {
+    activeUtilityScramblesRef.current.forEach((el) => restoreUtilityText(el));
+    activeUtilityScramblesRef.current.clear();
+  }, [restoreUtilityText]);
+
+  const scrambleUtilityText = useCallback((el: HTMLElement) => {
+    const label = el.dataset.label ?? '';
+    const textEl = getUtilityTextElement(el);
+    if (!label || !textEl) return;
+
+    restoreUtilityText(el);
+
+    if (
+      typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      textEl.textContent = label;
+      return;
+    }
+
+    activeUtilityScramblesRef.current.add(el);
+    const startedAt = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / UTILITY_SCRAMBLE_DURATION);
+      const settledIndex = Math.floor(progress * label.length);
+
+      textEl.textContent = Array.from(label).map((char, index) => {
+        if (char === ' ') return ' ';
+        if (index <= settledIndex) return char;
+        return UTILITY_SCRAMBLE_CHARS[
+          Math.floor(Math.random() * UTILITY_SCRAMBLE_CHARS.length)
+        ];
+      }).join('');
+
+      if (progress >= 1) {
+        restoreUtilityText(el);
+        return;
+      }
+
+      utilityScrambleFramesRef.current.set(el, window.requestAnimationFrame(tick));
+    };
+
+    utilityScrambleFramesRef.current.set(el, window.requestAnimationFrame(tick));
+  }, [restoreUtilityText]);
+
   const resetHoverField = useCallback(() => {
     pointerRef.current.active = false;
     pointerRef.current.velocity = 0;
@@ -180,7 +249,8 @@ export default function Contact() {
       item.char.style.setProperty('--contact-hover-warm-stop', '0%');
       item.char.style.setProperty('--contact-hover-white-stop', '0%');
     });
-  }, []);
+    resetUtilityScrambles();
+  }, [resetUtilityScrambles]);
 
   function handleTitlePointerEnter(e: PointerEvent<HTMLDivElement>) {
     const pointer = pointerRef.current;
@@ -251,48 +321,13 @@ export default function Contact() {
     }
   }
 
-  function animateUtilityLink(el: HTMLElement, active: boolean) {
-    const chars = Array.from(el.querySelectorAll<HTMLElement>('.contact-link-char'));
-    gsap.killTweensOf([el, ...chars]);
-
-    gsap.to(el, {
-      opacity: active ? 1 : 0.75,
-      letterSpacing: active ? '0.03em' : '0.02em',
-      duration: 0.32,
-      ease: 'power3.out',
-    });
-
-    if (active) {
-      gsap.fromTo(chars,
-        { y: 0 },
-        {
-          y: -6,
-          duration: 0.3,
-          ease: 'power3.out',
-          stagger: 0.03,
-          yoyo: true,
-          repeat: 1,
-        }
-      );
-      return;
-    }
-
-    gsap.to(chars, {
-      y: 0,
-      duration: 0.24,
-      ease: 'power3.out',
-      stagger: 0.015,
-    });
-  }
-
   function renderUtilityText(label: string) {
     return (
-      <span className="contact-link-text">
-        {Array.from(label).map((char, index) => (
-          <span className="contact-link-char" key={`${char}-${index}`}>
-            {char === ' ' ? '\u00A0' : char}
-          </span>
-        ))}
+      <span
+        className="contact-link-text"
+        style={{ minWidth: `${label.length}ch` }}
+      >
+        {label}
       </span>
     );
   }
@@ -323,12 +358,13 @@ export default function Contact() {
       window.removeEventListener('contactSceneReset', resetHoverField);
       hoverSweep.destroy();
       hoverSweepRef.current = null;
+      resetUtilityScrambles();
       if (interactionFrameRef.current !== null) {
         window.cancelAnimationFrame(interactionFrameRef.current);
         interactionFrameRef.current = null;
       }
     };
-  }, [cacheTitleRects, resetHoverField]);
+  }, [cacheTitleRects, resetHoverField, resetUtilityScrambles]);
 
   return (
     <section
@@ -366,12 +402,14 @@ export default function Contact() {
               {QUICK_JUMP_LINKS.map((link) => (
                 <button
                   className="contact-utility-link"
+                  data-label={link.label}
                   key={link.label}
+                  aria-label={link.label}
                   onClick={(e) => handleQuickJump(e, link.target)}
-                  onBlur={(e) => animateUtilityLink(e.currentTarget, false)}
-                  onFocus={(e) => animateUtilityLink(e.currentTarget, true)}
-                  onMouseEnter={(e) => animateUtilityLink(e.currentTarget, true)}
-                  onMouseLeave={(e) => animateUtilityLink(e.currentTarget, false)}
+                  onBlur={(e) => restoreUtilityText(e.currentTarget)}
+                  onFocus={(e) => scrambleUtilityText(e.currentTarget)}
+                  onMouseEnter={(e) => scrambleUtilityText(e.currentTarget)}
+                  onMouseLeave={(e) => restoreUtilityText(e.currentTarget)}
                   type="button"
                 >
                   {renderUtilityText(link.label)}
@@ -386,12 +424,14 @@ export default function Contact() {
               {CONNECT_LINKS.map((link) => (
                 <a
                   className="contact-utility-link"
+                  data-label={link.label}
                   href={link.href}
                   key={link.label}
-                  onBlur={(e) => animateUtilityLink(e.currentTarget, false)}
-                  onFocus={(e) => animateUtilityLink(e.currentTarget, true)}
-                  onMouseEnter={(e) => animateUtilityLink(e.currentTarget, true)}
-                  onMouseLeave={(e) => animateUtilityLink(e.currentTarget, false)}
+                  aria-label={link.label}
+                  onBlur={(e) => restoreUtilityText(e.currentTarget)}
+                  onFocus={(e) => scrambleUtilityText(e.currentTarget)}
+                  onMouseEnter={(e) => scrambleUtilityText(e.currentTarget)}
+                  onMouseLeave={(e) => restoreUtilityText(e.currentTarget)}
                   rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   target={link.href.startsWith('http') ? '_blank' : undefined}
                 >
@@ -490,6 +530,13 @@ export default function Contact() {
           text-decoration: none;
           cursor: pointer;
           opacity: 0.75;
+          transition: opacity 160ms ease, color 160ms ease;
+        }
+
+        .contact-utility-link:hover,
+        .contact-utility-link:focus-visible {
+          color: rgba(255, 255, 255, 0.98);
+          opacity: 1;
         }
 
         .contact-utility-link:focus-visible {
@@ -497,17 +544,10 @@ export default function Contact() {
         }
 
         .contact-link-text {
-          display: inline-flex;
+          display: inline-block;
           align-items: baseline;
           line-height: 1.8;
-        }
-
-        .contact-link-char {
-          display: inline-block;
-          line-height: inherit;
-          vertical-align: bottom;
           white-space: nowrap;
-          will-change: transform;
         }
 
         .contact-title-debug {

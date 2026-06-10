@@ -23,6 +23,8 @@ const NAV_LINKS: NavLink[] = [
   { num: '03', label: 'Contact', href: '/contact' },
 ];
 
+const NAV_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/@._-↗';
+const NAV_SCRAMBLE_DURATION = 520;
 
 const DURATION = {
   curtainOpen: 1100,   // ms — curtain expand, paling berat
@@ -144,6 +146,8 @@ export default function MorphNav() {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const footerRef = useRef<HTMLDivElement>(null);
   const originRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const navScrambleFramesRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
+  const activeNavScramblesRef = useRef<Set<HTMLElement>>(new Set());
 
   const [navState, setNavState] = useState<NavState>('closed');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -172,6 +176,74 @@ export default function MorphNav() {
       }
     };
   }, []);
+
+  const getNavTextElement = (el: HTMLElement) => {
+    return el.querySelector<HTMLElement>('.morph-nav-link-text');
+  };
+
+  const restoreNavText = useCallback((el: HTMLElement) => {
+    const frame = navScrambleFramesRef.current.get(el);
+    if (frame !== undefined) {
+      window.cancelAnimationFrame(frame);
+      navScrambleFramesRef.current.delete(el);
+    }
+
+    const label = el.dataset.label ?? '';
+    const textEl = getNavTextElement(el);
+    if (textEl) {
+      textEl.textContent = label;
+    }
+
+    activeNavScramblesRef.current.delete(el);
+  }, []);
+
+  const scrambleNavText = useCallback((el: HTMLElement) => {
+    const label = el.dataset.label ?? '';
+    const textEl = getNavTextElement(el);
+    if (!label || !textEl) return;
+
+    restoreNavText(el);
+
+    if (
+      typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      textEl.textContent = label;
+      return;
+    }
+
+    activeNavScramblesRef.current.add(el);
+    const startedAt = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / NAV_SCRAMBLE_DURATION);
+      const settledIndex = Math.floor(progress * label.length);
+
+      textEl.textContent = Array.from(label).map((char, index) => {
+        if (char === ' ') return ' ';
+        if (index <= settledIndex) return char;
+        return NAV_SCRAMBLE_CHARS[
+          Math.floor(Math.random() * NAV_SCRAMBLE_CHARS.length)
+        ];
+      }).join('');
+
+      if (progress >= 1) {
+        restoreNavText(el);
+        return;
+      }
+
+      navScrambleFramesRef.current.set(el, window.requestAnimationFrame(tick));
+    };
+
+    navScrambleFramesRef.current.set(el, window.requestAnimationFrame(tick));
+  }, [restoreNavText]);
+
+  useEffect(() => {
+    return () => {
+      activeNavScramblesRef.current.forEach((el) => restoreNavText(el));
+      activeNavScramblesRef.current.clear();
+    };
+  }, [restoreNavText]);
 
   useEffect(() => {
     const check = () => {
@@ -440,11 +512,16 @@ export default function MorphNav() {
     ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A')
     : 'var(--color-text-1)';
   const borderColor = isOpen
-    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(10, 10, 10, 0.15)')
-    : 'var(--color-border)';
+    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(10, 10, 10, 0.14)')
+    : 'rgba(255, 255, 255, 0.12)';
   const background = isOpen
-    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(10, 10, 10, 0.03)')
-    : 'var(--color-card-bg, rgba(255, 255, 255, 0.05))';
+    ? (menuTheme === 'dark-curtain'
+        ? 'rgba(12, 12, 12, 0.72)'
+        : 'rgba(255, 255, 255, 0.86)')
+    : 'rgba(12, 12, 12, 0.82)';
+  const surfaceShadow = isOpen && menuTheme === 'light-curtain'
+    ? '0 8px 24px rgba(10, 10, 10, 0.10)'
+    : '0 8px 24px rgba(0, 0, 0, 0.18)';
 
   const activeTheme = menuTheme === 'dark-curtain'
     ? {
@@ -535,9 +612,7 @@ export default function MorphNav() {
           borderRadius: '22px',
           border: `1px solid ${borderColor}`,
           background,
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          boxShadow: 'var(--color-card-shadow, 0 8px 32px rgba(10, 10, 10, 0.03))',
+          boxShadow: surfaceShadow,
           color: activeColor,
           cursor: isReallyCollapsed && !isAnimating ? 'pointer' : 'default',
           position: 'fixed',
@@ -590,6 +665,9 @@ export default function MorphNav() {
                 <a
                   href={link.href}
                   onClick={(e) => handleNavigationClick(e, link.href)}
+                  data-label={link.label}
+                  onFocus={(e) => scrambleNavText(e.currentTarget)}
+                  onMouseEnter={(e) => scrambleNavText(e.currentTarget)}
                   style={{
                     fontFamily: 'var(--font-mono, monospace)',
                     fontSize: '10px',
@@ -598,11 +676,19 @@ export default function MorphNav() {
                     textTransform: 'uppercase',
                     textDecoration: 'none',
                     color: 'var(--color-text-1)',
-                    opacity: active ? 1 : 0.4,
+                    opacity: active ? 1 : 0.52,
                     transition: 'opacity 0.3s ease',
                   }}
                 >
-                  {link.label}
+                  <span
+                    className="morph-nav-link-text"
+                    style={{
+                      display: 'inline-block',
+                      minWidth: `${link.label.length}ch`,
+                    }}
+                  >
+                    {link.label}
+                  </span>
                 </a>
               </span>
             );
