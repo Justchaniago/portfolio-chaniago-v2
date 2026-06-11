@@ -267,15 +267,18 @@ export default function Hero() {
         </div>
 
         {/* H1 */}
-        <h1 style={{
-          fontFamily: 'var(--font-display, Georgia, serif)',
-          fontSize: 'clamp(42px, 7.5vw, 110px)', // Slightly smaller min-size for mobile to prevent wrapping
-          fontWeight: 500,
-          letterSpacing: '-0.045em',
-          lineHeight: 1.25,
-          color: 'rgba(255,255,255,0.88)',
-          margin: 0,
-        }}>
+        <h1
+          className={`hero-tagline-shimmer${hovered ? ' is-highlight-hovered' : ''}`}
+          style={{
+            fontFamily: 'var(--font-display, Georgia, serif)',
+            fontSize: 'clamp(42px, 7.5vw, 110px)', // Slightly smaller min-size for mobile to prevent wrapping
+            fontWeight: 500,
+            letterSpacing: '-0.045em',
+            lineHeight: 1.25,
+            color: 'rgba(255,255,255,0.88)',
+            margin: 0,
+          }}
+        >
           {/* Line 1 */}
           <span
             className="hero-line-1"
@@ -328,6 +331,7 @@ export default function Hero() {
                 }}
               >
                 <em
+                  className="hero-highlight"
                   onMouseEnter={() => setHovered(true)}
                   onMouseLeave={() => setHovered(false)}
                   style={{
@@ -469,8 +473,58 @@ export default function Hero() {
           85%  { opacity: 1; }
           100% { transform: translateY(420%); opacity: 0; }
         }
+        @keyframes heroTaglineShimmer {
+          0% { background-position: 140% 50%; }
+          100% { background-position: -40% 50%; }
+        }
+        .hero-tagline-shimmer,
+        .hero-tagline-shimmer * {
+          background-image: linear-gradient(
+            105deg,
+            rgba(255,255,255,0.22) 0%,
+            rgba(255,255,255,0.34) 34%,
+            rgba(255,255,255,0.94) 45%,
+            rgba(201,240,168,0.86) 50%,
+            rgba(255,255,255,0.78) 55%,
+            rgba(255,255,255,0.32) 66%,
+            rgba(255,255,255,0.22) 100%
+          );
+          background-size: 260% 100%;
+          background-position: 140% 50%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent !important;
+          animation: heroTaglineShimmer 5.8s cubic-bezier(0.16,1,0.3,1) infinite;
+        }
+        .hero-tagline-shimmer .hero-highlight {
+          text-shadow: 0 0 0 rgba(201,240,168,0);
+          transition: text-shadow 0.45s cubic-bezier(0.16,1,0.3,1);
+        }
+        .hero-tagline-shimmer.is-highlight-hovered .hero-highlight {
+          background-image: linear-gradient(
+            105deg,
+            rgba(201,240,168,0.58) 0%,
+            rgba(255,255,255,0.96) 42%,
+            rgba(201,240,168,1) 50%,
+            rgba(255,255,255,0.9) 58%,
+            rgba(201,240,168,0.62) 100%
+          );
+          text-shadow: 0 0 24px rgba(201,240,168,0.34);
+        }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition-duration: 0.01ms !important; }
+          .hero-tagline-shimmer,
+          .hero-tagline-shimmer * {
+            background-image: none !important;
+            color: rgba(255,255,255,0.82) !important;
+          }
+          .hero-tagline-shimmer .hero-highlight {
+            color: rgba(255,255,255,0.46) !important;
+          }
+          .hero-tagline-shimmer.is-highlight-hovered .hero-highlight {
+            color: #C9F0A8 !important;
+            text-shadow: none !important;
+          }
         }
         @media (max-width: 768px) {
           .hero-scroll-indicator {
