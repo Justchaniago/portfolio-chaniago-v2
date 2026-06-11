@@ -21,9 +21,10 @@ interface NavLink {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { num: '01', label: 'Work', href: '/work' },
+  { num: '01', label: 'Home', href: '/' },
   { num: '02', label: 'About', href: '/about' },
-  { num: '03', label: 'Contact', href: '/contact' },
+  { num: '03', label: 'Work', href: '/work' },
+  { num: '04', label: 'Contact', href: '/contact' },
 ];
 
 const NAV_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/@._-↗';
@@ -346,13 +347,13 @@ export default function MorphNav() {
             ? (isOpen
                 ? (isMobile ? 'calc(-100vw + 16px)' : '-348px')
                 : (hovered ? -140 : -72))
-            : -130,
+            : -170,
           width: isReallyCollapsed
             ? (isOpen
                 ? (isMobile ? 'calc(100vw - 32px)' : '320px')
                 : (hovered ? 112 : 44))
-            : 260,
-          height: isOpen ? 250 : 44,
+            : 340,
+          height: isOpen ? 290 : 44,
           borderRadius: isOpen ? '12px' : '22px',
           opacity: hideCollapsedTriggerOnContact ? 0 : 1,
           scale: hideCollapsedTriggerOnContact ? 0.94 : 1,
@@ -397,7 +398,7 @@ export default function MorphNav() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '16px',
-              width: '260px',
+              width: '340px',
               height: '44px',
               padding: '0 16px',
             }}
@@ -542,7 +543,7 @@ export default function MorphNav() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              height: '248px',
+              height: '288px',
               padding: '20px',
               boxSizing: 'border-box',
             }}
