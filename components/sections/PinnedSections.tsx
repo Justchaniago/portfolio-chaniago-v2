@@ -279,7 +279,7 @@ export default function PinnedSections() {
           borderRadius: '8px',
           zIndex: 9999,
           pointerEvents: 'none',
-          display: 'flex',
+          display: 'none',
           flexDirection: 'column',
           alignItems: 'center',
           padding: '10px 0',
