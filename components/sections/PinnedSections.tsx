@@ -72,10 +72,12 @@ export default function PinnedSections() {
   }
 
   const handleEnvironmentHandoff = useCallback(() => {
+    if (isTransitioningRef.current) return;
     aboutEnvironmentRef.current?.activate();
   }, []);
 
   const handleEnvironmentReset = useCallback(() => {
+    if (isTransitioningRef.current) return;
     aboutEnvironmentRef.current?.deactivate();
   }, []);
 
@@ -87,17 +89,14 @@ export default function PinnedSections() {
     isTransitioningRef.current = portfolioExperience?.isTransitioning ?? false;
 
     if (portfolioExperience?.isTransitioning) {
-      // Kill any active delayed theme resets immediately
+      // Kill any active delayed theme resets and active GSAP tweens on html element
       contactThemeResetDelayRef.current?.kill();
       contactThemeResetDelayRef.current = null;
+      gsap.killTweensOf('html');
 
-      // Sync the About Environment lifecycle state instantly
+      // Sync the About Environment lifecycle state instantly by killing active tweens
       const pending = portfolioExperience.pendingSection;
-      if (pending === 'hero') {
-        aboutEnvironmentRef.current?.deactivate();
-      } else if (pending === 'about' || pending === 'work') {
-        aboutEnvironmentRef.current?.activate();
-      }
+      aboutEnvironmentRef.current?.destroy();
 
       // Apply target theme variables directly to html to prevent flash/wrong colors during snapping
       const targetTheme = THEME_BY_SECTION[pending];
@@ -127,6 +126,7 @@ export default function PinnedSections() {
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
     const dispatchActiveSection = (sectionId: string) => {
+      if (isTransitioningRef.current) return;
       portfolioWindow.__activeSection = sectionId;
       window.dispatchEvent(
         new CustomEvent('activeSectionChange', {
