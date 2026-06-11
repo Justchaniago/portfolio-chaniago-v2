@@ -28,35 +28,6 @@ const NAV_LINKS: NavLink[] = [
 
 const NAV_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/@._-↗';
 const NAV_SCRAMBLE_DURATION = 520;
-
-const DURATION = {
-  curtainOpen: 1100,   // ms — curtain expand, paling berat
-  curtainClose: 820,   // ms — close selalu lebih cepat dari open
-  itemsBase: 750,   // ms — nav items reveal base
-  footer: 600,   // ms — footer, paling ringan
-  clipReveal: 480,   // ms — hover clip-reveal
-  arrow: 380,   // ms — arrow slide-in, paling cepat
-} as const;
-
-const EASING = {
-  curtain: 'cubic-bezier(0.87, 0, 0.13, 1)',       // expo in-out — berat di tengah
-  items: 'cubic-bezier(0.16, 1, 0.3, 1)',         // expo out — decelerate elegan
-  clip: 'cubic-bezier(0.25, 1, 0.5, 1)',          // quart out — smooth
-  number: 'cubic-bezier(0.61, 1, 0.88, 1)',         // sine out — hampir tidak terasa
-  arrow: 'cubic-bezier(0.34, 1.56, 0.64, 1)',      // back out — springy
-  dim: 'linear',                                  // intentional, no ease
-} as const;
-
-// ─── Easing ──────────────────────────────────────────────────────────────────
-
-function easeInOutExpo(t: number): number {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  return t < 0.5
-    ? Math.pow(2, 20 * t - 10) / 2
-    : (2 - Math.pow(2, -20 * t + 10)) / 2;
-}
-
 function isBgLight(): boolean {
   if (typeof window === 'undefined') return false;
   const bg = window.getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
@@ -67,93 +38,17 @@ function isBgLight(): boolean {
 }
 
 function hrefToSection(href: string): PortfolioSectionId {
-  if (href === '/about') return 'about';
-  if (href === '/work') return 'work';
-  if (href === '/contact') return 'contact';
-  return 'hero';
-}
-
-// ─── Canvas draw — Phosphor liquid burst ─────────────────────────────────────
-//
-// Radial expand from trigger origin (top-right corner).
-// Two superimposed sine waves create the mercury-liquid wobble.
-// Amplitude peaks at progress midpoint via sin(π·p) envelope.
-
-function drawLiquidBurst(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
-  progress: number,     // 0 = hidden, 1 = full coverage
-  origin: { x: number; y: number },
-  curtainColor: string
-): void {
-  ctx.clearRect(0, 0, W, H);
-  if (progress <= 0) return;
-
-  const eased = easeInOutExpo(progress);
-  const maxR = Math.sqrt(
-    Math.max(origin.x, W - origin.x) ** 2 +
-    Math.max(origin.y, H - origin.y) ** 2
-  ) * 1.12;
-  const r = maxR * eased;
-  const wobble = 38 * Math.sin(Math.PI * progress * 0.85); // envelope: 0→peak→0
-
-  ctx.fillStyle = curtainColor;
-  ctx.beginPath();
-
-  const STEPS = 120;
-  for (let i = 0; i <= STEPS; i++) {
-    const angle = (i / STEPS) * Math.PI * 2;
-    // Three frequencies — higher freq creates metallic ripple character
-    const f1 = Math.sin(angle * 4 + progress * 13) * wobble;
-    const f2 = Math.cos(angle * 3 + progress * 8) * wobble * 0.55;
-    const f3 = Math.sin(angle * 7 + progress * 5) * wobble * 0.18;
-    const dist = r + f1 + f2 + f3;
-    const px = origin.x + Math.cos(angle) * dist;
-    const py = origin.y + Math.sin(angle) * dist;
-    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  const section = href.replace(/^\//, '');
+  if (section === 'about' || section === 'work' || section === 'contact') {
+    return section;
   }
-
-  ctx.closePath();
-  ctx.fill();
-}
-
-// ─── Animation helper ─────────────────────────────────────────────────────────
-
-function animateValue(
-  from: number,
-  to: number,
-  duration: number,
-  onUpdate: (val: number) => void
-): Promise<void> {
-  return new Promise((resolve) => {
-    const start = performance.now();
-    let rafId: number;
-
-    function tick(now: number) {
-      const t = Math.min((now - start) / duration, 1);
-      onUpdate(from + (to - from) * t);
-      if (t < 1) {
-        rafId = requestAnimationFrame(tick);
-      } else {
-        resolve();
-      }
-    }
-
-    rafId = requestAnimationFrame(tick);
-    void rafId;
-  });
+  return 'hero';
 }
 
 // ─── Unified Morphing Navigation Container ───────────────────────────────────
 
 export default function MorphNav() {
   const portfolioExperience = usePortfolioExperience();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const footerRef = useRef<HTMLDivElement>(null);
-  const originRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const navScrambleFramesRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
   const activeNavScramblesRef = useRef<Set<HTMLElement>>(new Set());
 
@@ -242,9 +137,10 @@ export default function MorphNav() {
   }, [restoreNavText]);
 
   useEffect(() => {
+    const activeNavScrambles = activeNavScramblesRef.current;
     return () => {
-      activeNavScramblesRef.current.forEach((el) => restoreNavText(el));
-      activeNavScramblesRef.current.clear();
+      activeNavScrambles.forEach((el) => restoreNavText(el));
+      activeNavScrambles.clear();
     };
   }, [restoreNavText]);
 
@@ -257,21 +153,6 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Canvas resize
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    function resize() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, []);
 
   // Active section tracking for the virtual experience shell.
   useEffect(() => {
@@ -294,137 +175,19 @@ export default function MorphNav() {
     };
   }, [portfolioExperience]);
 
-  // Capture trigger origin — FloatingCircle is always top: 12, right: 28, size: 44
-  function captureOrigin() {
-    originRef.current = {
-      x: window.innerWidth - 50, // right: 28px + half-width: 22px
-      y: 34,                      // top: 12px + half-height: 22px
-    };
-  }
-
-
-
-  // Show overlay + stagger nav items in
-  function revealItems() {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    overlay.style.opacity = '1';
-    overlay.style.pointerEvents = 'auto';
-    overlay.style.visibility = 'visible';
-
-    const itemDurations = [680, 730, 800];
-    const itemDelays = [80, 200, 360];
-
-    itemRefs.current.forEach((el, i) => {
-      if (!el) return;
-      el.style.transition = [
-        `opacity   ${itemDurations[i]}ms ${EASING.items} ${itemDelays[i]}ms`,
-        `transform ${itemDurations[i]}ms ${EASING.items} ${itemDelays[i]}ms`,
-      ].join(', ');
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(0)';
-    });
-
-    if (footerRef.current) {
-      footerRef.current.style.transition = [
-        `opacity   ${DURATION.footer}ms ${EASING.items} 500ms`,
-        `transform ${DURATION.footer}ms ${EASING.items} 500ms`,
-      ].join(', ');
-      footerRef.current.style.opacity = '1';
-      footerRef.current.style.transform = 'translateY(0)';
-    }
-  }
-
-  // Hide nav items instantly (before curtain close)
-  function hideItems(): Promise<void> {
-    return new Promise((resolve) => {
-      const hideDelays = [120, 60, 0];
-      const hideDurations = [220, 200, 180];
-
-      itemRefs.current.forEach((el, i) => {
-        if (!el) return;
-        el.style.transition = [
-          `opacity   ${hideDurations[i]}ms ${EASING.dim}   ${hideDelays[i]}ms`,
-          `transform ${hideDurations[i]}ms ${EASING.items} ${hideDelays[i]}ms`,
-        ].join(', ');
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(-18px)';
-      });
-
-      if (footerRef.current) {
-        footerRef.current.style.transition = 'opacity 160ms linear 0ms';
-        footerRef.current.style.opacity = '0';
-      }
-
-      setTimeout(() => {
-        const overlay = overlayRef.current;
-        if (overlay) {
-          overlay.style.opacity = '0';
-          overlay.style.pointerEvents = 'none';
-          overlay.style.visibility = 'hidden';
-        }
-        // Reset for next open
-        itemRefs.current.forEach((el) => {
-          if (!el) return;
-          el.style.transition = 'none';
-          el.style.opacity = '0';
-          el.style.transform = 'translateY(52px)';
-        });
-        if (footerRef.current) {
-          footerRef.current.style.transition = 'none';
-          footerRef.current.style.opacity = '0';
-          footerRef.current.style.transform = 'translateY(20px)';
-        }
-        resolve();
-      }, 320);
-    });
-  }
-
-  const handleOpen = useCallback(async () => {
+  const handleOpen = useCallback(() => {
     if (navState !== 'closed') return;
 
-    // Evaluate background to set theme before curtain opens
     const isLight = isBgLight();
     const activeColor = isLight ? '#0A0A0A' : '#FFFFFF';
     themeColorRef.current = activeColor;
     setMenuTheme(isLight ? 'dark-curtain' : 'light-curtain');
 
-    setNavState('opening');
-    if (typeof document !== 'undefined') {
-      document.body.classList.add('menu-is-open');
-    }
-    captureOrigin();
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    await animateValue(0, 1, DURATION.curtainOpen, (p) => {
-      drawLiquidBurst(ctx, canvas.width, canvas.height, p, originRef.current, themeColorRef.current);
-    });
-
-    revealItems();
     setNavState('open');
   }, [navState]);
 
-  const handleClose = useCallback(async () => {
+  const handleClose = useCallback(() => {
     if (navState !== 'open') return;
-    setNavState('closing');
-    if (typeof document !== 'undefined') {
-      document.body.classList.remove('menu-is-open');
-    }
-
-    await hideItems();
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    await animateValue(0, 1, DURATION.curtainClose, (p) => {
-      drawLiquidBurst(ctx, canvas.width, canvas.height, 1 - p, originRef.current, themeColorRef.current);
-    });
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setNavState('closed');
   }, [navState]);
 
@@ -432,11 +195,28 @@ export default function MorphNav() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && navState === 'open') {
-        void handleClose();
+        handleClose();
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, [navState, handleClose]);
+
+  // Auto-close menu on global scroll
+  useEffect(() => {
+    if (typeof window === 'undefined' || navState !== 'open') return;
+
+    const initialScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const diff = Math.abs(window.scrollY - initialScrollY);
+      if (diff > 20) {
+        handleClose();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [navState, handleClose]);
 
   const isAnimating = navState === 'opening' || navState === 'closing';
@@ -448,10 +228,10 @@ export default function MorphNav() {
     const targetSection = hrefToSection(href);
 
     if (isFromOverlay && navState === 'open') {
-      void handleClose();
+      handleClose();
       setTimeout(() => {
         portfolioExperience?.navigateTo(targetSection);
-      }, 350);
+      }, 250);
       return;
     }
 
@@ -459,62 +239,51 @@ export default function MorphNav() {
   }, [navState, handleClose, portfolioExperience]);
 
   const getActiveState = (href: string) => {
-    if (href === '/work') {
-      return activeSectionId === 'work';
-    }
-    if (href === '/about') {
-      return activeSectionId === 'about';
-    }
-    if (href === '/contact') {
-      return activeSectionId === 'contact';
-    }
-    return false;
+    const section = href.replace(/^\//, '');
+    if (section === '') return activeSectionId === 'hero';
+    return activeSectionId === section;
   };
 
   const isOpen = navState === 'open';
-  const activeColor = isOpen
+  const isExpanded = isOpen || navState === 'opening';
+  const activeColor = isExpanded
     ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A')
     : 'var(--color-text-1)';
-  const borderColor = isOpen
+  const borderColor = isExpanded
     ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(10, 10, 10, 0.14)')
     : 'rgba(255, 255, 255, 0.12)';
-  const background = isOpen
+  const background = isExpanded
     ? (menuTheme === 'dark-curtain'
-        ? 'rgba(12, 12, 12, 0.72)'
-        : 'rgba(255, 255, 255, 0.86)')
+        ? 'rgba(12, 12, 12, 0.88)'
+        : 'rgba(255, 255, 255, 0.94)')
     : 'rgba(12, 12, 12, 0.82)';
-  const surfaceShadow = isOpen && menuTheme === 'light-curtain'
-    ? '0 8px 24px rgba(10, 10, 10, 0.10)'
-    : '0 8px 24px rgba(0, 0, 0, 0.18)';
-
-  const activeTheme = menuTheme === 'dark-curtain'
-    ? {
-        curtain: '#0A0A0A',
-        text: '#FFFFFF',
-        muted: 'rgba(255, 255, 255, 0.15)',
-        accent: '#C9F0A8',
-        dim: '#888888',
-        border: 'rgba(255, 255, 255, 0.12)',
-        closeLines: '#888888',
-      }
-    : {
-        curtain: '#FFFFFF',
-        text: '#0A0A0A',
-        muted: 'rgba(10, 10, 10, 0.15)',
-        accent: '#3F702A',
-        dim: '#555555',
-        border: 'rgba(10, 10, 10, 0.12)',
-        closeLines: '#666666',
-      };
+  const surfaceShadow = isExpanded && menuTheme === 'light-curtain'
+    ? '0 8px 32px rgba(10, 10, 10, 0.08)'
+    : '0 8px 32px rgba(0, 0, 0, 0.24)';
 
   const morphTransition = {
-    type: 'tween' as const,
-    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-    duration: 0.45,
+    type: 'spring' as const,
+    stiffness: 240,
+    damping: 24,
+    mass: 0.85,
   };
 
   return (
     <>
+      {/* ── Transparent Click-Away Backdrop ─────────────────────────────────── */}
+      {isOpen && (
+        <div
+          onClick={handleClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'transparent',
+            cursor: 'default',
+          }}
+        />
+      )}
+
       {/* ── Fixed nav shell — logo only ───────────────────────────────────── */}
       <nav
         aria-label="Main navigation"
@@ -549,7 +318,7 @@ export default function MorphNav() {
             textDecoration: 'none',
             pointerEvents: 'auto',
             zIndex: 1001,
-            mixBlendMode: navState === 'open' ? 'difference' : 'normal',
+            mixBlendMode: isOpen ? 'difference' : 'normal',
             transition: 'color 0.4s ease-out, mix-blend-mode 0s',
             cursor: 'pointer',
           }}
@@ -561,30 +330,42 @@ export default function MorphNav() {
       {/* ── Unified Morphing Navigation Container ────────────────────────── */}
       <motion.div
         id="morph-nav-container"
+        layout
         animate={{
           left: isReallyCollapsed ? '100%' : '50%',
-          x: isReallyCollapsed ? (hovered ? -140 : -72) : -130,
-          width: isReallyCollapsed ? (hovered ? 112 : 44) : 260,
+          x: isReallyCollapsed
+            ? (isOpen
+                ? (isMobile ? 'calc(-100vw + 16px)' : '-348px')
+                : (hovered ? -140 : -72))
+            : -130,
+          width: isReallyCollapsed
+            ? (isOpen
+                ? (isMobile ? 'calc(100vw - 32px)' : '320px')
+                : (hovered ? 112 : 44))
+            : 260,
+          height: isOpen ? 250 : 44,
+          borderRadius: isOpen ? '12px' : '22px',
           opacity: hideCollapsedTriggerOnContact ? 0 : 1,
           scale: hideCollapsedTriggerOnContact ? 0.94 : 1,
         }}
         transition={morphTransition}
         onMouseEnter={() => isReallyCollapsed && setHovered(true)}
         onMouseLeave={() => isReallyCollapsed && setHovered(false)}
-        onClick={isReallyCollapsed && !isAnimating ? (isOpen ? handleClose : handleOpen) : undefined}
-        role={isReallyCollapsed ? 'button' : undefined}
+        onClick={isReallyCollapsed && !isAnimating && !isOpen ? handleOpen : undefined}
+        role={isReallyCollapsed && !isOpen ? 'button' : undefined}
         aria-label={isReallyCollapsed ? (isOpen ? 'Close navigation menu' : 'Open navigation menu') : undefined}
         style={{
           boxSizing: 'border-box',
           display: 'flex',
-          alignItems: 'center',
-          height: '44px',
-          borderRadius: '22px',
+          flexDirection: 'column',
+          alignItems: 'stretch',
           border: `1px solid ${borderColor}`,
           background,
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           boxShadow: surfaceShadow,
           color: activeColor,
-          cursor: isReallyCollapsed && !isAnimating ? 'pointer' : 'default',
+          cursor: isReallyCollapsed && !isAnimating && !isOpen ? 'pointer' : 'default',
           position: 'fixed',
           top: '12px',
           zIndex: 1001,
@@ -592,399 +373,285 @@ export default function MorphNav() {
           overflow: 'hidden',
           outline: 'none',
           WebkitTapHighlightColor: 'transparent',
+          willChange: 'transform, width, height, border-radius',
+          contain: 'paint layout',
         }}
       >
-        {/* Hero Pill Nav Links (Visible when NOT collapsed) */}
-        <motion.div
-          style={{
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            width: '260px',
-            height: '100%',
-            left: '50%',
-            x: '-50%',
-            pointerEvents: isReallyCollapsed ? 'none' : 'auto',
-          }}
-          animate={{
-            opacity: isReallyCollapsed ? 0 : 1,
-            scale: isReallyCollapsed ? 0.8 : 1,
-            y: isReallyCollapsed ? -10 : 0,
-          }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {NAV_LINKS.map((link, idx) => {
-            const active = getActiveState(link.href);
-            return (
-              <span key={link.href} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {idx > 0 && (
-                  <span
-                    style={{
-                      color: 'var(--color-text-3)',
-                      opacity: 0.3,
-                      userSelect: 'none',
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '10px'
-                    }}
-                  >
-                    •
-                  </span>
-                )}
-                <a
-                  href={link.href}
-                  onClick={(e) => handleNavigationClick(e, link.href)}
-                  data-label={link.label}
-                  onFocus={(e) => scrambleNavText(e.currentTarget)}
-                  onMouseEnter={(e) => scrambleNavText(e.currentTarget)}
-                  style={{
-                    fontFamily: 'var(--font-mono, monospace)',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    textDecoration: 'none',
-                    color: 'var(--color-text-1)',
-                    opacity: active ? 1 : 0.52,
-                    transition: 'opacity 0.3s ease',
-                  }}
-                >
-                  <span
-                    className="morph-nav-link-text"
-                    style={{
-                      display: 'inline-block',
-                      minWidth: `${link.label.length}ch`,
-                    }}
-                  >
-                    {link.label}
-                  </span>
-                </a>
-              </span>
-            );
-          })}
-        </motion.div>
-
-        {/* Floating Circle Content (Visible when collapsed) */}
-        <motion.div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            paddingRight: '12px',
-            width: '100%',
-            height: '100%',
-            pointerEvents: isReallyCollapsed ? 'auto' : 'none',
-          }}
-          animate={{
-            opacity: isReallyCollapsed ? 1 : 0,
-            scale: isReallyCollapsed ? 1 : 0.8,
-            y: isReallyCollapsed ? 0 : 10,
-          }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {/* Monospace label inside the morphing button */}
-          <span
+        {/* 1. Hero Pill Nav Links (Visible when NOT collapsed) */}
+        {!isReallyCollapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             style={{
-              position: 'absolute',
-              left: '18px',
-              top: '50%',
-              fontFamily: 'var(--font-mono, monospace)',
-              fontSize: '10px',
-              fontWeight: 700,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: activeColor,
-              opacity: (hovered && isReallyCollapsed) ? 1 : 0,
-              transform: (hovered && isReallyCollapsed) ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-10px)',
-              transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isOpen ? 'CLOSE' : 'MENU'}
-          </span>
-
-          {/* Hamburger lines / Close cross SVG */}
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            style={{
-              transform: `rotate(${isOpen ? 180 : 0}deg)`,
-              transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
-              flexShrink: 0,
-            }}
-          >
-            <line
-              x1="2"
-              y1="6"
-              x2="18"
-              y2="6"
-              stroke={activeColor}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              style={{
-                transformOrigin: '10px 10px',
-                transform: isOpen ? 'translateY(4px) rotate(45deg)' : 'translateY(0) rotate(0deg)',
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
-              }}
-            />
-            <line
-              x1="2"
-              y1="14"
-              x2="18"
-              y2="14"
-              stroke={activeColor}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              style={{
-                transformOrigin: '10px 10px',
-                transform: isOpen ? 'translateY(-4px) rotate(-45deg)' : 'translateY(0) rotate(0deg)',
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease',
-              }}
-            />
-          </svg>
-        </motion.div>
-      </motion.div>
-
-      {/* ── Canvas — liquid morph surface (fixed, full-screen) ───────────── */}
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 900,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* ── Full-screen nav overlay ───────────────────────────────────────── */}
-      <div
-        ref={overlayRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Navigation menu"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 950,
-          background: 'transparent', // canvas provides the fill
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          padding: isMobile ? '24px 28px 32px' : 'clamp(32px, 5vw, 56px)',
-          opacity: 0,
-          pointerEvents: 'none',
-          visibility: 'hidden',
-        }}
-      >
-        {/* Nav items */}
-        <ul
-          role="list"
-          style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            marginBottom: 'clamp(32px, 4vw, 48px)',
-          }}
-        >
-          {NAV_LINKS.map((link, i) => (
-            <li key={link.href}>
-              <div
-                ref={(el) => { itemRefs.current[i] = el; }}
-                role="none"
-                style={{
-                  opacity: 0,
-                  transform: 'translateY(52px)',
-                  borderTop: `0.5px solid ${activeTheme.muted}`,
-                  padding: '10px 0',
-                }}
-              >
-                <a
-                  href={link.href}
-                  onClick={(e) => handleNavigationClick(e, link.href, true)}
-                  onMouseEnter={() => setHoveredIdx(i)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '16px',
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                    padding: '6px 0',
-                  }}
-                >
-                  {/* Number */}
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '11px',
-                      letterSpacing: '0.08em',
-                      color: hoveredIdx === i
-                        ? activeTheme.accent
-                        : hoveredIdx !== null
-                          ? 'transparent'
-                          : activeTheme.muted,
-                      transition: `color 300ms ${EASING.number}, opacity 300ms ${EASING.number}`,
-                      minWidth: '28px',
-                      paddingBottom: '3px',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {link.num}
-                  </span>
-
-                  {/* Label — clip-reveal overlay */}
-                  <span style={{ position: 'relative', display: 'inline-block', overflow: 'hidden' }}>
-                    {/* Layer 1: default text */}
-                    <span
-                      style={{
-                        display: 'block',
-                        color: hoveredIdx === i ? 'transparent' : activeTheme.text,
-                        fontFamily: 'var(--font-display, Georgia, serif)',
-                        fontSize: isMobile ? 'clamp(36px, 10vw, 52px)' : 'clamp(44px, 7vw, 80px)',
-                        fontWeight: 500,
-                        letterSpacing: '-0.045em',
-                        lineHeight: 1.05,
-                        opacity: hoveredIdx !== null && hoveredIdx !== i ? 0.06 : 1,
-                        transitionProperty: 'opacity, color',
-                        transitionDuration: '250ms, 300ms',
-                        transitionTimingFunction: `${EASING.dim}, ${EASING.items}`,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {link.label}
-                    </span>
-                    {/* Layer 2: accent — clip-path reveal left→right */}
-                    <span
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'block',
-                        color: activeTheme.accent,
-                        fontFamily: 'var(--font-display, Georgia, serif)',
-                        fontSize: isMobile ? 'clamp(36px, 10vw, 52px)' : 'clamp(44px, 7vw, 80px)',
-                        fontWeight: 500,
-                        letterSpacing: '-0.045em',
-                        lineHeight: 1.05,
-                        clipPath: hoveredIdx === i ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)',
-                        transition: `clip-path ${DURATION.clipReveal}ms ${EASING.clip}`,
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {link.label}
-                    </span>
-                  </span>
-
-                  {/* Arrow */}
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      fontSize: '16px',
-                      color: activeTheme.accent,
-                      opacity: hoveredIdx === i ? 1 : 0,
-                      transform: hoveredIdx === i
-                        ? 'translateX(0) translateY(-2px)'
-                        : 'translateX(-14px) translateY(2px)',
-                      transition: [
-                        `opacity   ${DURATION.arrow}ms ease`,
-                        `transform ${DURATION.arrow}ms ${EASING.arrow}`,
-                      ].join(', '),
-                      flexShrink: 0,
-                      alignSelf: 'center',
-                    }}
-                  >
-                    ↗
-                  </span>
-                </a>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {/* Footer row */}
-        <div
-          ref={footerRef}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            opacity: 0,
-            transform: 'translateY(20px)',
-          }}
-        >
-          {/* Left: status + email */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <span
-              style={{
-                fontSize: '9px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: activeTheme.dim,
-                fontFamily: 'var(--font-body, sans-serif)',
-              }}
-            >
-              Currently available
-            </span>
-            <a
-              href="mailto:ferryruslyc@gmail.com"
-              style={{
-                fontSize: '12px',
-                color: activeTheme.accent,
-                textDecoration: 'none',
-                letterSpacing: '0.01em',
-                transition: 'opacity 0.2s',
-                fontFamily: 'var(--font-body, sans-serif)',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              ferryruslyc@gmail.com
-            </a>
-          </div>
-
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            disabled={isAnimating}
-            aria-label="Close navigation"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = activeTheme.accent;
-              const lines = e.currentTarget.querySelectorAll('line');
-              lines.forEach(line => line.setAttribute('stroke', activeTheme.accent));
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = activeTheme.border;
-              const lines = e.currentTarget.querySelectorAll('line');
-              lines.forEach(line => line.setAttribute('stroke', activeTheme.closeLines));
-            }}
-            style={{
-              all: 'unset',
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              border: `0.5px solid ${activeTheme.border}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: isAnimating ? 'default' : 'pointer',
-              transition: 'border-color 0.25s ease',
-              flexShrink: 0,
+              gap: '16px',
+              width: '260px',
+              height: '44px',
+              padding: '0 16px',
             }}
           >
-            <CloseIcon stroke={activeTheme.closeLines} />
-          </button>
-        </div>
-      </div>
+            {NAV_LINKS.map((link, idx) => {
+              const active = getActiveState(link.href);
+              return (
+                <span key={link.href} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {idx > 0 && (
+                    <span
+                      style={{
+                        color: 'var(--color-text-3)',
+                        opacity: 0.3,
+                        userSelect: 'none',
+                        fontFamily: 'var(--font-mono, monospace)',
+                        fontSize: '10px'
+                      }}
+                    >
+                      •
+                    </span>
+                  )}
+                  <a
+                    href={link.href}
+                    onClick={(e) => handleNavigationClick(e, link.href)}
+                    data-label={link.label}
+                    onFocus={(e) => scrambleNavText(e.currentTarget)}
+                    onMouseEnter={(e) => scrambleNavText(e.currentTarget)}
+                    style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      textDecoration: 'none',
+                      color: 'var(--color-text-1)',
+                      opacity: active ? 1 : 0.52,
+                      transition: 'opacity 0.3s ease',
+                    }}
+                  >
+                    <span
+                      className="morph-nav-link-text"
+                      style={{
+                        display: 'inline-block',
+                        minWidth: `${link.label.length}ch`,
+                      }}
+                    >
+                      {link.label}
+                    </span>
+                  </a>
+                </span>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* 2. Floating Circle Content (Visible when collapsed and closed) */}
+        {isReallyCollapsed && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              paddingRight: '12px',
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+            }}
+          >
+            {/* Monospace label inside the morphing button */}
+            <span
+              style={{
+                position: 'absolute',
+                left: '18px',
+                top: '50%',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: activeColor,
+                opacity: hovered ? 1 : 0,
+                transform: hovered ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-10px)',
+                transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              MENU
+            </span>
+
+            {/* Hamburger lines */}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              style={{
+                flexShrink: 0,
+              }}
+            >
+              <line
+                x1="2"
+                y1="6"
+                x2="18"
+                y2="6"
+                stroke={activeColor}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                style={{
+                  transition: 'stroke 0.3s ease',
+                }}
+              />
+              <line
+                x1="2"
+                y1="14"
+                x2="18"
+                y2="14"
+                stroke={activeColor}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                style={{
+                  transition: 'stroke 0.3s ease',
+                }}
+              />
+            </svg>
+          </motion.div>
+        )}
+
+        {/* 3. Bento Dropdown Menu Content (Visible when collapsed and open) */}
+        {isReallyCollapsed && isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ delay: 0.12, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '248px',
+              padding: '20px',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Header Row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: '9px',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                color: 'var(--color-text-3)',
+                opacity: 0.6,
+              }}>
+                NAVIGATION
+              </span>
+              {/* Close Button Cross */}
+              <button
+                onClick={handleClose}
+                type="button"
+                aria-label="Close menu"
+                style={{
+                  appearance: 'none',
+                  border: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  color: activeColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Links List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
+              {NAV_LINKS.map((link, idx) => {
+                const active = getActiveState(link.href);
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleNavigationClick(e, link.href, true)}
+                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '12px',
+                      textDecoration: 'none',
+                      padding: '6px 0',
+                      borderBottom: idx < NAV_LINKS.length - 1 ? '0.5px solid var(--color-border)' : 'none',
+                      color: active ? 'var(--color-accent)' : 'var(--color-text-1)',
+                      transition: 'color 0.3s ease',
+                    }}
+                  >
+                    <span style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '9px',
+                      color: 'var(--color-text-3)',
+                      minWidth: '16px',
+                      opacity: 0.6,
+                    }}>
+                      {link.num}
+                    </span>
+                    <span style={{
+                      fontFamily: 'var(--font-display, Georgia, serif)',
+                      fontSize: '18px',
+                      fontWeight: 500,
+                      letterSpacing: '-0.02em',
+                    }}>
+                      {link.label}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontSize: '12px',
+                      color: 'var(--color-accent)',
+                      opacity: active ? 1 : 0.3,
+                      transform: hoveredIdx === idx ? 'translateX(2px) translateY(-2px)' : 'translateX(0) translateY(0)',
+                      transition: 'transform 0.25s ease, opacity 0.25s ease',
+                    }}>
+                      ↗
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Divider Line */}
+            <div style={{
+              height: '0.5px',
+              background: 'var(--color-border)',
+              opacity: 0.15,
+              margin: '12px 0 6px',
+            }} />
+
+            {/* Metadata Footer */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '8px',
+              color: 'var(--color-text-3)',
+              letterSpacing: '0.08em',
+              opacity: 0.65,
+            }}>
+              <span>SURABAYA, ID</span>
+              <span>AVAILABLE</span>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
 
       {/* Global style for reduced motion */}
       <style>{`
@@ -993,35 +660,5 @@ export default function MorphNav() {
         }
       `}</style>
     </>
-  );
-}
-
-// ─── Close icon ───────────────────────────────────────────────────────────────
-
-function CloseIcon({ stroke }: { stroke: string }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-      style={{ display: 'block' }}
-    >
-      <line
-        x1="1" y1="1" x2="13" y2="13"
-        stroke={stroke}
-        strokeWidth="0.75"
-        strokeLinecap="round"
-        style={{ transition: 'stroke 0.25s ease' }}
-      />
-      <line
-        x1="13" y1="1" x2="1" y2="13"
-        stroke={stroke}
-        strokeWidth="0.75"
-        strokeLinecap="round"
-        style={{ transition: 'stroke 0.25s ease' }}
-      />
-    </svg>
   );
 }
