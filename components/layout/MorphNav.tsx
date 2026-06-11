@@ -596,8 +596,13 @@ export default function MorphNav() {
                     key={link.href}
                     href={link.href}
                     onClick={(e) => handleNavigationClick(e, link.href, true)}
-                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseEnter={(e) => {
+                      setHoveredIdx(idx);
+                      scrambleNavText(e.currentTarget);
+                    }}
                     onMouseLeave={() => setHoveredIdx(null)}
+                    onFocus={(e) => scrambleNavText(e.currentTarget)}
+                    data-label={link.label}
                     style={{
                       display: 'flex',
                       alignItems: 'baseline',
@@ -622,12 +627,17 @@ export default function MorphNav() {
                     }}>
                       {link.num}
                     </span>
-                    <span style={{
-                      fontFamily: 'var(--font-display, Georgia, serif)',
-                      fontSize: '20px',
-                      fontWeight: 500,
-                      letterSpacing: '-0.01em',
-                    }}>
+                    <span
+                      className="morph-nav-link-text"
+                      style={{
+                        fontFamily: 'var(--font-display, Georgia, serif)',
+                        fontSize: '20px',
+                        fontWeight: 500,
+                        letterSpacing: '-0.01em',
+                        display: 'inline-block',
+                        minWidth: `${link.label.length}ch`,
+                      }}
+                    >
                       {link.label}
                     </span>
                     <span style={{
