@@ -248,24 +248,24 @@ export default function MorphNav() {
   const isExpanded = isOpen || navState === 'opening';
   const activeColor = isExpanded
     ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A')
-    : 'var(--color-text-1)';
+    : (isReallyCollapsed ? '#FFFFFF' : 'var(--color-text-1)');
   const borderColor = isExpanded
     ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(10, 10, 10, 0.08)')
-    : (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(10, 10, 10, 0.06)');
+    : (isReallyCollapsed
+        ? (hovered ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.12)')
+        : 'rgba(255, 255, 255, 0.12)');
   const background = isExpanded
     ? (menuTheme === 'dark-curtain'
         ? 'rgba(10, 10, 10, 0.82)'
         : 'rgba(255, 255, 255, 0.88)')
-    : (menuTheme === 'dark-curtain'
-        ? 'rgba(10, 10, 10, 0.76)'
-        : 'rgba(255, 255, 255, 0.82)');
+    : 'rgba(10, 10, 10, 0.82)';
   const surfaceShadow = isExpanded
     ? (menuTheme === 'light-curtain'
         ? '0 4px 12px rgba(10, 10, 10, 0.03), 0 20px 40px rgba(10, 10, 10, 0.08)'
         : '0 4px 12px rgba(0, 0, 0, 0.15), 0 24px 50px rgba(0, 0, 0, 0.35)')
     : (menuTheme === 'light-curtain'
         ? '0 2px 8px rgba(10, 10, 10, 0.02), 0 8px 16px rgba(10, 10, 10, 0.04)'
-        : '0 2px 8px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(0, 0, 0, 0.25)');
+        : '0 2px 8px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.25)');
   const separatorColor = menuTheme === 'dark-curtain'
     ? 'rgba(255, 255, 255, 0.08)'
     : 'rgba(10, 10, 10, 0.06)';
