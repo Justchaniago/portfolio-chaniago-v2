@@ -250,16 +250,25 @@ export default function MorphNav() {
     ? (menuTheme === 'dark-curtain' ? '#FFFFFF' : '#0A0A0A')
     : 'var(--color-text-1)';
   const borderColor = isExpanded
-    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(10, 10, 10, 0.14)')
-    : 'rgba(255, 255, 255, 0.12)';
+    ? (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(10, 10, 10, 0.08)')
+    : (menuTheme === 'dark-curtain' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(10, 10, 10, 0.06)');
   const background = isExpanded
     ? (menuTheme === 'dark-curtain'
-        ? 'rgba(12, 12, 12, 0.88)'
-        : 'rgba(255, 255, 255, 0.94)')
-    : 'rgba(12, 12, 12, 0.82)';
-  const surfaceShadow = isExpanded && menuTheme === 'light-curtain'
-    ? '0 8px 32px rgba(10, 10, 10, 0.08)'
-    : '0 8px 32px rgba(0, 0, 0, 0.24)';
+        ? 'rgba(10, 10, 10, 0.82)'
+        : 'rgba(255, 255, 255, 0.88)')
+    : (menuTheme === 'dark-curtain'
+        ? 'rgba(10, 10, 10, 0.76)'
+        : 'rgba(255, 255, 255, 0.82)');
+  const surfaceShadow = isExpanded
+    ? (menuTheme === 'light-curtain'
+        ? '0 4px 12px rgba(10, 10, 10, 0.03), 0 20px 40px rgba(10, 10, 10, 0.08)'
+        : '0 4px 12px rgba(0, 0, 0, 0.15), 0 24px 50px rgba(0, 0, 0, 0.35)')
+    : (menuTheme === 'light-curtain'
+        ? '0 2px 8px rgba(10, 10, 10, 0.02), 0 8px 16px rgba(10, 10, 10, 0.04)'
+        : '0 2px 8px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(0, 0, 0, 0.25)');
+  const separatorColor = menuTheme === 'dark-curtain'
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(10, 10, 10, 0.06)';
 
   const morphTransition = {
     type: 'spring' as const,
@@ -361,8 +370,8 @@ export default function MorphNav() {
           alignItems: 'stretch',
           border: `1px solid ${borderColor}`,
           background,
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
           boxShadow: surfaceShadow,
           color: activeColor,
           cursor: isReallyCollapsed && !isAnimating && !isOpen ? 'pointer' : 'default',
@@ -542,11 +551,11 @@ export default function MorphNav() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{
                 fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '9px',
+                fontSize: '8px',
                 fontWeight: 700,
-                letterSpacing: '0.14em',
-                color: 'var(--color-text-3)',
-                opacity: 0.6,
+                letterSpacing: '0.18em',
+                color: activeColor,
+                opacity: 0.45,
               }}>
                 NAVIGATION
               </span>
@@ -562,10 +571,14 @@ export default function MorphNav() {
                   cursor: 'pointer',
                   padding: '4px',
                   color: activeColor,
+                  opacity: 0.65,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  transition: 'opacity 0.2s ease',
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.65'}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -591,35 +604,39 @@ export default function MorphNav() {
                       gap: '12px',
                       textDecoration: 'none',
                       padding: '6px 0',
-                      borderBottom: idx < NAV_LINKS.length - 1 ? '0.5px solid var(--color-border)' : 'none',
-                      color: active ? 'var(--color-accent)' : 'var(--color-text-1)',
-                      transition: 'color 0.3s ease',
+                      borderBottom: idx < NAV_LINKS.length - 1 ? `0.5px solid ${separatorColor}` : 'none',
+                      color: active ? 'var(--color-accent)' : activeColor,
+                      opacity: active ? 1 : (hoveredIdx === idx ? 1 : 0.65),
+                      transition: 'color 0.25s ease, opacity 0.25s ease',
                     }}
                   >
                     <span style={{
                       fontFamily: 'var(--font-mono, monospace)',
                       fontSize: '9px',
-                      color: 'var(--color-text-3)',
-                      minWidth: '16px',
-                      opacity: 0.6,
+                      fontWeight: 600,
+                      letterSpacing: '0.05em',
+                      color: activeColor,
+                      minWidth: '20px',
+                      opacity: active ? 0.85 : (hoveredIdx === idx ? 0.75 : 0.45),
+                      transition: 'opacity 0.25s ease',
                     }}>
                       {link.num}
                     </span>
                     <span style={{
                       fontFamily: 'var(--font-display, Georgia, serif)',
-                      fontSize: '18px',
+                      fontSize: '20px',
                       fontWeight: 500,
-                      letterSpacing: '-0.02em',
+                      letterSpacing: '-0.01em',
                     }}>
                       {link.label}
                     </span>
                     <span style={{
                       marginLeft: 'auto',
-                      fontSize: '12px',
-                      color: 'var(--color-accent)',
-                      opacity: active ? 1 : 0.3,
+                      fontSize: '13px',
+                      color: active ? 'var(--color-accent)' : activeColor,
+                      opacity: active ? 1 : (hoveredIdx === idx ? 0.8 : 0.35),
                       transform: hoveredIdx === idx ? 'translateX(2px) translateY(-2px)' : 'translateX(0) translateY(0)',
-                      transition: 'transform 0.25s ease, opacity 0.25s ease',
+                      transition: 'transform 0.25s ease, opacity 0.25s ease, color 0.25s ease',
                     }}>
                       ↗
                     </span>
@@ -631,8 +648,7 @@ export default function MorphNav() {
             {/* Divider Line */}
             <div style={{
               height: '0.5px',
-              background: 'var(--color-border)',
-              opacity: 0.15,
+              background: separatorColor,
               margin: '12px 0 6px',
             }} />
 
@@ -642,9 +658,10 @@ export default function MorphNav() {
               justifyContent: 'space-between',
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: '8px',
-              color: 'var(--color-text-3)',
-              letterSpacing: '0.08em',
-              opacity: 0.65,
+              fontWeight: 600,
+              color: activeColor,
+              letterSpacing: '0.12em',
+              opacity: 0.45,
             }}>
               <span>SURABAYA, ID</span>
               <span>AVAILABLE</span>
