@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { usePortfolioExperience } from '@/components/experience/PortfolioExperienceContext';
 
 import Hero from './Hero';
 import About from './About';
@@ -18,7 +19,50 @@ type PortfolioWindow = Window & {
   __scrollTriggerProgress?: number;
 };
 
+const THEME_BY_SECTION: Record<string, Record<string, string>> = {
+  hero: {
+    '--color-bg': '#0A0A0A',
+    '--color-text-1': '#FFFFFF',
+    '--color-text-2': '#888888',
+    '--color-text-3': '#555555',
+    '--color-border': '#2A2A2A',
+    '--color-accent': '#C9F0A8',
+    '--about-env-opacity': '0',
+  },
+  about: {
+    '--color-bg': '#FFFFFF',
+    '--color-text-1': '#0A0A0A',
+    '--color-text-2': '#444444',
+    '--color-text-3': '#555555',
+    '--color-border': 'rgba(10, 10, 10, 0.15)',
+    '--color-accent': '#3F702A',
+    '--about-env-opacity': '1',
+  },
+  work: {
+    '--color-bg': '#FFFFFF',
+    '--color-text-1': '#0A0A0A',
+    '--color-text-2': '#444444',
+    '--color-text-3': '#555555',
+    '--color-border': 'rgba(10, 10, 10, 0.15)',
+    '--color-accent': '#3F702A',
+    '--about-env-opacity': '1',
+  },
+  contact: {
+    '--color-bg': '#050505',
+    '--color-text-1': '#FFFFFF',
+    '--color-text-2': '#CFCFCF',
+    '--color-text-3': '#777777',
+    '--color-border': 'rgba(255, 255, 255, 0.14)',
+    '--color-accent': '#C9F0A8',
+    '--about-env-opacity': '0',
+  },
+};
+
 export default function PinnedSections() {
+  const portfolioExperience = usePortfolioExperience();
+  const isTransitioningRef = useRef(false);
+  const contactThemeResetDelayRef = useRef<gsap.core.Tween | null>(null);
+
   const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
   const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
   const contactScrollSpacerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +83,32 @@ export default function PinnedSections() {
     aboutControllerRef.current?.setTransitionComplete(complete);
   }, []);
 
+  useEffect(() => {
+    isTransitioningRef.current = portfolioExperience?.isTransitioning ?? false;
+
+    if (portfolioExperience?.isTransitioning) {
+      // Kill any active delayed theme resets immediately
+      contactThemeResetDelayRef.current?.kill();
+      contactThemeResetDelayRef.current = null;
+
+      // Sync the About Environment lifecycle state instantly
+      const pending = portfolioExperience.pendingSection;
+      if (pending === 'hero') {
+        aboutEnvironmentRef.current?.deactivate();
+      } else if (pending === 'about' || pending === 'work') {
+        aboutEnvironmentRef.current?.activate();
+      }
+
+      // Apply target theme variables directly to html to prevent flash/wrong colors during snapping
+      const targetTheme = THEME_BY_SECTION[pending];
+      if (targetTheme) {
+        Object.entries(targetTheme).forEach(([prop, val]) => {
+          document.documentElement.style.setProperty(prop, val);
+        });
+      }
+    }
+  }, [portfolioExperience?.isTransitioning, portfolioExperience?.pendingSection]);
+
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -49,6 +119,10 @@ export default function PinnedSections() {
     aboutControllerRef.current = aboutController;
     const contactScene = createContactScene();
     let contactThemeResetDelay: gsap.core.Tween | null = null;
+    const syncTween = (val: gsap.core.Tween | null) => {
+      contactThemeResetDelay = val;
+      contactThemeResetDelayRef.current = val;
+    };
     contactScene.prepare();
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
@@ -158,12 +232,14 @@ export default function PinnedSections() {
       trigger: '#contact-section',
       start: 'top bottom',
       onEnter: () => {
+        if (isTransitioningRef.current) return;
         contactThemeResetDelay?.kill();
-        contactThemeResetDelay = null;
+        syncTween(null);
       },
       onLeaveBack: () => {
+        if (isTransitioningRef.current) return;
         contactThemeResetDelay?.kill();
-        contactThemeResetDelay = gsap.delayedCall(0.4, () => {
+        syncTween(gsap.delayedCall(0.4, () => {
           gsap.to('html', {
             '--color-bg': '#FFFFFF',
             '--color-text-1': '#0A0A0A',
@@ -173,8 +249,8 @@ export default function PinnedSections() {
             '--about-env-opacity': '1',
             duration: 0.3,
           });
-          contactThemeResetDelay = null;
-        });
+          syncTween(null);
+        }));
       }
     });
 
@@ -204,6 +280,7 @@ export default function PinnedSections() {
       window.removeEventListener('scroll', handleScrollUpdate);
       window.removeEventListener('resize', updateContactOverlayProgress);
       contactThemeResetDelay?.kill();
+      syncTween(null);
       ScrollTrigger.getAll().forEach((st) => st.kill());
       contactScene.destroy();
       aboutController.destroy();

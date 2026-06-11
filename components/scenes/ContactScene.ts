@@ -50,9 +50,14 @@ export function createContactScene(): ContactScene {
 
     contactBackdropActive = active;
     if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--color-bg', active ? '#050505' : '#FFFFFF');
       gsap.killTweensOf(document.body, 'backgroundColor');
-      document.body.style.backgroundColor = active ? '#050505' : '';
+      if (active) {
+        document.documentElement.style.setProperty('--color-bg', '#050505');
+        document.body.style.backgroundColor = '#050505';
+      } else {
+        document.documentElement.style.removeProperty('--color-bg');
+        document.body.style.backgroundColor = '';
+      }
     }
   };
 
