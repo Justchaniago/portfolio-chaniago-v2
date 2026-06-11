@@ -62,7 +62,7 @@ export default function CurtainTransitionLayer({
         zIndex: 1600,
         pointerEvents: 'none',
         background:
-          'linear-gradient(180deg, #f7f5ef 0%, #ffffff 42%, #e9ece4 100%)',
+          'linear-gradient(180deg, #f7f5ef 0%, #ffffff 42%, #c9f0a8 100%)',
         transform: 'translate3d(0, 100%, 0)',
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
