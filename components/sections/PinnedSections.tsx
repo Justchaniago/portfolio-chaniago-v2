@@ -66,6 +66,7 @@ export default function PinnedSections() {
   const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
   const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
   const contactScrollSpacerRef = useRef<HTMLDivElement>(null);
+  const contactSceneRef = useRef<ReturnType<typeof createContactScene> | null>(null);
 
   if (aboutEnvironmentRef.current === null) {
     aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
@@ -109,8 +110,25 @@ export default function PinnedSections() {
           document.documentElement.style.setProperty(prop, val);
         });
       }
+
+      // Reset contact scene if transitioning away from contact
+      if (pending !== 'contact') {
+        contactSceneRef.current?.setProgress(0);
+      }
+    } else {
+      // Transition completed! Sync active section on window.
+      const active = portfolioExperience?.activeSection;
+      if (active && typeof window !== 'undefined') {
+        const portfolioWindow = window as PortfolioWindow;
+        portfolioWindow.__activeSection = active;
+        window.dispatchEvent(
+          new CustomEvent('activeSectionChange', {
+            detail: { activeSection: active },
+          })
+        );
+      }
     }
-  }, [portfolioExperience?.isTransitioning, portfolioExperience?.pendingSection]);
+  }, [portfolioExperience?.isTransitioning, portfolioExperience?.pendingSection, portfolioExperience?.activeSection]);
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
@@ -121,6 +139,7 @@ export default function PinnedSections() {
     });
     aboutControllerRef.current = aboutController;
     const contactScene = createContactScene();
+    contactSceneRef.current = contactScene;
     let contactThemeResetDelay: gsap.core.Tween | null = null;
     const syncTween = (val: gsap.core.Tween | null) => {
       contactThemeResetDelay = val;

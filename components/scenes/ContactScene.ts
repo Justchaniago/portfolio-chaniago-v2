@@ -52,6 +52,11 @@ export function createContactScene(): ContactScene {
     if (typeof document !== 'undefined') {
       gsap.killTweensOf(document.body, 'backgroundColor');
       if (active) {
+        // If we are currently transitioning via navigation menu, do not touch the HTML styles
+        // as the transition useEffect is applying the target theme variables.
+        if (typeof window !== 'undefined' && (window as any).__isTransitioning) {
+          return;
+        }
         document.documentElement.style.setProperty('--color-bg', '#050505');
         document.body.style.backgroundColor = '#050505';
       } else {
