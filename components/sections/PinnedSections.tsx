@@ -86,7 +86,11 @@ export default function PinnedSections() {
   }, []);
 
   useEffect(() => {
-    isTransitioningRef.current = portfolioExperience?.isTransitioning ?? false;
+    const isTrans = portfolioExperience?.isTransitioning ?? false;
+    isTransitioningRef.current = isTrans;
+    if (typeof window !== 'undefined') {
+      (window as any).__isTransitioning = isTrans;
+    }
 
     if (portfolioExperience?.isTransitioning) {
       // Kill any active delayed theme resets and active GSAP tweens on html element
@@ -287,6 +291,7 @@ export default function PinnedSections() {
       if (typeof window !== 'undefined') {
         delete portfolioWindow.__activeSection;
         delete portfolioWindow.__scrollTriggerProgress;
+        delete (window as any).__isTransitioning;
       }
     };
   }, []);

@@ -55,7 +55,21 @@ export function createContactScene(): ContactScene {
         document.documentElement.style.setProperty('--color-bg', '#050505');
         document.body.style.backgroundColor = '#050505';
       } else {
-        document.documentElement.style.removeProperty('--color-bg');
+        // If we are currently transitioning, do not touch the HTML style properties
+        // as the transition useEffect is applying the target theme variables.
+        if (typeof window !== 'undefined' && (window as any).__isTransitioning) {
+          document.body.style.backgroundColor = '';
+          return;
+        }
+
+        const activeSection = typeof window !== 'undefined' ? (window as any).__activeSection : undefined;
+        if (activeSection === 'about' || activeSection === 'work') {
+          document.documentElement.style.setProperty('--color-bg', '#FFFFFF');
+        } else if (activeSection === 'hero') {
+          document.documentElement.style.setProperty('--color-bg', '#0A0A0A');
+        } else {
+          document.documentElement.style.removeProperty('--color-bg');
+        }
         document.body.style.backgroundColor = '';
       }
     }
