@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto } from "next/font/google";
+import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto, Marck_Script } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import MorphNav from "@/components/layout/MorphNav";
@@ -11,6 +11,12 @@ const playfairDisplay = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin"],
   style: ["normal", "italic"],
+});
+
+const marckScript = Marck_Script({
+  variable: "--font-marck-script",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 const dmSans = DM_Sans({
@@ -55,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${roboto.variable} ${bitcountGridSingle.variable} h-full antialiased`}
+      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${roboto.variable} ${bitcountGridSingle.variable} ${marckScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />

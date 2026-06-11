@@ -127,6 +127,7 @@
   --font-mono: var(--font-mono);
   --font-phags-pa: var(--font-phags-pa);
   --font-bitcount: var(--font-bitcount);
+  --font-marck-script: var(--font-marck-script);
 
   /* Custom Transition Timing Functions */
   --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);

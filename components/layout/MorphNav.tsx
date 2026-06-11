@@ -320,11 +320,11 @@ export default function MorphNav() {
             border: 0,
             background: 'transparent',
             padding: 0,
-            fontFamily: 'var(--font-display, Georgia, serif)',
-            fontSize: '18px',
-            fontWeight: 600,
+            fontFamily: 'var(--font-marck-script, cursive)',
+            fontSize: '26px',
+            fontWeight: 400,
             color: 'var(--color-text-1)',
-            letterSpacing: '-0.03em',
+            letterSpacing: 'normal',
             textDecoration: 'none',
             pointerEvents: 'auto',
             zIndex: 1001,
@@ -333,7 +333,7 @@ export default function MorphNav() {
             cursor: 'pointer',
           }}
         >
-          Ch.
+          justchaniago
         </button>
       </nav>
 
