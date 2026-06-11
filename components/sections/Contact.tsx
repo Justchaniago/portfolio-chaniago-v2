@@ -3,12 +3,10 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
 import { HoverSweep } from '@/lib/interactionPresets';
-
-type ContactWindowWithLenis = {
-  lenis?: {
-    scrollTo(target: Element, options?: { duration?: number }): void;
-  };
-};
+import {
+  usePortfolioExperience,
+  type PortfolioSectionId,
+} from '@/components/experience/PortfolioExperienceContext';
 
 type ContactCharRect = {
   left: number;
@@ -38,9 +36,9 @@ const UTILITY_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/@._-↗';
 const UTILITY_SCRAMBLE_DURATION = 520;
 
 const QUICK_JUMP_LINKS = [
-  { label: 'HOME', target: 'hero-section' },
-  { label: 'ABOUT', target: 'about-section' },
-  { label: 'WORK', target: 'work-section' },
+  { label: 'HOME', target: 'hero' },
+  { label: 'ABOUT', target: 'about' },
+  { label: 'WORK', target: 'work' },
 ] as const;
 
 const CONNECT_LINKS = [
@@ -50,6 +48,7 @@ const CONNECT_LINKS = [
 ] as const;
 
 export default function Contact() {
+  const portfolioExperience = usePortfolioExperience();
   const containerRef = useRef<HTMLDivElement>(null);
   const innerWrapperRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -308,17 +307,9 @@ export default function Contact() {
     startInteractionLoop();
   }
 
-  function handleQuickJump(e: MouseEvent<HTMLButtonElement>, target: string) {
+  function handleQuickJump(e: MouseEvent<HTMLButtonElement>, target: PortfolioSectionId) {
     e.preventDefault();
-    const targetEl = document.getElementById(target);
-    if (targetEl) {
-      const lenis = (window as unknown as ContactWindowWithLenis).lenis;
-      if (typeof lenis?.scrollTo === 'function') {
-        lenis.scrollTo(targetEl, { duration: 1.2 });
-      } else {
-        targetEl.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    portfolioExperience?.navigateTo(target);
   }
 
   function renderUtilityText(label: string) {

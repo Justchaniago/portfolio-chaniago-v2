@@ -150,6 +150,94 @@ body {
   overflow-x: hidden;
 }
 
+html.portfolio-virtual-experience,
+body.portfolio-virtual-experience {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.portfolio-virtual-experience {
+  position: fixed;
+  inset: 0;
+}
+
+.portfolio-experience-shell {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text-1);
+  isolation: isolate;
+}
+
+.portfolio-scene-host,
+.portfolio-scene-layer,
+.portfolio-scene-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.portfolio-scene-host {
+  z-index: 1;
+}
+
+.portfolio-scene-layer {
+  transform: translate3d(0, 0, 0);
+  will-change: opacity, transform;
+}
+
+.portfolio-scene-surface {
+  contain: layout paint;
+}
+
+.portfolio-local-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  background: var(--color-bg);
+}
+
+.about-virtual-scene {
+  background: #ffffff;
+  --color-bg: #ffffff;
+  --color-text-1: #0a0a0a;
+  --color-text-2: #444444;
+  --color-text-3: #555555;
+  --color-border: rgba(10, 10, 10, 0.15);
+  --color-accent: #3f702a;
+}
+
+.work-virtual-scene {
+  background: #ffffff;
+  --color-bg: #ffffff;
+  --color-text-1: #0a0a0a;
+  --color-text-2: #444444;
+  --color-text-3: #555555;
+  --color-border: rgba(10, 10, 10, 0.15);
+  --color-accent: #3f702a;
+}
+
+.contact-virtual-scene {
+  background: #050505;
+  --color-bg: #050505;
+  --color-text-1: #ffffff;
+  --color-text-2: #cfcfcf;
+  --color-text-3: #777777;
+  --color-border: rgba(255, 255, 255, 0.14);
+  --color-accent: #c9f0a8;
+}
+
 /* Custom scrollbar styling following beautiful dark editorial aesthetic */
 ::-webkit-scrollbar {
   width: 8px;

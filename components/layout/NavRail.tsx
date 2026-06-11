@@ -2,39 +2,64 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { SECTION_IDS } from '@/lib/motion';
+import {
+  usePortfolioExperience,
+  type PortfolioSectionId,
+} from '@/components/experience/PortfolioExperienceContext';
 
-const SECTIONS = [
+const SECTIONS: Array<{
+  id: PortfolioSectionId;
+  label: string;
+  num: string;
+}> = [
   { id: 'hero', label: 'Hero', num: '01' },
   { id: 'about', label: 'About', num: '02' },
   { id: 'work', label: 'Work', num: '03' },
   { id: 'contact', label: 'Contact', num: '04' },
 ];
 
-const SECTION_GAP = 56; // gap in pixels between dots
+const SECTION_GAP = 56;
+
+type WindowWithScrollProgress = Window & {
+  __scrollTriggerProgress?: number;
+};
 
 export default function NavRail() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const portfolioExperience = usePortfolioExperience();
   const [hovered, setHovered] = useState(false);
-  const [mouseY, setMouseY] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const baseTargetYRef = useRef(0);
+  const mouseYRef = useRef<number | null>(null);
 
-  // Framer Motion values for spring-driven active indicator
   const y = useMotionValue(0);
   const scaleY = useMotionValue(1);
   const scaleX = useMotionValue(1);
-
-  // Crisp mechanical spring configuration (Apple-level design feel)
   const springY = useSpring(y, { stiffness: 350, damping: 30, mass: 0.8 });
   const springScaleY = useSpring(scaleY, { stiffness: 450, damping: 25 });
   const springScaleX = useSpring(scaleX, { stiffness: 450, damping: 25 });
 
-  // Handle velocity-based stretching into a capsule during movements
+  const getSectionIndex = (sectionId: PortfolioSectionId) => {
+    const index = SECTIONS.findIndex((section) => section.id === sectionId);
+    return index === -1 ? 0 : index;
+  };
+
+  const moveIndicatorToIndex = (index: number) => {
+    const targetY = index * SECTION_GAP;
+    baseTargetYRef.current = targetY;
+
+    if (mouseYRef.current !== null) {
+      const diff = mouseYRef.current - targetY;
+      y.set(targetY + diff * 0.25);
+      return;
+    }
+
+    y.set(targetY);
+  };
+
   useEffect(() => {
     let lastY = 0;
     const unsubscribe = springY.on('change', (latest) => {
       const diff = Math.abs(latest - lastY);
-      // Capsule stretch: taller scaleY, slightly squeezed scaleX
       scaleY.set(1 + Math.min(diff * 0.12, 1.6));
       scaleX.set(1 - Math.min(diff * 0.06, 0.35));
       lastY = latest;
@@ -42,106 +67,65 @@ export default function NavRail() {
     return () => unsubscribe();
   }, [springY, scaleY, scaleX]);
 
-  const baseTargetYRef = useRef(0);
-  const mouseYRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (portfolioExperience?.activeSection) {
+      moveIndicatorToIndex(getSectionIndex(portfolioExperience.activeSection));
+    }
+  }, [portfolioExperience?.activeSection]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track active section changes and global scroll progress
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    const handleActiveSectionChange = (e: Event) => {
-      const activeSectionId = (e as CustomEvent).detail.activeSection;
-      const index = SECTIONS.findIndex((s) => s.id === activeSectionId);
-      if (index !== -1) {
-        setActiveIndex(index);
-
-        const targetY = index * SECTION_GAP;
-        baseTargetYRef.current = targetY;
-
-        // Update position factoring in mouse hover ref status
-        if (mouseYRef.current !== null) {
-          const diff = mouseYRef.current - targetY;
-          y.set(targetY + diff * 0.25);
-        } else {
-          y.set(targetY);
-        }
-      }
-    };
 
     const handleProgressUpdate = (e: Event) => {
       const progress = (e as CustomEvent).detail.progress;
       const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
       if (fillLine) {
-        fillLine.style.top = '0px';
         fillLine.style.height = `${progress * (SECTION_GAP * 3)}px`;
       }
     };
 
-    window.addEventListener('activeSectionChange', handleActiveSectionChange);
     window.addEventListener('scrollTriggerProgress', handleProgressUpdate);
 
-    // Initial check to set correct initial state
-    if ((window as any).__activeSection) {
-      const activeSectionId = (window as any).__activeSection;
-      const index = SECTIONS.findIndex((s) => s.id === activeSectionId);
-      if (index !== -1) {
-        setActiveIndex(index);
-        const targetY = index * SECTION_GAP;
-        baseTargetYRef.current = targetY;
-        y.set(targetY);
-      }
-    }
-
-    if ((window as any).__scrollTriggerProgress !== undefined) {
-      const progress = (window as any).__scrollTriggerProgress;
+    // Initial fill height check if progress is already published
+    const progressWindow = window as unknown as WindowWithScrollProgress;
+    if (progressWindow.__scrollTriggerProgress !== undefined) {
+      const progress = progressWindow.__scrollTriggerProgress;
       const fillLine = document.querySelector('.nav-rail-fill') as HTMLDivElement | null;
       if (fillLine) {
-        fillLine.style.top = '0px';
         fillLine.style.height = `${progress * (SECTION_GAP * 3)}px`;
       }
     }
 
     return () => {
-      window.removeEventListener('activeSectionChange', handleActiveSectionChange);
       window.removeEventListener('scrollTriggerProgress', handleProgressUpdate);
     };
-  }, [y]);
+  }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (event: React.MouseEvent) => {
     if (!containerRef.current) return;
+
     const rect = containerRef.current.getBoundingClientRect();
-    // Calculate cursor Y position relative to the center vertical axis of dots
-    const relativeY = e.clientY - rect.top - 48; // offset top counter block
-    setMouseY(relativeY);
+    const relativeY = event.clientY - rect.top - 48;
     mouseYRef.current = relativeY;
 
-    // Trigger y update with magnetic pull
     const baseTargetY = baseTargetYRef.current;
     const diff = relativeY - baseTargetY;
     y.set(baseTargetY + diff * 0.25);
   };
 
   const handleMouseLeave = () => {
-    setMouseY(null);
     mouseYRef.current = null;
     setHovered(false);
-
-    // Restore exact scroll-driven target Y position
     y.set(baseTargetYRef.current);
   };
 
-  const handleSectionClick = (sectionId: string) => {
-    if (typeof window === 'undefined') return;
-    const targetEl = document.getElementById(`${sectionId}-section`);
-    if (targetEl) {
-      const lenis = (window as any).lenis;
-      if (lenis) {
-        lenis.scrollTo(targetEl, { duration: 1.2 });
-      } else {
-        targetEl.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+  const handleSectionClick = (sectionId: PortfolioSectionId) => {
+    portfolioExperience?.navigateTo(sectionId);
   };
+
+  const displayedActiveIndex = portfolioExperience
+    ? getSectionIndex(portfolioExperience.activeSection)
+    : 0;
 
   return (
     <div
@@ -161,10 +145,9 @@ export default function NavRail() {
         alignItems: 'center',
         gap: '24px',
         padding: '20px 10px',
-        pointerEvents: 'auto', // Receives hover triggers
+        pointerEvents: 'auto',
       }}
     >
-      {/* 1. Counter Display (Monochrome & Mono) */}
       <div
         style={{
           display: 'flex',
@@ -184,11 +167,10 @@ export default function NavRail() {
             transition: 'color 0.4s ease',
           }}
         >
-          {SECTIONS[activeIndex].num}
+          {SECTIONS[displayedActiveIndex].num}
         </span>
       </div>
 
-      {/* 2. Scroll Progress Rail */}
       <div
         style={{
           position: 'relative',
@@ -199,7 +181,6 @@ export default function NavRail() {
           alignItems: 'flex-start',
         }}
       >
-        {/* Baseline Rail stroke */}
         <div
           style={{
             position: 'absolute',
@@ -211,28 +192,24 @@ export default function NavRail() {
           }}
         />
 
-        {/* Dynamic Progress Fill overlay */}
         <div
           className="nav-rail-fill"
           style={{
             position: 'absolute',
             top: 0,
             width: '1px',
-            height: 0,
+            height: '0px',
             background: 'var(--color-text-1, #0A0A0A)',
-            transition: 'background 0.4s ease',
-            willChange: 'top, height',
+            transition:
+              'height 0.1s linear, background 0.4s ease',
+            willChange: 'height',
           }}
         />
 
-        {/* Section Dots / Label Row Wrappers */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -240,11 +217,16 @@ export default function NavRail() {
             zIndex: 2,
           }}
         >
-          {SECTIONS.map((section, idx) => (
-            <div
+          {SECTIONS.map((section, index) => (
+            <button
               key={section.id}
               onClick={() => handleSectionClick(section.id)}
+              type="button"
+              aria-label={`Navigate to ${section.label}`}
               style={{
+                appearance: 'none',
+                border: 0,
+                background: 'transparent',
                 position: 'relative',
                 width: '100%',
                 height: '16px',
@@ -252,11 +234,11 @@ export default function NavRail() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
+                padding: 0,
               }}
             >
-              {/* Elegant Fading/Blurring Label */}
               <span
-                className={`nav-rail-label ${activeIndex === idx ? 'active' : ''}`}
+                className={`nav-rail-label ${displayedActiveIndex === index ? 'active' : ''}`}
                 style={{
                   position: 'absolute',
                   right: '28px',
@@ -268,37 +250,36 @@ export default function NavRail() {
                   color: 'var(--color-text-1, #0A0A0A)',
                   whiteSpace: 'nowrap',
                   pointerEvents: 'none',
-                  opacity: hovered ? (activeIndex === idx ? 0.85 : 0.4) : 0,
+                  opacity: hovered ? (displayedActiveIndex === index ? 0.85 : 0.4) : 0,
                   filter: hovered ? 'blur(0px)' : 'blur(8px)',
-                  transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease',
+                  transition:
+                    'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease',
                   willChange: 'opacity, filter',
                 }}
               >
                 {section.label}
               </span>
 
-              {/* Fixed Tiny Dot Mark */}
               <div
-                className={`nav-rail-dot ${activeIndex === idx ? 'active' : ''}`}
+                className={`nav-rail-dot ${displayedActiveIndex === index ? 'active' : ''}`}
                 style={{
                   width: '4px',
                   height: '4px',
                   borderRadius: '50%',
                   background: 'var(--color-text-1, #0A0A0A)',
-                  opacity: activeIndex === idx ? 0 : 0.25,
+                  opacity: displayedActiveIndex === index ? 0 : 0.25,
                   transition: 'opacity 0.3s ease, background 0.4s ease',
                 }}
               />
-            </div>
+            </button>
           ))}
         </div>
 
-        {/* 3. Snappy Spring Morphing Active Indicator */}
         <motion.div
           className="nav-rail-active-indicator"
           style={{
             position: 'absolute',
-            top: '-3px', // centers 10px indicator precisely over dots (16px vertical zone offset)
+            top: '-3px',
             width: '6px',
             height: '6px',
             borderRadius: '100px',

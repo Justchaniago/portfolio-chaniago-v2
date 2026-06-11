@@ -1,4 +1,10 @@
+'use client';
+
+import { usePortfolioExperience } from '@/components/experience/PortfolioExperienceContext';
+
 export default function AboutChapterB() {
+  const portfolioExperience = usePortfolioExperience();
+
   return (
     /* 5. New Sub-section Editorial Grid (Placed on the right quadrant, progressive reveals) */
     <div
@@ -45,13 +51,7 @@ export default function AboutChapterB() {
         {/* Integrated Contextual VIEW Action Belongs to Section Header */}
         <span
           onClick={() => {
-            if (typeof window !== 'undefined') {
-              const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-              window.scrollTo({
-                top: scrollHeight * 0.74,
-                behavior: 'smooth'
-              });
-            }
+            portfolioExperience?.navigateTo('work');
           }}
           style={{
             fontFamily: 'var(--font-mono, monospace)',

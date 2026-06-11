@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import {
+  usePortfolioExperience,
+  type PortfolioSectionId,
+} from '@/components/experience/PortfolioExperienceContext';
 // getActiveSectionIndex progress calculation removed
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -60,10 +63,14 @@ function isBgLight(): boolean {
   if (bg.includes('232') || bg.toLowerCase().includes('ffffff') || bg.toLowerCase().includes('white') || bg.toLowerCase().includes('e8e0d5') || bg.includes('linen')) {
     return true;
   }
-  if (window.scrollY > window.innerHeight * 0.5) {
-    return true;
-  }
   return false;
+}
+
+function hrefToSection(href: string): PortfolioSectionId {
+  if (href === '/about') return 'about';
+  if (href === '/work') return 'work';
+  if (href === '/contact') return 'contact';
+  return 'hero';
 }
 
 // ─── Canvas draw — Phosphor liquid burst ─────────────────────────────────────
@@ -141,6 +148,7 @@ function animateValue(
 // ─── Unified Morphing Navigation Container ───────────────────────────────────
 
 export default function MorphNav() {
+  const portfolioExperience = usePortfolioExperience();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -156,18 +164,13 @@ export default function MorphNav() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<'hero' | 'work' | 'about' | 'contact'>('hero');
   const [hovered, setHovered] = useState(false);
-  const [windowHeight, setWindowHeight] = useState(() =>
-    typeof window !== 'undefined' ? window.innerHeight : 800
-  );
   const themeColorRef = useRef<string>('#FFFFFF');
 
-  const isReallyCollapsed = isCollapsed || navState !== 'closed';
-
-  useEffect(() => {
-    if (!isReallyCollapsed) {
-      setHovered(false);
-    }
-  }, [isReallyCollapsed]);
+  const activeSectionId = portfolioExperience?.activeSection ?? activeSection;
+  const sectionCollapsed = portfolioExperience
+    ? portfolioExperience.activeSection !== 'hero'
+    : isCollapsed;
+  const isReallyCollapsed = sectionCollapsed || navState !== 'closed';
 
   useEffect(() => {
     return () => {
@@ -248,19 +251,11 @@ export default function MorphNav() {
   useEffect(() => {
     const check = () => {
       setIsMobile(window.innerWidth < 768);
-      setWindowHeight(window.innerHeight);
     };
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
-
-  const pathname = usePathname();
-
-  // Close on route change
-  useEffect(() => {
-    if (navState === 'open') handleClose();
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Canvas resize
   useEffect(() => {
@@ -278,43 +273,26 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Scroll tracking — isCollapsed + activeSection
+  // Active section tracking for the virtual experience shell.
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handleScroll = () => {
-      const y = window.scrollY;
-      setIsCollapsed(y > 80);
-    };
+    if (portfolioExperience) return;
 
     const handleActiveSectionChange = (e: Event) => {
-      const activeSectionId = (e as CustomEvent).detail.activeSection;
-      setActiveSection(activeSectionId);
+      const nextActiveSection = (e as CustomEvent<{
+        activeSection: 'hero' | 'work' | 'about' | 'contact';
+      }>).detail.activeSection;
+      setActiveSection(nextActiveSection);
+      setIsCollapsed(nextActiveSection !== 'hero');
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('activeSectionChange', handleActiveSectionChange);
 
-    // Initial values
-    handleScroll();
-    if ((window as any).__activeSection) {
-      setActiveSection((window as any).__activeSection);
-    }
-
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('activeSectionChange', handleActiveSectionChange);
     };
-  }, []);
-
-  // Keyboard close
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && navState === 'open') handleClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [navState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [portfolioExperience]);
 
   // Capture trigger origin — FloatingCircle is always top: 12, right: 28, size: 44
   function captureOrigin() {
@@ -450,59 +428,45 @@ export default function MorphNav() {
     setNavState('closed');
   }, [navState]);
 
-  const isAnimating = navState === 'opening' || navState === 'closing';
-  const hideCollapsedTriggerOnContact = activeSection === 'contact' && navState === 'closed';
+  // Keyboard close
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && navState === 'open') {
+        void handleClose();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navState, handleClose]);
 
-  // Unified navigation click handler — scrolls directly to target section
+  const isAnimating = navState === 'opening' || navState === 'closing';
+  const hideCollapsedTriggerOnContact = activeSectionId === 'contact' && navState === 'closed';
+
   const handleNavigationClick = useCallback((e: React.MouseEvent, href: string, isFromOverlay: boolean = false) => {
     e.preventDefault();
 
-    const targetIdMap: Record<string, string> = {
-      '/hero': 'hero-section',
-      '/about': 'about-section',
-      '/work': 'work-section',
-      '/contact': 'contact-section',
-    };
+    const targetSection = hrefToSection(href);
 
-    const targetId = targetIdMap[href] || (href === '/' ? 'hero-section' : href.substring(1) + '-section');
-    const targetEl = document.getElementById(targetId);
-
-    // Handle closing the full-screen menu overlay first if clicked from inside the curtain menu
     if (isFromOverlay && navState === 'open') {
-      handleClose();
-      // Delay transition slightly so overlay close animation doesn't conflict
+      void handleClose();
       setTimeout(() => {
-        if (targetEl) {
-          const lenis = (window as any).lenis;
-          if (lenis) {
-            lenis.scrollTo(targetEl, { duration: 1.2 });
-          } else {
-            targetEl.scrollIntoView({ behavior: 'smooth' });
-          }
-        }
+        portfolioExperience?.navigateTo(targetSection);
       }, 350);
       return;
     }
 
-    if (targetEl) {
-      const lenis = (window as any).lenis;
-      if (lenis) {
-        lenis.scrollTo(targetEl, { duration: 1.2 });
-      } else {
-        targetEl.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }, [navState, handleClose]);
+    portfolioExperience?.navigateTo(targetSection);
+  }, [navState, handleClose, portfolioExperience]);
 
   const getActiveState = (href: string) => {
     if (href === '/work') {
-      return pathname === '/work' || (pathname === '/' && activeSection === 'work');
+      return activeSectionId === 'work';
     }
     if (href === '/about') {
-      return pathname === '/about' || (pathname === '/' && activeSection === 'about');
+      return activeSectionId === 'about';
     }
     if (href === '/contact') {
-      return pathname === '/contact' || (pathname === '/' && activeSection === 'contact');
+      return activeSectionId === 'contact';
     }
     return false;
   };
@@ -568,10 +532,15 @@ export default function MorphNav() {
         }}
       >
         {/* Logo */}
-        <a
-          href="/"
+        <button
+          type="button"
           aria-label="Home"
+          onClick={(e) => handleNavigationClick(e, '/')}
           style={{
+            appearance: 'none',
+            border: 0,
+            background: 'transparent',
+            padding: 0,
             fontFamily: 'var(--font-display, Georgia, serif)',
             fontSize: '18px',
             fontWeight: 600,
@@ -582,10 +551,11 @@ export default function MorphNav() {
             zIndex: 1001,
             mixBlendMode: navState === 'open' ? 'difference' : 'normal',
             transition: 'color 0.4s ease-out, mix-blend-mode 0s',
+            cursor: 'pointer',
           }}
         >
           Ch.
-        </a>
+        </button>
       </nav>
 
       {/* ── Unified Morphing Navigation Container ────────────────────────── */}

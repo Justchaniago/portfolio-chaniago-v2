@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 
 type AboutEnvironmentProps = {
   children: ReactNode;
@@ -21,7 +22,7 @@ export default function AboutEnvironment({ children }: AboutEnvironmentProps) {
           filter: 'blur(100px)',
           pointerEvents: 'none',
           zIndex: 1,
-          opacity: 'calc(0.85 * var(--about-env-opacity, 0))' as any,
+          opacity: 'calc(0.85 * var(--about-env-opacity, 0))' as CSSProperties['opacity'],
         }}
       />
 
@@ -44,7 +45,7 @@ export default function AboutEnvironment({ children }: AboutEnvironmentProps) {
           borderRadius: '100% 100% 0 0 / 30% 30% 0 0', // Curved organic glass lens dome
           borderTop: '0.85px solid rgba(255, 255, 255, 0.65)', // Refraction highlight edge catching light
           boxShadow: 'inset 0 1px 16px rgba(255, 255, 255, 0.35), 0 -4px 20px rgba(0, 0, 0, 0.005)',
-          opacity: 'var(--about-env-opacity, 0)' as any,
+          opacity: 'var(--about-env-opacity, 0)' as CSSProperties['opacity'],
           // Perfect edge-free fade mask for the blur itself:
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0) 100%)',
           WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0) 100%)',

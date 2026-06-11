@@ -210,7 +210,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       return () => ctx.revert();
     } else {
       // Exit sequence triggered immediately on collapse
-      setIsMorphComplete(false);
+      queueMicrotask(() => setIsMorphComplete(false));
 
       if (isExiting) {
         // If exiting to next project, DO NOT fade/shrink/slide down the pill.

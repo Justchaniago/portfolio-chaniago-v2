@@ -9,7 +9,13 @@ import SignaturePathDebug from './SignaturePathDebug';
 
 const DEBUG_SIGNATURE_PATH = false;
 
-export default function ProjectShowcase() {
+type ProjectShowcaseProps = {
+  enableScrollEffects?: boolean;
+};
+
+export default function ProjectShowcase({
+  enableScrollEffects = true,
+}: ProjectShowcaseProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [projects, setProjects] = useState<Project[]>([]);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -28,6 +34,26 @@ export default function ProjectShowcase() {
   }, []);
 
   useEffect(() => {
+    if (!enableScrollEffects) {
+      const ctx = gsap.context(() => {
+        gsap.set('.work-reveal-item', {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          clearProps: 'filter',
+        });
+
+        const path = pathRef.current;
+        const svg = svgRef.current;
+        if (path && svg) {
+          const controller = new SignaturePathController(path, svg);
+          controller.update(0.56);
+        }
+      }, sectionRef);
+
+      return () => ctx.revert();
+    }
+
     const ctx = gsap.context(() => {
       // 1. Quiet, premium reveal animation when each item enters the viewport
       const revealItems = gsap.utils.toArray<Element>('.work-reveal-item');
@@ -71,7 +97,7 @@ export default function ProjectShowcase() {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [enableScrollEffects]);
 
   return (
     <section ref={sectionRef} className="work-section">

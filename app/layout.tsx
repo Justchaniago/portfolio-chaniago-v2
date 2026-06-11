@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-import LenisInit from "@/components/layout/LenisInit";
 import MorphNav from "@/components/layout/MorphNav";
 import LoaderWrapper from "@/components/layout/LoaderWrapper";
+import LenisInit from "@/components/layout/LenisInit";
+import { PortfolioExperienceProvider } from "@/components/experience/PortfolioExperienceContext";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-display",
@@ -59,8 +60,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />
         <LenisInit />
-        <MorphNav />
-        {children}
+        <PortfolioExperienceProvider>
+          <MorphNav />
+          {children}
+        </PortfolioExperienceProvider>
       </body>
     </html>
   );

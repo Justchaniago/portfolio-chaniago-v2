@@ -494,7 +494,7 @@ export default function Hero() {
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent !important;
-          animation: heroTaglineShimmer 5.8s cubic-bezier(0.16,1,0.3,1) infinite;
+          animation: heroTaglineShimmer 4.8s ease-in-out infinite;
         }
         .hero-tagline-shimmer .hero-highlight {
           text-shadow: 0 0 0 rgba(201,240,168,0);

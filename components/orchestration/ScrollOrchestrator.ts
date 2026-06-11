@@ -13,6 +13,10 @@ export type ScrollOrchestrator = {
   destroy(): void;
 };
 
+type PortfolioScrollWindow = Window & {
+  __scrollTriggerProgress?: number;
+};
+
 export function createScrollOrchestrator(): ScrollOrchestrator {
   let state: ScrollOrchestratorState = {
     progress: 0,
@@ -25,7 +29,7 @@ export function createScrollOrchestrator(): ScrollOrchestrator {
   const publish = () => {
     // Publish progress to global window property
     if (typeof window !== 'undefined') {
-      (window as any).__scrollTriggerProgress = state.progress;
+      (window as PortfolioScrollWindow).__scrollTriggerProgress = state.progress;
       window.dispatchEvent(
         new CustomEvent('scrollTriggerProgress', {
           detail: { progress: state.progress },
