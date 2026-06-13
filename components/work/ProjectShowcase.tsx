@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { projectRepository, type Project } from '@/lib/projects';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import SignaturePath from './SignaturePath';
@@ -8,6 +8,27 @@ import { SignaturePathController } from './SignaturePathController';
 import SignaturePathDebug from './SignaturePathDebug';
 
 const DEBUG_SIGNATURE_PATH = false;
+const MORPH_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const POINTER_LEAVE_COLLAPSE_DELAY = 120;
+
+const PLACEHOLDER_CARDS = [
+  { id: 'wp-1', className: 'wp-1', title: 'Large Landscape Anchor', meta: '16:10 / Primary field' },
+  { id: 'wp-2', className: 'wp-2', title: 'Tall Portrait Overlap', meta: '4:5 / Foreground overlap' },
+  { id: 'wp-3', className: 'wp-3', title: 'Ultra Wide Cinematic', meta: '21:9 / Cinematic wall' },
+  { id: 'wp-4', className: 'wp-4', title: 'Medium Portrait', meta: '3:4 / Editorial study' },
+  { id: 'wp-5', className: 'wp-5', title: 'Rhythm Interrupter', meta: '1:1 / Detail crop' },
+  { id: 'wp-6', className: 'wp-6', title: 'Solitary Close', meta: '16:10 / Closing frame' },
+] as const;
+
+type PlaceholderCard = (typeof PLACEHOLDER_CARDS)[number];
+type PlaceholderId = PlaceholderCard['id'];
+type MorphRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  borderRadius: number;
+};
 
 type ProjectShowcaseProps = {
   enableScrollEffects?: boolean;
@@ -18,9 +39,220 @@ export default function ProjectShowcase({
 }: ProjectShowcaseProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [projects, setProjects] = useState<Project[]>([]);
+  const [activePlaceholderId, setActivePlaceholderId] = useState<PlaceholderId | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const overlayInnerRef = useRef<HTMLDivElement>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
+  const activePlaceholderIdRef = useRef<PlaceholderId | null>(null);
+  const originRectRef = useRef<MorphRect | null>(null);
+  const targetRectRef = useRef<MorphRect | null>(null);
+  const isMorphingRef = useRef(false);
+  const isPreparingOpenRef = useRef(false);
+  const isScrollingToCardRef = useRef(false);
+  const expandCompleteRef = useRef(false);
+  const ambientTweenRef = useRef<gsap.core.Tween | null>(null);
+  const pointerLeaveTimeoutRef = useRef<number | null>(null);
+  const signatureScrollTriggerRef = useRef<ScrollTrigger | null>(null);
+  const placeholderRefs = useRef<Partial<Record<PlaceholderId, HTMLDivElement | null>>>({});
+
+  const activePlaceholder = PLACEHOLDER_CARDS.find((placeholder) => placeholder.id === activePlaceholderId) ?? null;
+
+  const getTargetRect = useCallback((): MorphRect => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth <= 768;
+    const width = Math.round(viewportWidth * (isMobile ? 0.92 : 0.9));
+    const height = Math.round(viewportHeight * (isMobile ? 0.78 : 0.86));
+
+    return {
+      x: Math.round((viewportWidth - width) / 2),
+      y: Math.round((viewportHeight - height) / 2),
+      width,
+      height,
+      borderRadius: isMobile ? 22 : 32,
+    };
+  }, []);
+
+  const clearPointerLeaveTimeout = useCallback(() => {
+    if (pointerLeaveTimeoutRef.current === null) return;
+
+    window.clearTimeout(pointerLeaveTimeoutRef.current);
+    pointerLeaveTimeoutRef.current = null;
+  }, []);
+
+  const resetSignaturePath = useCallback(() => {
+    signatureScrollTriggerRef.current?.enable();
+  }, []);
+
+  const scrollToPlaceholder = useCallback((source: HTMLElement, idealTopRatio = 0.12) => (
+    new Promise<void>((resolve) => {
+      const rect = source.getBoundingClientRect();
+      const idealTop = window.innerHeight * idealTopRatio;
+      const isFullyVisible = rect.top >= idealTop && rect.bottom <= window.innerHeight * 0.95;
+
+      if (isFullyVisible) {
+        resolve();
+        return;
+      }
+
+      isScrollingToCardRef.current = true;
+      gsap.to(window, {
+        scrollTo: {
+          y: window.scrollY + rect.top - idealTop,
+          autoKill: false,
+        },
+        duration: 0.45,
+        ease: 'power3.inOut',
+        onComplete: () => {
+          isScrollingToCardRef.current = false;
+          resolve();
+        },
+        onInterrupt: () => {
+          isScrollingToCardRef.current = false;
+          resolve();
+        },
+      });
+    })
+  ), []);
+
+  const getSourceRect = useCallback((placeholderId: PlaceholderId): MorphRect | null => {
+    const source = placeholderRefs.current[placeholderId];
+    if (!source) return null;
+
+    const rect = source.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(source);
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+      borderRadius: Number.parseFloat(computedStyle.borderRadius) || 12,
+    };
+  }, []);
+
+  const collapsePlaceholder = useCallback(() => {
+    if (!activePlaceholderIdRef.current || isMorphingRef.current) return;
+
+    const overlay = overlayRef.current;
+    const overlayInner = overlayInnerRef.current;
+    const scrim = scrimRef.current;
+    const targetRect = targetRectRef.current;
+    const destinationRect = getSourceRect(activePlaceholderIdRef.current) ?? originRectRef.current;
+    if (!overlay || !scrim || !targetRect || !destinationRect) {
+      setActivePlaceholderId(null);
+      activePlaceholderIdRef.current = null;
+      return;
+    }
+
+    clearPointerLeaveTimeout();
+    ambientTweenRef.current?.kill();
+    ambientTweenRef.current = null;
+    isMorphingRef.current = true;
+    expandCompleteRef.current = false;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isOffScreen = destinationRect.y + destinationRect.height < 0 || destinationRect.y > window.innerHeight;
+    const duration = prefersReducedMotion ? 0.16 : 0.58;
+    const scaleX = destinationRect.width / targetRect.width;
+    const scaleY = destinationRect.height / targetRect.height;
+
+    const timeline = gsap.timeline({
+      defaults: {
+        ease: MORPH_EASE,
+      },
+      onComplete: () => {
+        gsap.set([overlay, overlayInner, scrim], { clearProps: 'all' });
+        isMorphingRef.current = false;
+        originRectRef.current = null;
+        targetRectRef.current = null;
+        activePlaceholderIdRef.current = null;
+        resetSignaturePath();
+        setActivePlaceholderId(null);
+      },
+    });
+
+    if (isOffScreen) {
+      timeline
+        .to(scrim, { opacity: 0, duration: 0.2 }, 0)
+        .to(overlay, {
+          opacity: 0,
+          scale: 0.96,
+          duration: prefersReducedMotion ? 0.16 : 0.25,
+          ease: 'power2.in',
+        }, 0);
+      return;
+    }
+
+    timeline
+      .to(scrim, { opacity: 0, duration: duration * 0.72 }, 0)
+      .to(overlay, prefersReducedMotion
+        ? {
+            opacity: 0,
+            scale: 0.96,
+            duration,
+          }
+        : {
+            x: destinationRect.x,
+            y: destinationRect.y,
+            scaleX,
+            scaleY,
+            borderRadius: destinationRect.borderRadius,
+            boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
+            duration,
+          }, 0)
+      .to(overlayInner, {
+        scale: prefersReducedMotion ? 0.98 : 1,
+        opacity: prefersReducedMotion ? 0 : 0.68,
+        duration: duration * 0.9,
+      }, 0);
+  }, [clearPointerLeaveTimeout, getSourceRect, resetSignaturePath]);
+
+  const expandPlaceholder = useCallback(async (placeholderId: PlaceholderId) => {
+    if (isPreparingOpenRef.current || isMorphingRef.current || activePlaceholderIdRef.current) return;
+
+    const source = placeholderRefs.current[placeholderId];
+    if (!source) return;
+
+    isPreparingOpenRef.current = true;
+    gsap.killTweensOf(source);
+    gsap.set(source, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      clearProps: 'filter',
+    });
+
+    await scrollToPlaceholder(source);
+
+    originRectRef.current = getSourceRect(placeholderId);
+    if (!originRectRef.current) {
+      isPreparingOpenRef.current = false;
+      return;
+    }
+    signatureScrollTriggerRef.current?.disable();
+    activePlaceholderIdRef.current = placeholderId;
+    isPreparingOpenRef.current = false;
+    setActivePlaceholderId(placeholderId);
+  }, [getSourceRect, scrollToPlaceholder]);
+
+  const handlePlaceholderKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>, placeholderId: PlaceholderId) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+
+    event.preventDefault();
+    expandPlaceholder(placeholderId);
+  }, [expandPlaceholder]);
+
+  const handleExpandedPointerLeave = useCallback(() => {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches || !expandCompleteRef.current) return;
+
+    clearPointerLeaveTimeout();
+    pointerLeaveTimeoutRef.current = window.setTimeout(() => {
+      collapsePlaceholder();
+    }, POINTER_LEAVE_COLLAPSE_DELAY);
+  }, [clearPointerLeaveTimeout, collapsePlaceholder]);
 
   useEffect(() => {
     // Keep repository pathway alive and active in background
@@ -32,6 +264,137 @@ export default function ProjectShowcase({
         console.error('Failed to fetch projects in background:', err);
       });
   }, []);
+
+  useLayoutEffect(() => {
+    if (!activePlaceholderId) return;
+
+    const overlay = overlayRef.current;
+    const overlayInner = overlayInnerRef.current;
+    const scrim = scrimRef.current;
+    const originRect = originRectRef.current;
+    if (!overlay || !overlayInner || !scrim || !originRect) return;
+
+    const targetRect = getTargetRect();
+    targetRectRef.current = targetRect;
+    const initialScaleX = originRect.width / targetRect.width;
+    const initialScaleY = originRect.height / targetRect.height;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    isMorphingRef.current = true;
+    expandCompleteRef.current = false;
+
+    gsap.set(scrim, {
+      opacity: 0,
+    });
+    gsap.set(overlay, {
+      x: originRect.x,
+      y: originRect.y,
+      width: targetRect.width,
+      height: targetRect.height,
+      borderRadius: originRect.borderRadius,
+      opacity: 1,
+      scaleX: initialScaleX,
+      scaleY: initialScaleY,
+      boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
+      transformOrigin: '0% 0%',
+    });
+    gsap.set(overlayInner, {
+      scale: 1,
+      opacity: 0.68,
+      xPercent: 0,
+      yPercent: 0,
+      transformOrigin: '50% 50%',
+    });
+
+    const timeline = gsap.timeline({
+      defaults: {
+        ease: MORPH_EASE,
+      },
+      onComplete: () => {
+        isMorphingRef.current = false;
+        expandCompleteRef.current = true;
+        if (!prefersReducedMotion) {
+          ambientTweenRef.current = gsap.to(overlayInner, {
+            xPercent: 1.2,
+            yPercent: -0.8,
+            duration: 1.4,
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1,
+          });
+        }
+      },
+    });
+
+    timeline
+      .to(scrim, {
+        opacity: prefersReducedMotion ? 0.12 : 1,
+        duration: prefersReducedMotion ? 0.16 : 0.42,
+      }, 0)
+      .to(overlay, prefersReducedMotion
+        ? {
+            x: targetRect.x,
+            y: targetRect.y,
+            width: targetRect.width,
+            height: targetRect.height,
+            borderRadius: targetRect.borderRadius,
+            opacity: 1,
+            duration: 0.18,
+          }
+        : {
+            x: targetRect.x,
+            y: targetRect.y,
+            scaleX: 1,
+            scaleY: 1,
+            borderRadius: targetRect.borderRadius,
+            boxShadow: '0 44px 120px rgba(10, 10, 10, 0.22), 0 12px 40px rgba(249, 92, 75, 0.08)',
+            duration: 0.72,
+          }, 0)
+      .to(overlayInner, {
+        scale: prefersReducedMotion ? 1 : 1.025,
+        opacity: 1,
+        duration: prefersReducedMotion ? 0.18 : 0.72,
+      }, 0);
+
+    return () => {
+      timeline.kill();
+      ambientTweenRef.current?.kill();
+      ambientTweenRef.current = null;
+    };
+  }, [activePlaceholderId, getTargetRect]);
+
+  useEffect(() => {
+    if (!activePlaceholderId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isScrollingToCardRef.current) return;
+      if (event.key === 'Escape') {
+        collapsePlaceholder();
+      }
+    };
+    const handleScrollIntent = () => {
+      if (isScrollingToCardRef.current) return;
+      collapsePlaceholder();
+    };
+    const handleResize = () => {
+      if (isScrollingToCardRef.current) return;
+      collapsePlaceholder();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleScrollIntent, { passive: true });
+    window.addEventListener('touchmove', handleScrollIntent, { passive: true });
+    window.addEventListener('scroll', handleScrollIntent, { passive: true });
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleScrollIntent);
+      window.removeEventListener('touchmove', handleScrollIntent);
+      window.removeEventListener('scroll', handleScrollIntent);
+      window.removeEventListener('resize', handleResize);
+      clearPointerLeaveTimeout();
+    };
+  }, [activePlaceholderId, clearPointerLeaveTimeout, collapsePlaceholder]);
 
   useEffect(() => {
     if (!enableScrollEffects) {
@@ -91,12 +454,16 @@ export default function ProjectShowcase({
             controller.update(self.progress);
           },
         });
+        signatureScrollTriggerRef.current = signatureTrigger;
 
         controller.update(signatureTrigger.progress);
       }
     }, sectionRef);
 
-    return () => ctx.revert();
+    return () => {
+      signatureScrollTriggerRef.current = null;
+      ctx.revert();
+    };
   }, [enableScrollEffects]);
 
   return (
@@ -149,15 +516,24 @@ export default function ProjectShowcase({
           </div>
         </div>
 
-        {/* Placeholder 1: Large Landscape Anchor */}
-        <div className="work-reveal-item work-placeholder wp-1">
-          <div className="work-placeholder-inner" />
-        </div>
-
-        {/* Placeholder 2: Tall Portrait Overlap (Overlap Rule) */}
-        <div className="work-reveal-item work-placeholder wp-2">
-          <div className="work-placeholder-inner" />
-        </div>
+        {PLACEHOLDER_CARDS.slice(0, 2).map((placeholder) => (
+          <div
+            key={placeholder.id}
+            ref={(node) => {
+              placeholderRefs.current[placeholder.id] = node;
+            }}
+            className={`work-reveal-item work-placeholder ${placeholder.className}${activePlaceholderId === placeholder.id ? ' is-morph-source-hidden' : ''}`}
+            role="button"
+            tabIndex={0}
+            aria-label={`Expand ${placeholder.title}`}
+            aria-pressed={activePlaceholderId === placeholder.id}
+            onClick={() => expandPlaceholder(placeholder.id)}
+            onKeyDown={(event) => handlePlaceholderKeyDown(event, placeholder.id)}
+          >
+            <div className="work-placeholder-inner" />
+            <span className="work-placeholder-index">{placeholder.id.replace('wp-', '').padStart(2, '0')}</span>
+          </div>
+        ))}
 
         {/* Typographic Breathing Section (Museum Rule) */}
         <div className="work-reveal-item work-breathing-section">
@@ -166,25 +542,24 @@ export default function ProjectShowcase({
           </p>
         </div>
 
-        {/* Placeholder 3: Ultra-wide Cinematic */}
-        <div className="work-reveal-item work-placeholder wp-3">
-          <div className="work-placeholder-inner" />
-        </div>
-
-        {/* Placeholder 4: Medium Portrait */}
-        <div className="work-reveal-item work-placeholder wp-4">
-          <div className="work-placeholder-inner" />
-        </div>
-
-        {/* Placeholder 5: Small Rhythm Interrupter */}
-        <div className="work-reveal-item work-placeholder wp-5">
-          <div className="work-placeholder-inner" />
-        </div>
-
-        {/* Placeholder 6: Solitary Close */}
-        <div className="work-reveal-item work-placeholder wp-6">
-          <div className="work-placeholder-inner" />
-        </div>
+        {PLACEHOLDER_CARDS.slice(2).map((placeholder) => (
+          <div
+            key={placeholder.id}
+            ref={(node) => {
+              placeholderRefs.current[placeholder.id] = node;
+            }}
+            className={`work-reveal-item work-placeholder ${placeholder.className}${activePlaceholderId === placeholder.id ? ' is-morph-source-hidden' : ''}`}
+            role="button"
+            tabIndex={0}
+            aria-label={`Expand ${placeholder.title}`}
+            aria-pressed={activePlaceholderId === placeholder.id}
+            onClick={() => expandPlaceholder(placeholder.id)}
+            onKeyDown={(event) => handlePlaceholderKeyDown(event, placeholder.id)}
+          >
+            <div className="work-placeholder-inner" />
+            <span className="work-placeholder-index">{placeholder.id.replace('wp-', '').padStart(2, '0')}</span>
+          </div>
+        ))}
 
         {/* CTA Prototype */}
         <div className="work-reveal-item work-cta-container">
@@ -200,6 +575,47 @@ export default function ProjectShowcase({
         </div>
 
       </div>
+
+      {activePlaceholder && (
+        <div
+          className="work-morph-layer"
+          aria-hidden={false}
+        >
+          <div
+            ref={scrimRef}
+            className="work-morph-scrim"
+            onClick={() => collapsePlaceholder()}
+          />
+          <div
+            ref={overlayRef}
+            className="work-morph-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${activePlaceholder.title} expanded preview`}
+            onPointerEnter={clearPointerLeaveTimeout}
+            onPointerLeave={handleExpandedPointerLeave}
+          >
+            <div ref={overlayInnerRef} className="work-morph-card-inner">
+              <div className="work-morph-grid" aria-hidden="true" />
+              <div className="work-morph-orb work-morph-orb-a" aria-hidden="true" />
+              <div className="work-morph-orb work-morph-orb-b" aria-hidden="true" />
+              <div className="work-morph-content">
+                <span className="work-morph-kicker">{activePlaceholder.id.replace('wp-', '').padStart(2, '0')} / PLACEHOLDER</span>
+                <h3>{activePlaceholder.title}</h3>
+                <p>{activePlaceholder.meta}</p>
+              </div>
+              <button
+                type="button"
+                className="work-morph-close"
+                aria-label="Close expanded preview"
+                onClick={() => collapsePlaceholder()}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .work-section {
@@ -288,15 +704,28 @@ export default function ProjectShowcase({
           border-radius: 12px;
           position: relative;
           overflow: hidden;
-          transition: border-color 0.4s ease, background-color 0.4s ease;
+          cursor: pointer;
+          outline: none;
+          transition: border-color 0.4s ease, background-color 0.4s ease, opacity 0.24s ease, transform 0.4s ${MORPH_EASE};
           box-shadow: 0 4px 24px rgba(10, 10, 10, 0.01);
           z-index: 2;
         }
 
-        .work-placeholder:hover {
+        .work-placeholder:hover,
+        .work-placeholder:focus-visible {
           background-color: rgba(10, 10, 10, 0.05);
           border-color: rgba(10, 10, 10, 0.15);
           box-shadow: 0 8px 32px rgba(10, 10, 10, 0.03);
+          transform: translateY(-2px);
+        }
+
+        .work-placeholder:focus-visible {
+          box-shadow: 0 0 0 3px rgba(249, 92, 75, 0.22), 0 8px 32px rgba(10, 10, 10, 0.03);
+        }
+
+        .work-placeholder.is-morph-source-hidden {
+          opacity: 0 !important;
+          pointer-events: none;
         }
 
         .work-placeholder-inner {
@@ -314,6 +743,186 @@ export default function ProjectShowcase({
 
         .work-placeholder:hover .work-placeholder-inner {
           opacity: 1;
+        }
+
+        .work-placeholder-index {
+          position: absolute;
+          left: clamp(14px, 1.6vw, 22px);
+          bottom: clamp(12px, 1.4vw, 18px);
+          font-family: var(--font-mono, monospace);
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          color: rgba(10, 10, 10, 0.42);
+          z-index: 2;
+          pointer-events: none;
+        }
+
+        .work-morph-layer {
+          position: fixed;
+          inset: 0;
+          z-index: 1400;
+          pointer-events: none;
+        }
+
+        .work-morph-scrim {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 50% 42%, rgba(249, 92, 75, 0.08), rgba(10, 10, 10, 0) 36%),
+            rgba(246, 244, 241, 0.42);
+          backdrop-filter: blur(7px) saturate(1.04);
+          -webkit-backdrop-filter: blur(7px) saturate(1.04);
+          pointer-events: auto;
+        }
+
+        .work-morph-card {
+          position: fixed;
+          top: 0;
+          left: 0;
+          overflow: hidden;
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.56), rgba(228, 222, 210, 0.36)),
+            var(--color-stone, #E4DED2);
+          border: 1px solid rgba(10, 10, 10, 0.12);
+          color: var(--color-text-1, #0A0A0A);
+          pointer-events: auto;
+          will-change: transform, width, height, border-radius, box-shadow, opacity;
+          contain: layout paint;
+        }
+
+        .work-morph-card-inner {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          opacity: 0.68;
+          will-change: transform, opacity;
+        }
+
+        .work-morph-card-inner::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0) 45%, rgba(249, 92, 75, 0.18) 100%);
+          opacity: 0.78;
+          pointer-events: none;
+        }
+
+        .work-morph-card-inner::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+          background-size: 220px 220px;
+          opacity: 0.055;
+          mix-blend-mode: multiply;
+          pointer-events: none;
+        }
+
+        .work-morph-grid {
+          position: absolute;
+          inset: clamp(18px, 2.4vw, 34px);
+          border: 1px solid rgba(10, 10, 10, 0.12);
+          border-radius: inherit;
+          background-image:
+            linear-gradient(rgba(10, 10, 10, 0.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(10, 10, 10, 0.055) 1px, transparent 1px);
+          background-size: clamp(32px, 5vw, 72px) clamp(32px, 5vw, 72px);
+          opacity: 0.58;
+          pointer-events: none;
+        }
+
+        .work-morph-orb {
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(36px);
+          pointer-events: none;
+        }
+
+        .work-morph-orb-a {
+          width: 36%;
+          aspect-ratio: 1 / 1;
+          left: 8%;
+          top: 8%;
+          background: rgba(249, 92, 75, 0.22);
+        }
+
+        .work-morph-orb-b {
+          width: 28%;
+          aspect-ratio: 1 / 1;
+          right: 10%;
+          bottom: 10%;
+          background: rgba(255, 255, 255, 0.46);
+        }
+
+        .work-morph-content {
+          position: absolute;
+          left: clamp(24px, 5vw, 78px);
+          bottom: clamp(24px, 6vh, 72px);
+          z-index: 2;
+          max-width: min(520px, calc(100% - 48px));
+          pointer-events: none;
+        }
+
+        .work-morph-kicker {
+          display: block;
+          margin-bottom: 14px;
+          font-family: var(--font-mono, monospace);
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          color: var(--color-accent, #F95C4B);
+          text-transform: uppercase;
+        }
+
+        .work-morph-content h3 {
+          margin: 0;
+          font-family: "PP Neue Montreal", "Neue Montreal", var(--font-body), sans-serif;
+          font-size: clamp(2.6rem, 8vw, 8.4rem);
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          line-height: 0.86;
+          text-transform: uppercase;
+        }
+
+        .work-morph-content p {
+          margin: 18px 0 0;
+          font-family: var(--font-mono, monospace);
+          font-size: clamp(10px, 1.1vw, 13px);
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          color: var(--color-text-2, #3E3A36);
+          text-transform: uppercase;
+        }
+
+        .work-morph-close {
+          position: absolute;
+          top: clamp(18px, 3vw, 34px);
+          right: clamp(18px, 3vw, 34px);
+          z-index: 3;
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          border: 1px solid rgba(10, 10, 10, 0.16);
+          background: rgba(246, 244, 241, 0.58);
+          color: var(--color-text-1, #0A0A0A);
+          font-size: 28px;
+          line-height: 1;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          transition: transform 0.28s ${MORPH_EASE}, background-color 0.28s ease;
+        }
+
+        .work-morph-close:hover,
+        .work-morph-close:focus-visible {
+          transform: scale(1.06);
+          background: rgba(255, 255, 255, 0.76);
+          outline: none;
         }
 
         /* Desktop Positioning and Ratios */

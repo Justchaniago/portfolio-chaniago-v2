@@ -1,11 +1,12 @@
 // lib/gsap.ts
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { CustomEase } from 'gsap/CustomEase';
 import Lenis from 'lenis';
 
 // Register ScrollTrigger and CustomEase.
-gsap.registerPlugin(ScrollTrigger, CustomEase);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, CustomEase);
 
 // Create the premium cubic-bezier ease (Apple / Porsche / Linear style)
 CustomEase.create('premiumBezier', '0.22, 1, 0.36, 1');
@@ -43,4 +44,4 @@ export function initLenis(): Lenis {
   return lenis;
 }
 
-export { gsap, ScrollTrigger, CustomEase };
+export { gsap, ScrollTrigger, ScrollToPlugin, CustomEase };
