@@ -68,7 +68,7 @@ export function createContactScene(): ContactScene {
         }
 
         const activeSection = typeof window !== 'undefined' ? (window as any).__activeSection : undefined;
-        if (activeSection === 'about' || activeSection === 'work') {
+        if (activeSection === 'about' || activeSection === 'work' || activeSection === 'contact') {
           document.documentElement.style.setProperty('--color-bg', '#FFFFFF');
         } else if (activeSection === 'hero') {
           document.documentElement.style.setProperty('--color-bg', '#0A0A0A');
