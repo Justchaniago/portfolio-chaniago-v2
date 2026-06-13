@@ -1,6 +1,13 @@
 import { gsap } from '@/lib/gsap';
 import { motionPresets } from '@/lib/motionPresets';
 import { MOTION_STAGGERS } from '@/lib/motionSystem';
+import { applyThemeVariables, getSectionTheme, palette } from '@/lib/theme/sectionThemes';
+import type { PortfolioSectionId } from '@/components/experience/PortfolioExperienceContext';
+
+type PortfolioRuntimeWindow = Window & {
+  __activeSection?: PortfolioSectionId;
+  __isTransitioning?: boolean;
+};
 
 export type ContactSceneState =
   | 'UNPREPARED'
@@ -54,24 +61,22 @@ export function createContactScene(): ContactScene {
       if (active) {
         // If we are currently transitioning via navigation menu, do not touch the HTML styles
         // as the transition useEffect is applying the target theme variables.
-        if (typeof window !== 'undefined' && (window as any).__isTransitioning) {
+        if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
           return;
         }
-        document.documentElement.style.setProperty('--color-bg', '#050505');
-        document.body.style.backgroundColor = '#050505';
+        document.documentElement.style.setProperty('--color-bg', palette.nearBlack);
+        document.body.style.backgroundColor = palette.nearBlack;
       } else {
         // If we are currently transitioning, do not touch the HTML style properties
         // as the transition useEffect is applying the target theme variables.
-        if (typeof window !== 'undefined' && (window as any).__isTransitioning) {
+        if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
           document.body.style.backgroundColor = '';
           return;
         }
 
-        const activeSection = typeof window !== 'undefined' ? (window as any).__activeSection : undefined;
-        if (activeSection === 'about' || activeSection === 'work' || activeSection === 'contact') {
-          document.documentElement.style.setProperty('--color-bg', '#FFFFFF');
-        } else if (activeSection === 'hero') {
-          document.documentElement.style.setProperty('--color-bg', '#0A0A0A');
+        const activeSection = typeof window !== 'undefined' ? (window as PortfolioRuntimeWindow).__activeSection : undefined;
+        if (activeSection === 'about' || activeSection === 'work' || activeSection === 'contact' || activeSection === 'hero') {
+          applyThemeVariables(document.documentElement, getSectionTheme(activeSection));
         } else {
           document.documentElement.style.removeProperty('--color-bg');
         }

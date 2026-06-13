@@ -120,7 +120,7 @@ export default function ProjectShowcase({
               fontSize: '11px',
               fontWeight: 800,
               letterSpacing: '0.14em',
-              color: 'var(--color-accent, #3F702A)',
+              color: 'var(--color-accent, #F95C4B)',
               textTransform: 'uppercase',
               marginBottom: '2vh',
               display: 'block',
@@ -207,7 +207,7 @@ export default function ProjectShowcase({
           width: 100%;
           height: auto;
           min-height: 100vh;
-          background-color: var(--color-bg, #FFFFFF);
+          background-color: var(--color-bg, #F6F4F1);
           color: var(--color-text-1, #0A0A0A);
           box-sizing: border-box;
           display: flex;

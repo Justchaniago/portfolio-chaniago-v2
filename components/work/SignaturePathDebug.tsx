@@ -36,7 +36,7 @@ export default function SignaturePathDebug() {
         bottom: '20px',
         right: '20px',
         backgroundColor: 'rgba(6, 6, 6, 0.95)',
-        border: '1.5px solid #3F702A',
+        border: '1.5px solid var(--color-accent, #F95C4B)',
         borderRadius: '10px',
         padding: '16px',
         fontFamily: 'var(--font-mono, monospace)',
@@ -44,22 +44,22 @@ export default function SignaturePathDebug() {
         color: '#FFFFFF',
         zIndex: 99999,
         pointerEvents: 'none',
-        boxShadow: '0 8px 32px rgba(63, 112, 42, 0.15)',
+        boxShadow: '0 8px 32px rgba(249, 92, 75, 0.18)',
         width: '260px',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
       }}
     >
-      <div style={{ fontWeight: 800, color: '#3F702A', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', paddingBottom: '6px', textTransform: 'uppercase' }}>
+      <div style={{ fontWeight: 800, color: 'var(--color-accent, #F95C4B)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', paddingBottom: '6px', textTransform: 'uppercase' }}>
         Path Debug HUD
       </div>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
           <span>Progress:</span>
-          <span style={{ color: '#3F702A', fontWeight: 'bold' }}>{Math.round(data.progress * 100)}%</span>
+          <span style={{ color: 'var(--color-accent, #F95C4B)', fontWeight: 'bold' }}>{Math.round(data.progress * 100)}%</span>
         </div>
-        <div style={{ color: '#3F702A', letterSpacing: '0.05em' }}>
+        <div style={{ color: 'var(--color-accent, #F95C4B)', letterSpacing: '0.05em' }}>
           [{progressBar}]
         </div>
       </div>

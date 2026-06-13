@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { gsap } from '@/lib/gsap';
+import { palette } from '@/lib/theme/sectionThemes';
 
 type EnvironmentTransitionLayerProps = {
   onEnvironmentHandoff?: () => void;
@@ -153,7 +154,7 @@ export default function EnvironmentTransitionLayer({
           width: calc(100vw - 80px);
           height: 80vh;
           border-radius: 40px;
-          background: #FFFFFF;
+          background: ${palette.paper};
           overflow: hidden;
           will-change: transform, width, height, border-radius, box-shadow, opacity;
           -webkit-mask-image: -webkit-radial-gradient(white, black);
@@ -163,7 +164,7 @@ export default function EnvironmentTransitionLayer({
         .environment-transition-coverage {
           position: absolute;
           inset: 0;
-          background: #FFFFFF;
+          background: ${palette.paper};
           pointer-events: none;
         }
 

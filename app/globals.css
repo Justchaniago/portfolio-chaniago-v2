@@ -3,6 +3,11 @@
 :root {
   --about-env-opacity: 0;
   /* === BACKGROUNDS === */
+  --color-paper: #F6F4F1;
+  --color-stone: #E4DED2;
+  --color-coral: #F95C4B;
+  --color-coral-dim: #D9473B;
+  --color-black: #000000;
   --color-void: #0A0A0A;
   /* Background utama */
   --color-carbon: #111111;
@@ -21,24 +26,26 @@
   /* Tertiary, labels */
 
   /* === ACCENT === */
-  --color-phosphor: #C9F0A8;
+  --color-phosphor: var(--color-coral);
   /* CTA, highlights — gunakan sparingly */
-  --color-phosphor-dim: #7db865;
+  --color-phosphor-dim: var(--color-coral-dim);
   /* Phosphor hover state */
 
   /* === WARM TONES === */
-  --color-linen: #FFFFFF;
+  --color-linen: var(--color-paper);
   /* Warm accent, serif teks dekoratif */
 
   /* === SEMANTIC === */
   --color-bg: var(--color-void);
   --color-surface: var(--color-carbon);
   --color-surface-2: var(--color-onyx);
+  --color-surface-soft: var(--color-stone);
   --color-border: var(--color-graphite);
   --color-text-1: var(--color-white);
   --color-text-2: var(--color-ash);
   --color-text-3: var(--color-smoke);
-  --color-accent: var(--color-phosphor);
+  --color-accent: var(--color-coral);
+  --color-accent-dim: var(--color-coral-dim);
 
   /* === SPACING SYSTEM (4px base grid) === */
   --s-1: 4px;
@@ -100,6 +107,11 @@
 }
 
 @theme {
+  --color-paper: var(--color-paper);
+  --color-stone: var(--color-stone);
+  --color-coral: var(--color-coral);
+  --color-coral-dim: var(--color-coral-dim);
+  --color-black: var(--color-black);
   --color-void: var(--color-void);
   --color-carbon: var(--color-carbon);
   --color-onyx: var(--color-onyx);
@@ -115,11 +127,13 @@
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
   --color-surface-2: var(--color-surface-2);
+  --color-surface-soft: var(--color-surface-soft);
   --color-border: var(--color-border);
   --color-text-1: var(--color-text-1);
   --color-text-2: var(--color-text-2);
   --color-text-3: var(--color-text-3);
   --color-accent: var(--color-accent);
+  --color-accent-dim: var(--color-accent-dim);
 
   /* Fonts mapped from CSS variables defined in layout.tsx */
   --font-display: var(--font-display);
@@ -210,23 +224,31 @@ body.portfolio-virtual-experience {
 }
 
 .about-virtual-scene {
-  background: #ffffff;
-  --color-bg: #ffffff;
+  background: var(--color-paper);
+  --color-bg: var(--color-paper);
+  --color-surface: var(--color-paper);
+  --color-surface-2: var(--color-stone);
+  --color-surface-soft: var(--color-stone);
   --color-text-1: #0a0a0a;
-  --color-text-2: #444444;
-  --color-text-3: #555555;
-  --color-border: rgba(10, 10, 10, 0.15);
-  --color-accent: #3f702a;
+  --color-text-2: #3e3a36;
+  --color-text-3: #68615a;
+  --color-border: rgba(10, 10, 10, 0.14);
+  --color-accent: var(--color-coral);
+  --color-accent-dim: var(--color-coral-dim);
 }
 
 .work-virtual-scene {
-  background: #ffffff;
-  --color-bg: #ffffff;
+  background: var(--color-paper);
+  --color-bg: var(--color-paper);
+  --color-surface: var(--color-paper);
+  --color-surface-2: var(--color-stone);
+  --color-surface-soft: var(--color-stone);
   --color-text-1: #0a0a0a;
-  --color-text-2: #444444;
-  --color-text-3: #555555;
-  --color-border: rgba(10, 10, 10, 0.15);
-  --color-accent: #3f702a;
+  --color-text-2: #3e3a36;
+  --color-text-3: #68615a;
+  --color-border: rgba(10, 10, 10, 0.14);
+  --color-accent: var(--color-coral);
+  --color-accent-dim: var(--color-coral-dim);
 }
 
 .contact-virtual-scene {
@@ -236,7 +258,8 @@ body.portfolio-virtual-experience {
   --color-text-2: #cfcfcf;
   --color-text-3: #777777;
   --color-border: rgba(255, 255, 255, 0.14);
-  --color-accent: #c9f0a8;
+  --color-accent: var(--color-coral);
+  --color-accent-dim: var(--color-coral-dim);
 }
 
 /* Custom scrollbar styling following beautiful dark editorial aesthetic */

@@ -156,7 +156,7 @@ export default function Loader({ onComplete }: LoaderProps) {
   // ── Polish notes ──
   // - Responsive percentage-based SVG coords (0 to 100) ensure zero layout shifts on any screen.
   // - SVG uses preserveAspectRatio="none" to stretch and cover the full viewport like a liquid sheet.
-  // - Dual wave offsets create a high-contrast chromatic tearing effect (green phosphor leading white).
+  // - Dual wave offsets create a high-contrast chromatic tearing effect (coral leading white).
 
   return (
     <div
@@ -235,7 +235,7 @@ export default function Loader({ onComplete }: LoaderProps) {
           <path
             ref={risePhosphorRef}
             d="M -100 0 C -70 -5 -30 5 0 0 C 30 -5 70 5 100 0 C 130 -5 170 5 200 0 L 200 115 L -100 115 Z"
-            fill="rgba(201, 240, 168, 0.9)" // Phosphor Green
+            fill="rgba(249, 92, 75, 0.9)" // Coral
           />
           {/* Solid White Wave */}
           <path
@@ -251,7 +251,7 @@ export default function Loader({ onComplete }: LoaderProps) {
           <path
             ref={pullPhosphorRef}
             d="M -100 -115 L 200 -115 L 200 0 C 170 6 130 -6 100 0 C 70 6 30 -6 0 0 C -30 6 -70 -6 -100 0 Z"
-            fill="rgba(201, 240, 168, 0.9)" // Phosphor Green
+            fill="rgba(249, 92, 75, 0.9)" // Coral
           />
           {/* Solid White Curtain */}
           <path

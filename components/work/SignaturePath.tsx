@@ -31,7 +31,7 @@ export default function SignaturePath({ svgRef, pathRef }: SignaturePathProps) {
       <path
         ref={pathRef}
         d="M -100 480 C 200 480, 400 550, 450 750 C 500 950, 200 1150, -150 1250 C -300 1300, 100 1500, 500 1600 C 900 1700, 1150 1900, 1200 2100 C 1250 2300, 600 2500, 150 2600 C -100 2650, 100 2950, 500 3100 C 900 3250, 1100 3400, 1200 3650"
-        stroke="#3F702A"
+        stroke="var(--color-accent, #F95C4B)"
         strokeWidth="var(--path-stroke-width, 18px)"
         strokeLinecap="round"
         strokeLinejoin="round"

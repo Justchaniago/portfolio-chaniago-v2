@@ -13,49 +13,12 @@ import { createAboutController } from '../about/AboutController';
 import { createAboutEnvironmentLifecycle } from '../about/AboutEnvironmentLifecycle';
 import { createContactScene } from '../scenes/ContactScene';
 import EnvironmentTransitionLayer from '../transitions/EnvironmentTransitionLayer';
+import { applyThemeVariables, getSectionTheme, palette } from '@/lib/theme/sectionThemes';
 
 type PortfolioWindow = Window & {
   __activeSection?: string;
   __scrollTriggerProgress?: number;
-};
-
-const THEME_BY_SECTION: Record<string, Record<string, string>> = {
-  hero: {
-    '--color-bg': '#0A0A0A',
-    '--color-text-1': '#FFFFFF',
-    '--color-text-2': '#888888',
-    '--color-text-3': '#555555',
-    '--color-border': '#2A2A2A',
-    '--color-accent': '#C9F0A8',
-    '--about-env-opacity': '0',
-  },
-  about: {
-    '--color-bg': '#FFFFFF',
-    '--color-text-1': '#0A0A0A',
-    '--color-text-2': '#444444',
-    '--color-text-3': '#555555',
-    '--color-border': 'rgba(10, 10, 10, 0.15)',
-    '--color-accent': '#3F702A',
-    '--about-env-opacity': '1',
-  },
-  work: {
-    '--color-bg': '#FFFFFF',
-    '--color-text-1': '#0A0A0A',
-    '--color-text-2': '#444444',
-    '--color-text-3': '#555555',
-    '--color-border': 'rgba(10, 10, 10, 0.15)',
-    '--color-accent': '#3F702A',
-    '--about-env-opacity': '1',
-  },
-  contact: {
-    '--color-bg': '#050505',
-    '--color-text-1': '#FFFFFF',
-    '--color-text-2': '#CFCFCF',
-    '--color-text-3': '#777777',
-    '--color-border': 'rgba(255, 255, 255, 0.14)',
-    '--color-accent': '#C9F0A8',
-    '--about-env-opacity': '0',
-  },
+  __isTransitioning?: boolean;
 };
 
 export default function PinnedSections() {
@@ -90,7 +53,7 @@ export default function PinnedSections() {
     const isTrans = portfolioExperience?.isTransitioning ?? false;
     isTransitioningRef.current = isTrans;
     if (typeof window !== 'undefined') {
-      (window as any).__isTransitioning = isTrans;
+      (window as PortfolioWindow).__isTransitioning = isTrans;
     }
 
     if (portfolioExperience?.isTransitioning) {
@@ -104,11 +67,9 @@ export default function PinnedSections() {
       aboutEnvironmentRef.current?.destroy();
 
       // Apply target theme variables directly to html to prevent flash/wrong colors during snapping
-      const targetTheme = THEME_BY_SECTION[pending];
+      const targetTheme = getSectionTheme(pending);
       if (targetTheme) {
-        Object.entries(targetTheme).forEach(([prop, val]) => {
-          document.documentElement.style.setProperty(prop, val);
-        });
+        applyThemeVariables(document.documentElement, targetTheme);
       }
 
       // Reset contact scene if transitioning away from contact
@@ -264,11 +225,7 @@ export default function PinnedSections() {
         contactThemeResetDelay?.kill();
         syncTween(gsap.delayedCall(0.4, () => {
           gsap.to('html', {
-            '--color-bg': '#FFFFFF',
-            '--color-text-1': '#0A0A0A',
-            '--color-text-2': '#444444',
-            '--color-border': 'rgba(10, 10, 10, 0.15)',
-            '--color-accent': '#3F702A',
+            ...getSectionTheme('work'),
             '--about-env-opacity': '1',
             duration: 0.3,
           });
@@ -310,7 +267,7 @@ export default function PinnedSections() {
       if (typeof window !== 'undefined') {
         delete portfolioWindow.__activeSection;
         delete portfolioWindow.__scrollTriggerProgress;
-        delete (window as any).__isTransitioning;
+        delete portfolioWindow.__isTransitioning;
       }
     };
   }, []);
@@ -342,7 +299,7 @@ export default function PinnedSections() {
         style={{
           position: 'fixed',
           inset: '-2px',
-          backgroundColor: '#050505',
+          backgroundColor: palette.nearBlack,
           opacity: 0,
           visibility: 'hidden',
           pointerEvents: 'none',

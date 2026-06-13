@@ -367,7 +367,7 @@ export default function Contact() {
         width: '100vw',
         height: '100vh',
         minHeight: '100vh',
-        backgroundColor: '#050505',
+        backgroundColor: 'var(--color-bg, #050505)',
         zIndex: 850,
         pointerEvents: 'none',
         overflow: 'hidden',
@@ -582,8 +582,8 @@ export default function Contact() {
           color: transparent;
           background-image: radial-gradient(
             circle 112px at var(--contact-hover-x, 50%) var(--contact-hover-y, 50%),
-            #ff3b30 0 var(--contact-hover-stop, 0%),
-            rgba(255, 92, 70, 0.78) var(--contact-hover-warm-stop, 0%),
+            var(--color-accent, #F95C4B) 0 var(--contact-hover-stop, 0%),
+            rgba(249, 92, 75, 0.78) var(--contact-hover-warm-stop, 0%),
             #fff var(--contact-hover-white-stop, 0%)
           );
           background-clip: text;

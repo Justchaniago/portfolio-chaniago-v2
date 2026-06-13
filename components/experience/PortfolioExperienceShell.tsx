@@ -14,6 +14,7 @@ import {
   useRequiredPortfolioExperience,
   type PortfolioSectionId,
 } from './PortfolioExperienceContext';
+import { applySectionTheme } from '@/lib/theme/sectionThemes';
 
 const sceneMotion = {
   initial: { opacity: 0, y: 16, scale: 0.995 },
@@ -147,44 +148,7 @@ function PortfolioExperienceRuntime() {
   }, [activeSection]);
 
   useEffect(() => {
-    const themeBySection: Record<PortfolioSectionId, Record<string, string>> = {
-      hero: {
-        '--color-bg': '#0A0A0A',
-        '--color-text-1': '#FFFFFF',
-        '--color-text-2': '#888888',
-        '--color-text-3': '#555555',
-        '--color-border': '#2A2A2A',
-        '--color-accent': '#C9F0A8',
-      },
-      about: {
-        '--color-bg': '#FFFFFF',
-        '--color-text-1': '#0A0A0A',
-        '--color-text-2': '#444444',
-        '--color-text-3': '#555555',
-        '--color-border': 'rgba(10, 10, 10, 0.15)',
-        '--color-accent': '#3F702A',
-      },
-      work: {
-        '--color-bg': '#FFFFFF',
-        '--color-text-1': '#0A0A0A',
-        '--color-text-2': '#444444',
-        '--color-text-3': '#555555',
-        '--color-border': 'rgba(10, 10, 10, 0.15)',
-        '--color-accent': '#3F702A',
-      },
-      contact: {
-        '--color-bg': '#050505',
-        '--color-text-1': '#FFFFFF',
-        '--color-text-2': '#CFCFCF',
-        '--color-text-3': '#777777',
-        '--color-border': 'rgba(255, 255, 255, 0.14)',
-        '--color-accent': '#C9F0A8',
-      },
-    };
-
-    Object.entries(themeBySection[activeSection]).forEach(([property, value]) => {
-      document.documentElement.style.setProperty(property, value);
-    });
+    applySectionTheme(activeSection);
   }, [activeSection]);
 
   useEffect(() => {

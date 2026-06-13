@@ -1,4 +1,5 @@
 import { gsap } from '@/lib/gsap';
+import { getSectionTheme } from '@/lib/theme/sectionThemes';
 
 type AboutEnvironmentState = 'inactive' | 'activating' | 'active' | 'deactivating';
 type AboutThemeTimeline = ReturnType<typeof gsap.timeline>;
@@ -8,13 +9,9 @@ type AboutEnvironmentActivationOptions = {
 };
 
 const ABOUT_THEME_VARS = {
-  '--color-bg': '#FFFFFF',
-  '--color-text-1': '#0A0A0A',
-  '--color-text-2': '#444444',
-  '--color-border': 'rgba(10, 10, 10, 0.15)',
-  '--color-accent': '#3F702A',
+  ...getSectionTheme('about'),
   '--text-shadow-glow': '0 2px 12px rgba(10, 10, 10, 0.02)',
-  '--color-card-bg': 'rgba(255, 255, 255, 0.35)',
+  '--color-card-bg': 'rgba(228, 222, 210, 0.35)',
   '--color-card-shadow': '0 8px 32px rgba(10, 10, 10, 0.03)',
   '--color-card-shadow-hover': '0 12px 40px rgba(10, 10, 10, 0.05)',
   '--color-text-reveal-bg': 'rgba(10, 10, 10, 0.12)',
@@ -22,8 +19,6 @@ const ABOUT_THEME_VARS = {
   ease: 'power2.inOut',
   duration: 0.3,
 } as const;
-
-const DEFAULT_ACTIVATION_POSITION = 0.1;
 
 export function createAboutEnvironmentLifecycle() {
   let state: AboutEnvironmentState = 'inactive';

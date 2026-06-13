@@ -336,7 +336,7 @@ export default function Hero() {
                   onMouseLeave={() => setHovered(false)}
                   style={{
                     fontStyle: 'italic',
-                    color: hovered ? '#C9F0A8' : 'rgba(255,255,255,0.38)',
+                    color: hovered ? 'var(--color-accent, #F95C4B)' : 'rgba(255,255,255,0.38)',
                     transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
                     pointerEvents: 'auto',
                     cursor: 'pointer',
@@ -484,7 +484,7 @@ export default function Hero() {
             rgba(255,255,255,0.22) 0%,
             rgba(255,255,255,0.34) 34%,
             rgba(255,255,255,0.94) 45%,
-            rgba(201,240,168,0.86) 50%,
+            rgba(249,92,75,0.86) 50%,
             rgba(255,255,255,0.78) 55%,
             rgba(255,255,255,0.32) 66%,
             rgba(255,255,255,0.22) 100%
@@ -497,19 +497,19 @@ export default function Hero() {
           animation: heroTaglineShimmer 4.8s ease-in-out infinite;
         }
         .hero-tagline-shimmer .hero-highlight {
-          text-shadow: 0 0 0 rgba(201,240,168,0);
+          text-shadow: 0 0 0 rgba(249,92,75,0);
           transition: text-shadow 0.45s cubic-bezier(0.16,1,0.3,1);
         }
         .hero-tagline-shimmer.is-highlight-hovered .hero-highlight {
           background-image: linear-gradient(
             105deg,
-            rgba(201,240,168,0.58) 0%,
+            rgba(249,92,75,0.58) 0%,
             rgba(255,255,255,0.96) 42%,
-            rgba(201,240,168,1) 50%,
+            rgba(249,92,75,1) 50%,
             rgba(255,255,255,0.9) 58%,
-            rgba(201,240,168,0.62) 100%
+            rgba(249,92,75,0.62) 100%
           );
-          text-shadow: 0 0 24px rgba(201,240,168,0.34);
+          text-shadow: 0 0 24px rgba(249,92,75,0.34);
         }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition-duration: 0.01ms !important; }
@@ -522,7 +522,7 @@ export default function Hero() {
             color: rgba(255,255,255,0.46) !important;
           }
           .hero-tagline-shimmer.is-highlight-hovered .hero-highlight {
-            color: #C9F0A8 !important;
+            color: var(--color-accent, #F95C4B) !important;
             text-shadow: none !important;
           }
         }

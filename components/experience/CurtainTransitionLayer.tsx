@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { PortfolioTransitionPhase } from './PortfolioExperienceContext';
+import { palette } from '@/lib/theme/sectionThemes';
 
 const curtainEase: [number, number, number, number] = [0.76, 0, 0.24, 1];
 
@@ -61,7 +62,7 @@ export default function CurtainTransitionLayer({
         inset: 0,
         zIndex: 1600,
         pointerEvents: 'none',
-        background: '#c9f0a8',
+        background: palette.coral,
         transform: 'translate3d(0, 100%, 0)',
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
