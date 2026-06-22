@@ -34,6 +34,7 @@ const CONTACT_PROGRESS_LERP = 0.12;
 const CONTACT_SETTLE_THRESHOLD = 0.62;
 const CONTACT_SETTLE_DELAY = 320;
 const CONTACT_PROGRESS_EPSILON = 0.0015;
+const CONTACT_UNLOCK_PROGRESS = 0.1;
 const BOTTOM_LOCK_EPSILON = 4;
 
 function getMainScrollBottom() {
@@ -107,7 +108,7 @@ export default function PinnedSections() {
   }, []);
 
   const syncContactActiveSection = useCallback((progress: number) => {
-    const shouldMarkContactActive = progress > 0;
+    const shouldMarkContactActive = progress > CONTACT_UNLOCK_PROGRESS;
     if (shouldMarkContactActive !== contactActiveSectionRef.current) {
       contactActiveSectionRef.current = shouldMarkContactActive;
       dispatchOverlaySection(shouldMarkContactActive ? 'contact' : 'work');
@@ -119,18 +120,18 @@ export default function PinnedSections() {
 
     applySectionTheme(contactClosedThemeRef.current);
 
-    if (clampedProgress <= 0) {
+    if (clampedProgress <= CONTACT_UNLOCK_PROGRESS) {
       syncContactActiveSection(0);
     }
 
     renderedContactProgressRef.current = clampedProgress;
     contactSceneRef.current?.setProgress(clampedProgress);
 
-    if (clampedProgress > 0) {
+    if (clampedProgress > CONTACT_UNLOCK_PROGRESS) {
       lockMainScrollToWorkBottom();
     }
 
-    if (clampedProgress > 0) {
+    if (clampedProgress > CONTACT_UNLOCK_PROGRESS) {
       syncContactActiveSection(clampedProgress);
     }
   }, [applySectionTheme, lockMainScrollToWorkBottom, syncContactActiveSection]);
@@ -355,6 +356,11 @@ export default function PinnedSections() {
         deltaY / CONTACT_OVERSCROLL_DISTANCE
       );
       const nextProgress = progress + progressDelta;
+
+      if (deltaY < 0 && nextProgress <= CONTACT_UNLOCK_PROGRESS) {
+        setContactTargetProgress(0);
+        return false;
+      }
 
       if (prefersReducedMotionRef.current) {
         setContactTargetProgress(nextProgress >= CONTACT_SETTLE_THRESHOLD ? 1 : 0, {
