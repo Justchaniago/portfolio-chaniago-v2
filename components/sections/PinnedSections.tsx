@@ -117,11 +117,10 @@ export default function PinnedSections() {
   const renderContactProgress = useCallback((progress: number) => {
     const clampedProgress = gsap.utils.clamp(0, 1, progress);
 
+    applySectionTheme(contactClosedThemeRef.current);
+
     if (clampedProgress <= 0) {
-      applySectionTheme(contactClosedThemeRef.current);
       syncContactActiveSection(0);
-    } else {
-      applySectionTheme('contact');
     }
 
     renderedContactProgressRef.current = clampedProgress;
@@ -208,8 +207,8 @@ export default function PinnedSections() {
       const pending = portfolioExperience.pendingSection;
       aboutEnvironmentRef.current?.destroy();
 
-      // Apply target theme variables directly to html to prevent flash/wrong colors during snapping
-      const targetTheme = getSectionTheme(pending);
+      // Contact is an overlay package; keep the main page/backdrop theme stable behind it.
+      const targetTheme = getSectionTheme(pending === 'contact' ? 'work' : pending);
       if (targetTheme) {
         applyThemeVariables(document.documentElement, targetTheme);
       }
