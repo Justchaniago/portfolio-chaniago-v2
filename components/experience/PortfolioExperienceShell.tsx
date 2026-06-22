@@ -126,6 +126,13 @@ function PortfolioExperienceRuntime() {
     markCovered,
     markRevealed,
   } = useRequiredPortfolioExperience();
+  const isTransitioning = transitionPhase !== 'idle';
+  const backgroundBlur = transitionPhase === 'covering'
+    ? 'blur(18px)'
+    : transitionPhase === 'revealing'
+      ? 'blur(10px)'
+      : 'blur(0px)';
+  const backgroundScale = isTransitioning ? 1.01 : 1;
 
   useEffect(() => {
     document.documentElement.classList.add('portfolio-virtual-experience');
@@ -158,7 +165,16 @@ function PortfolioExperienceRuntime() {
   return (
     <div className="portfolio-experience-shell">
       <NavRail />
-      <main className="portfolio-scene-host" aria-live="polite">
+      <main
+        className="portfolio-scene-host"
+        aria-live="polite"
+        style={{
+          filter: backgroundBlur,
+          transform: `scale(${backgroundScale})`,
+          transition: 'filter 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)',
+          willChange: 'filter, transform',
+        }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSection}

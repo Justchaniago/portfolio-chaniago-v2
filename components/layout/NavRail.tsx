@@ -12,11 +12,11 @@ const SECTIONS: Array<{
   label: string;
   num: string;
 }> = [
-  { id: 'hero', label: 'Hero', num: '01' },
-  { id: 'about', label: 'About', num: '02' },
-  { id: 'work', label: 'Work', num: '03' },
-  { id: 'contact', label: 'Contact', num: '04' },
-];
+    { id: 'hero', label: 'Hero', num: '01' },
+    { id: 'about', label: 'About', num: '02' },
+    { id: 'work', label: 'Work', num: '03' },
+    { id: 'contact', label: 'Contact', num: '04' },
+  ];
 
 const SECTION_GAP = 56;
 
@@ -127,6 +127,8 @@ export default function NavRail() {
     ? getSectionIndex(portfolioExperience.activeSection)
     : 0;
 
+  const isContactSection = portfolioExperience?.activeSection === 'contact';
+
   return (
     <div
       ref={containerRef}
@@ -139,13 +141,15 @@ export default function NavRail() {
         right: '3.5vw',
         top: '50%',
         transform: 'translateY(-50%)',
-        zIndex: 900,
+        zIndex: isContactSection ? 10 : 900,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '24px',
         padding: '20px 10px',
-        pointerEvents: 'auto',
+        pointerEvents: isContactSection ? 'none' : 'auto',
+        opacity: isContactSection ? 0 : 1,
+        transition: 'opacity 0.4s ease, z-index 0.4s ease',
       }}
     >
       <div

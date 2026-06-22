@@ -6,6 +6,7 @@ import MorphNav from "@/components/layout/MorphNav";
 import LoaderWrapper from "@/components/layout/LoaderWrapper";
 import LenisInit from "@/components/layout/LenisInit";
 import { PortfolioExperienceProvider } from "@/components/experience/PortfolioExperienceContext";
+import "slot-text/style.css";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-display",
