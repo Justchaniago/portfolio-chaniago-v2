@@ -367,7 +367,7 @@ export default function Contact() {
         width: '100vw',
         height: '100vh',
         minHeight: '100vh',
-        backgroundColor: 'var(--color-bg, #050505)',
+        backgroundColor: '#050505',
         zIndex: 850,
         pointerEvents: 'none',
         overflow: 'hidden',

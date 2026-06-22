@@ -13,7 +13,7 @@ import { createAboutController } from '../about/AboutController';
 import { createAboutEnvironmentLifecycle } from '../about/AboutEnvironmentLifecycle';
 import { createContactScene } from '../scenes/ContactScene';
 import EnvironmentTransitionLayer from '../transitions/EnvironmentTransitionLayer';
-import { applyThemeVariables, getSectionTheme, palette } from '@/lib/theme/sectionThemes';
+import { applyThemeVariables, getSectionTheme } from '@/lib/theme/sectionThemes';
 
 type PortfolioWindow = Window & {
   __activeSection?: string;
@@ -292,24 +292,6 @@ export default function PinnedSections() {
       <div id="work-section" className="w-full min-h-screen relative overflow-hidden">
         <ProjectShowcase />
       </div>
-
-      <div
-        className="contact-transition-underlay"
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: '-2px',
-          backgroundColor: palette.nearBlack,
-          opacity: 0,
-          visibility: 'hidden',
-          pointerEvents: 'none',
-          zIndex: 840,
-          transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden',
-          contain: 'paint',
-          willChange: 'opacity',
-        }}
-      />
 
       <div
         id="contact-section"

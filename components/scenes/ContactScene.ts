@@ -1,7 +1,7 @@
 import { gsap } from '@/lib/gsap';
 import { motionPresets } from '@/lib/motionPresets';
 import { MOTION_STAGGERS } from '@/lib/motionSystem';
-import { applyThemeVariables, getSectionTheme, palette } from '@/lib/theme/sectionThemes';
+import { applyThemeVariables, getSectionTheme } from '@/lib/theme/sectionThemes';
 import type { PortfolioSectionId } from '@/components/experience/PortfolioExperienceContext';
 
 type PortfolioRuntimeWindow = Window & {
@@ -57,20 +57,17 @@ export function createContactScene(): ContactScene {
 
     contactBackdropActive = active;
     if (typeof document !== 'undefined') {
-      gsap.killTweensOf(document.body, 'backgroundColor');
       if (active) {
         // If we are currently transitioning via navigation menu, do not touch the HTML styles
         // as the transition useEffect is applying the target theme variables.
         if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
           return;
         }
-        document.documentElement.style.setProperty('--color-bg', palette.nearBlack);
-        document.body.style.backgroundColor = palette.nearBlack;
+        applyThemeVariables(document.documentElement, getSectionTheme('contact'));
       } else {
         // If we are currently transitioning, do not touch the HTML style properties
         // as the transition useEffect is applying the target theme variables.
         if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
-          document.body.style.backgroundColor = '';
           return;
         }
 
@@ -80,7 +77,6 @@ export function createContactScene(): ContactScene {
         } else {
           document.documentElement.style.removeProperty('--color-bg');
         }
-        document.body.style.backgroundColor = '';
       }
     }
   };
@@ -139,10 +135,6 @@ export function createContactScene(): ContactScene {
 
   const setHidden = () => {
     cancelReleaseFrame();
-    gsap.set('.contact-transition-underlay', {
-      opacity: 0,
-      visibility: 'hidden',
-    });
     gsap.set('.contact-section-container', {
       opacity: 1,
       visibility: 'visible',
@@ -156,10 +148,6 @@ export function createContactScene(): ContactScene {
         opacity: 0,
         visibility: 'hidden',
       });
-      gsap.set('.contact-transition-underlay', {
-        opacity: 0,
-        visibility: 'hidden',
-      });
       setContactBackdrop(false);
       return;
     }
@@ -167,10 +155,6 @@ export function createContactScene(): ContactScene {
     releaseFrame = window.requestAnimationFrame(() => {
       releaseFrame = null;
       gsap.set('.contact-section-container', {
-        opacity: 0,
-        visibility: 'hidden',
-      });
-      gsap.set('.contact-transition-underlay', {
         opacity: 0,
         visibility: 'hidden',
       });
@@ -198,10 +182,6 @@ export function createContactScene(): ContactScene {
         visibility: 'visible',
         yPercent: 100,
         pointerEvents: 'none',
-      });
-      gsap.set('.contact-transition-underlay', {
-        opacity: 0,
-        visibility: 'hidden',
       });
       resetContent({ force: true, notify: false });
 
@@ -247,12 +227,7 @@ export function createContactScene(): ContactScene {
       const contentProgress = rawContentProgress <= CONTENT_REVEAL_DEADZONE
         ? 0
         : gsap.utils.clamp(0, 1, (rawContentProgress - CONTENT_REVEAL_DEADZONE) / (1 - CONTENT_REVEAL_DEADZONE));
-      const underlayVisible = panelProgress >= 1;
 
-      gsap.set('.contact-transition-underlay', {
-        opacity: underlayVisible ? 1 : 0,
-        visibility: underlayVisible ? 'visible' : 'hidden',
-      });
       gsap.set('.contact-section-container', {
         yPercent: contentProgress > 0 ? 0 : (1 - easedPanelProgress) * 100,
         opacity: 1,

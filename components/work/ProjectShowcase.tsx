@@ -219,7 +219,7 @@ export default function ProjectShowcase({
           width: 100%;
           height: auto;
           min-height: 100vh;
-          background-color: var(--color-bg, #F6F4F1);
+          background-color: #F6F4F1;
           color: var(--color-text-1, #0A0A0A);
           box-sizing: border-box;
           display: flex;
