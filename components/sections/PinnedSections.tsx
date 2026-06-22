@@ -304,7 +304,7 @@ export default function PinnedSections() {
         style={{
           height: '64vh',
           minHeight: '480px',
-          backgroundColor: '#050505',
+          backgroundColor: '#F6F4F1',
         }}
       >
         <Contact />
