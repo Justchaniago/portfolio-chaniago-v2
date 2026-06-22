@@ -358,7 +358,12 @@ export default function PinnedSections() {
       const nextProgress = progress + progressDelta;
 
       if (deltaY < 0 && nextProgress <= CONTACT_UNLOCK_PROGRESS) {
-        setContactTargetProgress(0);
+        if (prefersReducedMotionRef.current) {
+          setContactTargetProgress(0, { immediate: true });
+        } else {
+          setContactTargetProgress(nextProgress);
+          scheduleContactSettle();
+        }
         return false;
       }
 
