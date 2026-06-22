@@ -14,9 +14,10 @@ import { createAboutEnvironmentLifecycle } from '../about/AboutEnvironmentLifecy
 import { createContactScene } from '../scenes/ContactScene';
 import EnvironmentTransitionLayer from '../transitions/EnvironmentTransitionLayer';
 import { applyThemeVariables, getSectionTheme } from '@/lib/theme/sectionThemes';
+import type { PortfolioSectionId } from '@/components/experience/PortfolioExperienceContext';
 
 type PortfolioWindow = Window & {
-  __activeSection?: string;
+  __activeSection?: PortfolioSectionId;
   __scrollTriggerProgress?: number;
   __isTransitioning?: boolean;
   lenis?: {
@@ -53,6 +54,7 @@ export default function PinnedSections() {
   const touchStartYRef = useRef<number | null>(null);
   const contactActiveSectionRef = useRef(false);
   const prefersReducedMotionRef = useRef(false);
+  const contactClosedThemeRef = useRef<Exclude<PortfolioSectionId, 'contact'>>('work');
 
   if (aboutEnvironmentRef.current === null) {
     aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
@@ -86,7 +88,13 @@ export default function PinnedSections() {
     window.scrollTo(0, bottom);
   }, []);
 
-  const dispatchOverlaySection = useCallback((sectionId: 'work' | 'contact') => {
+  const applySectionTheme = useCallback((sectionId: PortfolioSectionId) => {
+    if (typeof document === 'undefined') return;
+
+    applyThemeVariables(document.documentElement, getSectionTheme(sectionId));
+  }, []);
+
+  const dispatchOverlaySection = useCallback((sectionId: PortfolioSectionId) => {
     if (typeof window === 'undefined' || isTransitioningRef.current) return;
 
     const portfolioWindow = window as unknown as PortfolioWindow;
@@ -109,6 +117,13 @@ export default function PinnedSections() {
   const renderContactProgress = useCallback((progress: number) => {
     const clampedProgress = gsap.utils.clamp(0, 1, progress);
 
+    if (clampedProgress <= 0) {
+      applySectionTheme(contactClosedThemeRef.current);
+      syncContactActiveSection(0);
+    } else {
+      applySectionTheme('contact');
+    }
+
     renderedContactProgressRef.current = clampedProgress;
     contactSceneRef.current?.setProgress(clampedProgress);
 
@@ -116,8 +131,10 @@ export default function PinnedSections() {
       lockMainScrollToWorkBottom();
     }
 
-    syncContactActiveSection(clampedProgress);
-  }, [lockMainScrollToWorkBottom, syncContactActiveSection]);
+    if (clampedProgress > 0) {
+      syncContactActiveSection(clampedProgress);
+    }
+  }, [applySectionTheme, lockMainScrollToWorkBottom, syncContactActiveSection]);
 
   const clearContactSettleTimer = useCallback(() => {
     if (contactSettleTimerRef.current === null || typeof window === 'undefined') return;
@@ -198,8 +215,11 @@ export default function PinnedSections() {
       }
 
       if (pending === 'contact') {
+        contactClosedThemeRef.current = 'work';
+        lockMainScrollToWorkBottom();
         setContactTargetProgress(1, { immediate: true });
       } else {
+        contactClosedThemeRef.current = pending;
         setContactTargetProgress(0, { immediate: true });
       }
     } else {
@@ -216,6 +236,8 @@ export default function PinnedSections() {
       }
 
       if (active === 'hero' || active === 'about' || active === 'work') {
+        contactClosedThemeRef.current = active;
+        applySectionTheme(active);
         setContactTargetProgress(0, { immediate: true });
       }
     }
@@ -223,6 +245,8 @@ export default function PinnedSections() {
     portfolioExperience?.isTransitioning,
     portfolioExperience?.pendingSection,
     portfolioExperience?.activeSection,
+    applySectionTheme,
+    lockMainScrollToWorkBottom,
     setContactTargetProgress,
   ]);
 
@@ -241,7 +265,7 @@ export default function PinnedSections() {
     contactScene.setProgress(renderedContactProgressRef.current);
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
-    const dispatchActiveSection = (sectionId: string) => {
+    const dispatchActiveSection = (sectionId: PortfolioSectionId) => {
       if (isTransitioningRef.current) return;
       if (renderedContactProgressRef.current > 0 && sectionId !== 'contact') return;
       portfolioWindow.__activeSection = sectionId;
@@ -253,7 +277,7 @@ export default function PinnedSections() {
     };
 
     // 1. Setup Section Observer (determines active section when visible area >= 40%)
-    const sectionIds = ['hero', 'about', 'work'];
+    const sectionIds: PortfolioSectionId[] = ['hero', 'about', 'work'];
     sectionIds.forEach((id) => {
       ScrollTrigger.create({
         trigger: `#${id}-section`,

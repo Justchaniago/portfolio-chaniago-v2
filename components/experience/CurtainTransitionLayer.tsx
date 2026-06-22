@@ -29,6 +29,26 @@ export default function CurtainTransitionLayer({
     }
   }, [phase]);
 
+  useEffect(() => {
+    if (phase === 'idle') return;
+
+    const fallbackDelay = prefersReducedMotion ? 180 : 760;
+    const timer = window.setTimeout(() => {
+      if (phase === 'covering' && !coveredNotifiedRef.current) {
+        coveredNotifiedRef.current = true;
+        onCovered();
+        return;
+      }
+
+      if (phase === 'revealing' && !revealedNotifiedRef.current) {
+        revealedNotifiedRef.current = true;
+        onRevealed();
+      }
+    }, fallbackDelay);
+
+    return () => window.clearTimeout(timer);
+  }, [onCovered, onRevealed, phase, prefersReducedMotion]);
+
   if (phase === 'idle') return null;
 
   const animate = phase === 'covering'

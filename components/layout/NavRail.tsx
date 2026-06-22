@@ -139,7 +139,7 @@ export default function NavRail() {
         right: '3.5vw',
         top: '50%',
         transform: 'translateY(-50%)',
-        zIndex: 100,
+        zIndex: 900,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

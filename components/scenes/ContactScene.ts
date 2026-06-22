@@ -1,13 +1,6 @@
 import { gsap } from '@/lib/gsap';
 import { motionPresets } from '@/lib/motionPresets';
 import { MOTION_STAGGERS } from '@/lib/motionSystem';
-import { applyThemeVariables, getSectionTheme } from '@/lib/theme/sectionThemes';
-import type { PortfolioSectionId } from '@/components/experience/PortfolioExperienceContext';
-
-type PortfolioRuntimeWindow = Window & {
-  __activeSection?: PortfolioSectionId;
-  __isTransitioning?: boolean;
-};
 
 export type ContactSceneState =
   | 'UNPREPARED'
@@ -55,32 +48,7 @@ export function createContactScene(): ContactScene {
   };
 
   const setContactBackdrop = (active: boolean) => {
-    if (!active && contactBackdropActive === active) return;
-
     contactBackdropActive = active;
-    if (typeof document !== 'undefined') {
-      if (active) {
-        // If we are currently transitioning via navigation menu, do not touch the HTML styles
-        // as the transition useEffect is applying the target theme variables.
-        if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
-          return;
-        }
-        applyThemeVariables(document.documentElement, getSectionTheme('contact'));
-      } else {
-        // If we are currently transitioning, do not touch the HTML style properties
-        // as the transition useEffect is applying the target theme variables.
-        if (typeof window !== 'undefined' && (window as PortfolioRuntimeWindow).__isTransitioning) {
-          return;
-        }
-
-        const activeSection = typeof window !== 'undefined' ? (window as PortfolioRuntimeWindow).__activeSection : undefined;
-        if (activeSection === 'about' || activeSection === 'work' || activeSection === 'contact' || activeSection === 'hero') {
-          applyThemeVariables(document.documentElement, getSectionTheme(activeSection));
-        } else {
-          document.documentElement.style.removeProperty('--color-bg');
-        }
-      }
-    }
   };
 
   const resetContent = (
@@ -237,7 +205,7 @@ export function createContactScene(): ContactScene {
         1,
         (clampedProgress - CONTENT_REVEAL_START) / (1 - CONTENT_REVEAL_START)
       );
-      const isReverseExit = contactBackdropActive && clampedProgress < previousProgress;
+      const isReverseExit = previousProgress > 0 && clampedProgress < previousProgress;
       const shouldHoldPanel = contactBackdropActive && clampedProgress > 0;
 
       if (isReverseExit) {
@@ -256,20 +224,28 @@ export function createContactScene(): ContactScene {
           isSheetExitMode = false;
         }
 
-        contentVisible = true;
         setContactBackdrop(true);
         gsap.set('.contact-section-container', {
           yPercent: (1 - clampedProgress) * 100,
           opacity: 1,
           visibility: 'visible',
         });
-        gsap.set('.contact-content-wrapper', {
-          opacity: 1,
-          visibility: 'visible',
-        });
-        gsap.set('.contact-title-debug', { opacity: 1 });
-        revealTimeline?.progress(1).pause();
-        syncInteractivity(clampedProgress, 1);
+
+        if (contentProgress <= 0) {
+          revealTimeline?.progress(0).pause();
+          resetContent({ resetBackdrop: false });
+          syncInteractivity(clampedProgress, 0);
+        } else {
+          contentVisible = true;
+          gsap.set('.contact-content-wrapper', {
+            opacity: 1,
+            visibility: 'visible',
+          });
+          gsap.set('.contact-title-debug', { opacity: 1 });
+          revealTimeline?.progress(contentProgress).pause();
+          syncInteractivity(clampedProgress, contentProgress);
+        }
+
         setState(isSheetExitMode ? 'EXITING' : 'ACTIVE');
         previousProgress = clampedProgress;
         return;
