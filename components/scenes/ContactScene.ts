@@ -30,8 +30,11 @@ export function createContactScene(): ContactScene {
   let previousState: ContactSceneState = 'HIDDEN';
   let revealTimeline: gsap.core.Timeline | null = null;
   const panelEase = gsap.parseEase('power3.out');
+  const contentExitEase = gsap.parseEase('power2.out');
   const PANEL_REVEAL_END = 0.68;
   const CONTENT_REVEAL_START = 0.68;
+  const CONTENT_EXIT_FADE_END = 0.62;
+  const CONTENT_EXIT_Y = 24;
   let contentVisible = false;
   let releaseFrame: number | null = null;
   let contactBackdropActive = false;
@@ -64,6 +67,7 @@ export function createContactScene(): ContactScene {
     gsap.set('.contact-content-wrapper', {
       opacity: 0,
       visibility: 'hidden',
+      y: 0,
       pointerEvents: 'none',
       overwrite: true,
     });
@@ -231,26 +235,22 @@ export function createContactScene(): ContactScene {
           visibility: 'visible',
         });
 
-        if (contentProgress <= 0) {
-          contentVisible = true;
-          gsap.set('.contact-content-wrapper', {
-            opacity: 1,
-            visibility: 'visible',
-            pointerEvents: 'none',
-          });
-          gsap.set('.contact-title-debug', { opacity: 1 });
-          revealTimeline?.progress(0).pause();
-          syncInteractivity(clampedProgress, 0);
-        } else {
-          contentVisible = true;
-          gsap.set('.contact-content-wrapper', {
-            opacity: 1,
-            visibility: 'visible',
-          });
-          gsap.set('.contact-title-debug', { opacity: 1 });
-          revealTimeline?.progress(contentProgress).pause();
-          syncInteractivity(clampedProgress, contentProgress);
-        }
+        const exitContentProgress = contentExitEase(gsap.utils.clamp(
+          0,
+          1,
+          clampedProgress / CONTENT_EXIT_FADE_END
+        ));
+
+        contentVisible = true;
+        revealTimeline?.progress(1).pause();
+        gsap.set('.contact-content-wrapper', {
+          opacity: exitContentProgress,
+          visibility: 'visible',
+          y: (1 - exitContentProgress) * CONTENT_EXIT_Y,
+          pointerEvents: 'none',
+        });
+        gsap.set('.contact-title-debug', { opacity: 1 });
+        syncInteractivity(clampedProgress, 0);
 
         setState(isSheetExitMode ? 'EXITING' : 'ACTIVE');
         previousProgress = clampedProgress;
@@ -287,6 +287,7 @@ export function createContactScene(): ContactScene {
       gsap.set('.contact-content-wrapper', {
         opacity: 1,
         visibility: 'visible',
+        y: 0,
       });
       gsap.set('.contact-title-debug', { opacity: 1 });
       revealTimeline?.progress(contentProgress).pause();
