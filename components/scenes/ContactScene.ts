@@ -43,6 +43,7 @@ export function createContactScene(): ContactScene {
   let releaseFrame: number | null = null;
   let contactBackdropActive = false;
   let previousProgress = 0;
+  let isSheetExitMode = false;
   const contactResetTargets = [
     '.contact-content-wrapper',
     '.contact-utility-link',
@@ -141,6 +142,7 @@ export function createContactScene(): ContactScene {
   const setHidden = () => {
     cancelReleaseFrame();
     previousProgress = 0;
+    isSheetExitMode = false;
     gsap.set('.contact-section-container', {
       opacity: 1,
       visibility: 'visible',
@@ -182,6 +184,7 @@ export function createContactScene(): ContactScene {
 
     prepare() {
       if (revealTimeline) return;
+      isSheetExitMode = false;
 
       gsap.set('.contact-section-container', {
         opacity: 1,
@@ -237,11 +240,19 @@ export function createContactScene(): ContactScene {
       const shouldHoldPanel = contactBackdropActive && clampedProgress > 0;
 
       if (isReverseExit) {
+        isSheetExitMode = true;
+      }
+
+      if (isSheetExitMode) {
         if (clampedProgress <= 0) {
           previousProgress = clampedProgress;
           setState('HIDDEN');
           setHidden();
           return;
+        }
+
+        if (clampedProgress >= 1) {
+          isSheetExitMode = false;
         }
 
         contentVisible = true;
@@ -258,7 +269,7 @@ export function createContactScene(): ContactScene {
         gsap.set('.contact-title-debug', { opacity: 1 });
         revealTimeline?.progress(1).pause();
         syncInteractivity(clampedProgress, 1);
-        setState('EXITING');
+        setState(isSheetExitMode ? 'EXITING' : 'ACTIVE');
         previousProgress = clampedProgress;
         return;
       }
