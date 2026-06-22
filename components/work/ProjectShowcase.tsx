@@ -9,6 +9,7 @@ import SignaturePathDebug from './SignaturePathDebug';
 
 const DEBUG_SIGNATURE_PATH = false;
 const MORPH_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const COLLAPSE_EASE = 'cubic-bezier(0.55, 0, 1, 0.45)';
 const POINTER_LEAVE_COLLAPSE_DELAY = 120;
 
 const PLACEHOLDER_CARDS = [
@@ -44,8 +45,13 @@ export default function ProjectShowcase({
   const svgRef = useRef<SVGSVGElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const overlayInnerRef = useRef<HTMLDivElement>(null);
+  const mediaLayerRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
+  const gradientScrimRef = useRef<HTMLDivElement>(null);
+  const textCatRef = useRef<HTMLParagraphElement>(null);
+  const textTitleRef = useRef<HTMLHeadingElement>(null);
+  const textDescRef = useRef<HTMLParagraphElement>(null);
+  const textTagsRef = useRef<HTMLDivElement>(null);
   const activePlaceholderIdRef = useRef<PlaceholderId | null>(null);
   const originRectRef = useRef<MorphRect | null>(null);
   const targetRectRef = useRef<MorphRect | null>(null);
@@ -82,6 +88,13 @@ export default function ProjectShowcase({
     window.clearTimeout(pointerLeaveTimeoutRef.current);
     pointerLeaveTimeoutRef.current = null;
   }, []);
+
+  const getTextNodes = useCallback(() => [
+    textCatRef.current,
+    textTitleRef.current,
+    textDescRef.current,
+    textTagsRef.current,
+  ].filter(Boolean), []);
 
   const resetSignaturePath = useCallback(() => {
     signatureScrollTriggerRef.current?.enable();
@@ -137,11 +150,12 @@ export default function ProjectShowcase({
     if (!activePlaceholderIdRef.current || isMorphingRef.current) return;
 
     const overlay = overlayRef.current;
-    const overlayInner = overlayInnerRef.current;
+    const mediaLayer = mediaLayerRef.current;
     const scrim = scrimRef.current;
+    const gradientScrim = gradientScrimRef.current;
     const targetRect = targetRectRef.current;
     const destinationRect = getSourceRect(activePlaceholderIdRef.current) ?? originRectRef.current;
-    if (!overlay || !scrim || !targetRect || !destinationRect) {
+    if (!overlay || !mediaLayer || !scrim || !targetRect || !destinationRect) {
       setActivePlaceholderId(null);
       activePlaceholderIdRef.current = null;
       return;
@@ -158,13 +172,17 @@ export default function ProjectShowcase({
     const duration = prefersReducedMotion ? 0.16 : 0.58;
     const scaleX = destinationRect.width / targetRect.width;
     const scaleY = destinationRect.height / targetRect.height;
+    const clipTop = destinationRect.y - targetRect.y;
+    const clipLeft = destinationRect.x - targetRect.x;
+    const clipRight = targetRect.width - (clipLeft + destinationRect.width);
+    const clipBottom = targetRect.height - (clipTop + destinationRect.height);
 
     const timeline = gsap.timeline({
       defaults: {
-        ease: MORPH_EASE,
+        ease: COLLAPSE_EASE,
       },
       onComplete: () => {
-        gsap.set([overlay, overlayInner, scrim], { clearProps: 'all' });
+        gsap.set([overlay, mediaLayer, scrim, gradientScrim, ...getTextNodes()], { clearProps: 'all' });
         isMorphingRef.current = false;
         originRectRef.current = null;
         targetRectRef.current = null;
@@ -177,6 +195,8 @@ export default function ProjectShowcase({
     if (isOffScreen) {
       timeline
         .to(scrim, { opacity: 0, duration: 0.2 }, 0)
+        .to(gradientScrim, { opacity: 0, duration: 0.18, ease: 'power2.in' }, 0)
+        .to(getTextNodes(), { opacity: 0, y: 8, duration: 0.18, ease: 'power2.in' }, 0)
         .to(overlay, {
           opacity: 0,
           scale: 0.96,
@@ -187,6 +207,8 @@ export default function ProjectShowcase({
     }
 
     timeline
+      .to(gradientScrim, { opacity: 0, duration: 0.18, ease: 'power2.in' }, 0)
+      .to(getTextNodes(), { opacity: 0, y: 8, duration: 0.18, ease: 'power2.in' }, 0)
       .to(scrim, { opacity: 0, duration: duration * 0.72 }, 0)
       .to(overlay, prefersReducedMotion
         ? {
@@ -200,15 +222,17 @@ export default function ProjectShowcase({
             scaleX,
             scaleY,
             borderRadius: destinationRect.borderRadius,
+            clipPath: `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px round ${destinationRect.borderRadius}px)`,
             boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
             duration,
           }, 0)
-      .to(overlayInner, {
-        scale: prefersReducedMotion ? 0.98 : 1,
+      .to(mediaLayer, {
+        scaleX: prefersReducedMotion ? 1 : 1 / scaleX,
+        scaleY: prefersReducedMotion ? 1 : 1 / scaleY,
         opacity: prefersReducedMotion ? 0 : 0.68,
         duration: duration * 0.9,
       }, 0);
-  }, [clearPointerLeaveTimeout, getSourceRect, resetSignaturePath]);
+  }, [clearPointerLeaveTimeout, getSourceRect, getTextNodes, resetSignaturePath]);
 
   const expandPlaceholder = useCallback(async (placeholderId: PlaceholderId) => {
     if (isPreparingOpenRef.current || isMorphingRef.current || activePlaceholderIdRef.current) return;
@@ -269,15 +293,20 @@ export default function ProjectShowcase({
     if (!activePlaceholderId) return;
 
     const overlay = overlayRef.current;
-    const overlayInner = overlayInnerRef.current;
+    const mediaLayer = mediaLayerRef.current;
     const scrim = scrimRef.current;
+    const gradientScrim = gradientScrimRef.current;
     const originRect = originRectRef.current;
-    if (!overlay || !overlayInner || !scrim || !originRect) return;
+    if (!overlay || !mediaLayer || !scrim || !originRect) return;
 
     const targetRect = getTargetRect();
     targetRectRef.current = targetRect;
     const initialScaleX = originRect.width / targetRect.width;
     const initialScaleY = originRect.height / targetRect.height;
+    const clipTop = originRect.y - targetRect.y;
+    const clipLeft = originRect.x - targetRect.x;
+    const clipRight = targetRect.width - (clipLeft + originRect.width);
+    const clipBottom = targetRect.height - (clipTop + originRect.height);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     isMorphingRef.current = true;
     expandCompleteRef.current = false;
@@ -286,23 +315,32 @@ export default function ProjectShowcase({
       opacity: 0,
     });
     gsap.set(overlay, {
-      x: originRect.x,
-      y: originRect.y,
+      x: targetRect.x,
+      y: targetRect.y,
       width: targetRect.width,
       height: targetRect.height,
       borderRadius: originRect.borderRadius,
       opacity: 1,
       scaleX: initialScaleX,
       scaleY: initialScaleY,
+      clipPath: `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px round ${originRect.borderRadius}px)`,
       boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
       transformOrigin: '0% 0%',
     });
-    gsap.set(overlayInner, {
-      scale: 1,
+    gsap.set(mediaLayer, {
+      scaleX: prefersReducedMotion ? 1 : 1 / initialScaleX,
+      scaleY: prefersReducedMotion ? 1 : 1 / initialScaleY,
       opacity: 0.68,
       xPercent: 0,
       yPercent: 0,
-      transformOrigin: '50% 50%',
+      transformOrigin: '0% 0%',
+    });
+    gsap.set(gradientScrim, {
+      opacity: 0,
+    });
+    gsap.set(getTextNodes(), {
+      opacity: 0,
+      y: 16,
     });
 
     const timeline = gsap.timeline({
@@ -313,7 +351,7 @@ export default function ProjectShowcase({
         isMorphingRef.current = false;
         expandCompleteRef.current = true;
         if (!prefersReducedMotion) {
-          ambientTweenRef.current = gsap.to(overlayInner, {
+          ambientTweenRef.current = gsap.to(mediaLayer, {
             xPercent: 1.2,
             yPercent: -0.8,
             duration: 1.4,
@@ -337,6 +375,7 @@ export default function ProjectShowcase({
             width: targetRect.width,
             height: targetRect.height,
             borderRadius: targetRect.borderRadius,
+            clipPath: `inset(0px 0px 0px 0px round ${targetRect.borderRadius}px)`,
             opacity: 1,
             duration: 0.18,
           }
@@ -346,21 +385,32 @@ export default function ProjectShowcase({
             scaleX: 1,
             scaleY: 1,
             borderRadius: targetRect.borderRadius,
+            clipPath: `inset(0px 0px 0px 0px round ${targetRect.borderRadius}px)`,
             boxShadow: '0 44px 120px rgba(10, 10, 10, 0.22), 0 12px 40px rgba(249, 92, 75, 0.08)',
-            duration: 0.72,
+            duration: 0.6,
           }, 0)
-      .to(overlayInner, {
-        scale: prefersReducedMotion ? 1 : 1.025,
+      .to(mediaLayer, {
+        scaleX: 1,
+        scaleY: 1,
         opacity: 1,
-        duration: prefersReducedMotion ? 0.18 : 0.72,
-      }, 0);
+        duration: prefersReducedMotion ? 0.18 : 0.6,
+      }, 0)
+      .to(gradientScrim, {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power2.out',
+      }, prefersReducedMotion ? 0.08 : 0.38)
+      .to(textCatRef.current, { opacity: 1, y: 0, duration: 0.38, ease: 'power3.out' }, prefersReducedMotion ? 0.08 : 0.46)
+      .to(textTitleRef.current, { opacity: 1, y: 0, duration: 0.42, ease: 'power3.out' }, prefersReducedMotion ? 0.1 : 0.52)
+      .to(textDescRef.current, { opacity: 1, y: 0, duration: 0.38, ease: 'power3.out' }, prefersReducedMotion ? 0.12 : 0.58)
+      .to(textTagsRef.current, { opacity: 1, y: 0, duration: 0.32, ease: 'power3.out' }, prefersReducedMotion ? 0.14 : 0.63);
 
     return () => {
       timeline.kill();
       ambientTweenRef.current?.kill();
       ambientTweenRef.current = null;
     };
-  }, [activePlaceholderId, getTargetRect]);
+  }, [activePlaceholderId, getTargetRect, getTextNodes]);
 
   useEffect(() => {
     if (!activePlaceholderId) return;
@@ -595,15 +645,22 @@ export default function ProjectShowcase({
             onPointerEnter={clearPointerLeaveTimeout}
             onPointerLeave={handleExpandedPointerLeave}
           >
-            <div ref={overlayInnerRef} className="work-morph-card-inner">
+            <div ref={mediaLayerRef} className="work-morph-media-layer">
               <div className="work-morph-grid" aria-hidden="true" />
               <div className="work-morph-orb work-morph-orb-a" aria-hidden="true" />
               <div className="work-morph-orb work-morph-orb-b" aria-hidden="true" />
-              <div className="work-morph-content">
-                <span className="work-morph-kicker">{activePlaceholder.id.replace('wp-', '').padStart(2, '0')} / PLACEHOLDER</span>
-                <h3>{activePlaceholder.title}</h3>
-                <p>{activePlaceholder.meta}</p>
+              <div className="work-morph-media-placeholder" aria-hidden="true" />
+            </div>
+            <div ref={gradientScrimRef} className="work-morph-gradient-scrim" aria-hidden="true" />
+            <div className="work-morph-content">
+              <p ref={textCatRef} className="work-morph-kicker">{activePlaceholder.id.replace('wp-', '').padStart(2, '0')} / PLACEHOLDER</p>
+              <h3 ref={textTitleRef}>{activePlaceholder.title}</h3>
+              <p ref={textDescRef}>{activePlaceholder.meta}</p>
+              <div ref={textTagsRef} className="work-morph-tags">
+                <span>Abstract media</span>
+                <span>Future project slot</span>
               </div>
+            </div>
               <button
                 type="button"
                 className="work-morph-close"
@@ -612,7 +669,6 @@ export default function ProjectShowcase({
               >
                 ×
               </button>
-            </div>
           </div>
         </div>
       )}
@@ -787,19 +843,20 @@ export default function ProjectShowcase({
           border: 1px solid rgba(10, 10, 10, 0.12);
           color: var(--color-text-1, #0A0A0A);
           pointer-events: auto;
-          will-change: transform, width, height, border-radius, box-shadow, opacity;
+          will-change: transform, clip-path, border-radius, box-shadow, opacity;
           contain: layout paint;
         }
 
-        .work-morph-card-inner {
+        .work-morph-media-layer {
           position: absolute;
           inset: 0;
           overflow: hidden;
           opacity: 0.68;
           will-change: transform, opacity;
+          transform-origin: 0% 0%;
         }
 
-        .work-morph-card-inner::before {
+        .work-morph-media-layer::before {
           content: '';
           position: absolute;
           inset: 0;
@@ -809,7 +866,7 @@ export default function ProjectShowcase({
           pointer-events: none;
         }
 
-        .work-morph-card-inner::after {
+        .work-morph-media-layer::after {
           content: '';
           position: absolute;
           inset: 0;
@@ -817,6 +874,35 @@ export default function ProjectShowcase({
           background-size: 220px 220px;
           opacity: 0.055;
           mix-blend-mode: multiply;
+          pointer-events: none;
+        }
+
+        .work-morph-media-placeholder {
+          position: absolute;
+          inset: clamp(22px, 3vw, 42px);
+          border-radius: clamp(18px, 2vw, 28px);
+          border: 1px solid rgba(10, 10, 10, 0.12);
+          background:
+            linear-gradient(145deg, rgba(246, 244, 241, 0.2), rgba(10, 10, 10, 0.06)),
+            rgba(255, 255, 255, 0.18);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+          pointer-events: none;
+        }
+
+        .work-morph-gradient-scrim {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 58%;
+          background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.84) 0%,
+            rgba(0, 0, 0, 0.58) 42%,
+            rgba(0, 0, 0, 0) 100%
+          );
+          opacity: 0;
+          z-index: 2;
           pointer-events: none;
         }
 
@@ -894,6 +980,44 @@ export default function ProjectShowcase({
           letter-spacing: 0.12em;
           color: var(--color-text-2, #3E3A36);
           text-transform: uppercase;
+        }
+
+        .work-morph-content h3,
+        .work-morph-content p,
+        .work-morph-tags {
+          will-change: transform, opacity;
+        }
+
+        .work-morph-content h3 {
+          color: #fff;
+          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.22);
+        }
+
+        .work-morph-content p {
+          color: rgba(255, 255, 255, 0.76);
+        }
+
+        .work-morph-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 16px;
+        }
+
+        .work-morph-tags span {
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          border-radius: 999px;
+          border: 0.5px solid rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.12);
+          color: rgba(255, 255, 255, 0.78);
+          font-family: var(--font-mono, monospace);
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          padding: 3px 10px;
         }
 
         .work-morph-close {

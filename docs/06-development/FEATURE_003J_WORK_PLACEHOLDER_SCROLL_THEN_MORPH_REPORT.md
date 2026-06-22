@@ -4,27 +4,49 @@ Date: 2026-06-13
 
 ## Summary
 
-Implemented an Apple-style scroll-then-morph interaction for the Work section placeholders in `ProjectShowcase.tsx`.
+Implemented the Work placeholder expansion as an in-place shared-element morph interaction.
 
-The Work placeholder cards now:
+The current behavior:
 
-- open from their exact source position into a near-viewport expanded preview;
-- scroll into an ideal viewport position before morphing if the clicked card is clipped or partially off-screen;
-- collapse back to the source card with the same transform-based morph on scroll, outside click, Escape, resize, or desktop pointer leave;
-- avoid sudden fade during normal scroll-close;
-- keep the expanded content abstract/placeholder-only until real project images are ready.
+- Work has 6 abstract placeholder cards.
+- Clicking/tapping a placeholder expands it into a near-viewport preview card.
+- If the clicked card is clipped or partially outside the viewport, the page scrolls it into a better measuring position first, then starts the morph.
+- Collapse runs as a reverse morph on normal close paths: scroll intent, outside click, Escape, resize, close button, and desktop pointer leave.
+- Source layout stays stable because the original placeholder remains in the document flow and is only visually hidden while the overlay is active.
+- The expanded card is still placeholder-only; no real project image/gallery logic was added.
 
-The Work section still does not use `pin: true`. Existing reveal ScrollTriggers and signature-path scrub remain intact.
+This task did not add ScrollTrigger pinning to Work. Existing Work reveal triggers and the signature-path scrub remain, but the signature scrub is temporarily disabled while a placeholder is expanded.
 
 ## Files Edited
 
+### `components/work/ProjectShowcase.tsx`
+
+Main implementation file.
+
+Changes made:
+
+- Added a typed six-card placeholder config.
+- Converted placeholder blocks into clickable and keyboard-accessible morph sources.
+- Added FLIP-style measurement with `getBoundingClientRect()`.
+- Added scroll-then-morph preparation for clipped cards.
+- Added one fixed overlay card rendered from React state.
+- Added transform-based expand/collapse animation through GSAP.
+- Added dual-layer morph structure:
+  - shell/card layer handles position, scale, border radius, shadow, and clip mask;
+  - media layer uses inverse counter-scale so inner visual content does not stretch during the shell morph.
+- Added gradient scrim and staggered text reveal inside the expanded card.
+- Added collapse triggers and interaction guards.
+- Added off-screen fallback for the rare case where the destination source is fully outside the viewport.
+- Disabled the signature path ScrollTrigger while expanded and re-enabled it after close.
+
 ### `lib/gsap.ts`
 
-Purpose:
+GSAP plugin registration.
 
-- Register GSAP `ScrollToPlugin` so Work placeholders can scroll to an ideal viewport position before morphing.
+Changes made:
 
-Key change:
+- Registered `ScrollToPlugin`.
+- Exported `ScrollToPlugin` with the existing GSAP utilities.
 
 ```ts
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
@@ -34,22 +56,11 @@ gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, CustomEase);
 export { gsap, ScrollTrigger, ScrollToPlugin, CustomEase };
 ```
 
-### `components/work/ProjectShowcase.tsx`
+## Key Technical Design
 
-Purpose:
+### 1. Placeholder Config
 
-- Convert six static placeholder blocks into interactive morph sources.
-- Add scroll-then-morph opening.
-- Add transform-only FLIP morph animation.
-- Add consistent morph-based close behavior.
-- Add edge-case handling for clipped/off-screen cards.
-- Pause signature-path scrub while expanded.
-
-## Main Code Additions
-
-### Placeholder Configuration
-
-The six placeholders are now represented by a typed config array instead of repeated hardcoded JSX.
+The six placeholders are now defined in one config array:
 
 ```ts
 const PLACEHOLDER_CARDS = [
@@ -62,36 +73,19 @@ const PLACEHOLDER_CARDS = [
 ] as const;
 ```
 
-Each placeholder is now clickable and keyboard-accessible:
+This keeps ID, layout class, title, and ratio metadata in one place.
 
-```tsx
-<div
-  key={placeholder.id}
-  ref={(node) => {
-    placeholderRefs.current[placeholder.id] = node;
-  }}
-  className={`work-reveal-item work-placeholder ${placeholder.className}${activePlaceholderId === placeholder.id ? ' is-morph-source-hidden' : ''}`}
-  role="button"
-  tabIndex={0}
-  aria-label={`Expand ${placeholder.title}`}
-  aria-pressed={activePlaceholderId === placeholder.id}
-  onClick={() => expandPlaceholder(placeholder.id)}
-  onKeyDown={(event) => handlePlaceholderKeyDown(event, placeholder.id)}
->
-  <div className="work-placeholder-inner" />
-  <span className="work-placeholder-index">{placeholder.id.replace('wp-', '').padStart(2, '0')}</span>
-</div>
-```
+### 2. Morph State And Refs
 
-### State And Runtime Refs
+The animation is mostly ref-driven so GSAP can run without forcing React renders every frame.
 
-The interaction is mostly ref-driven to avoid unnecessary render churn during GSAP animation.
+Important refs:
 
 ```ts
-const [activePlaceholderId, setActivePlaceholderId] = useState<PlaceholderId | null>(null);
 const overlayRef = useRef<HTMLDivElement>(null);
-const overlayInnerRef = useRef<HTMLDivElement>(null);
+const mediaLayerRef = useRef<HTMLDivElement>(null);
 const scrimRef = useRef<HTMLDivElement>(null);
+const gradientScrimRef = useRef<HTMLDivElement>(null);
 const activePlaceholderIdRef = useRef<PlaceholderId | null>(null);
 const originRectRef = useRef<MorphRect | null>(null);
 const targetRectRef = useRef<MorphRect | null>(null);
@@ -99,18 +93,20 @@ const isMorphingRef = useRef(false);
 const isPreparingOpenRef = useRef(false);
 const isScrollingToCardRef = useRef(false);
 const expandCompleteRef = useRef(false);
-const ambientTweenRef = useRef<gsap.core.Tween | null>(null);
-const pointerLeaveTimeoutRef = useRef<number | null>(null);
 const signatureScrollTriggerRef = useRef<ScrollTrigger | null>(null);
 const placeholderRefs = useRef<Partial<Record<PlaceholderId, HTMLDivElement | null>>>({});
 ```
 
-### Target Expanded Rect
+Why refs:
 
-Expanded preview size is viewport-based:
+- avoid rerendering during timeline frames;
+- block repeated click while opening/closing;
+- preserve the active source ID during async scroll preparation;
+- keep measured source and target rects stable for reverse morph.
 
-- desktop: `90vw x 86vh`, `32px` radius
-- mobile: `92vw x 78vh`, `22px` radius
+### 3. Target Expanded Size
+
+The expanded card is viewport-relative.
 
 ```ts
 const getTargetRect = useCallback((): MorphRect => {
@@ -130,9 +126,15 @@ const getTargetRect = useCallback((): MorphRect => {
 }, []);
 ```
 
-### Scroll-Then-Morph
+Result:
 
-Before morphing, a clipped card is smoothly scrolled into a stable measuring position.
+- desktop: about `90vw x 86vh`;
+- mobile: about `92vw x 78vh`;
+- centered with breathing room around the viewport.
+
+### 4. Scroll-Then-Morph
+
+Before opening, the clicked source is checked. If it is clipped, the page scrolls it into a stable position first.
 
 ```ts
 const scrollToPlaceholder = useCallback((source: HTMLElement, idealTopRatio = 0.12) => (
@@ -167,9 +169,20 @@ const scrollToPlaceholder = useCallback((source: HTMLElement, idealTopRatio = 0.
 ), []);
 ```
 
-### Open Flow
+Important guard:
 
-`expandPlaceholder()` now waits for the programmatic scroll before measuring the source rect.
+- `isScrollingToCardRef` prevents the programmatic scroll from immediately triggering close.
+
+### 5. Expand Flow
+
+The open flow is:
+
+1. reject repeated click if morph/open is already active;
+2. normalize the source placeholder opacity/transform;
+3. scroll into a better viewport position if needed;
+4. measure the source rect;
+5. disable signature-path scrub;
+6. mount the fixed overlay card.
 
 ```ts
 const expandPlaceholder = useCallback(async (placeholderId: PlaceholderId) => {
@@ -194,6 +207,7 @@ const expandPlaceholder = useCallback(async (placeholderId: PlaceholderId) => {
     isPreparingOpenRef.current = false;
     return;
   }
+
   signatureScrollTriggerRef.current?.disable();
   activePlaceholderIdRef.current = placeholderId;
   isPreparingOpenRef.current = false;
@@ -201,26 +215,59 @@ const expandPlaceholder = useCallback(async (placeholderId: PlaceholderId) => {
 }, [getSourceRect, scrollToPlaceholder]);
 ```
 
-### Transform-Only FLIP Expand
+### 6. Dual-Layer Morph
 
-The overlay is fixed at the final target size, then animated from source scale to full scale. This avoids animating `width` and `height` every frame.
+The latest version uses a shell layer plus a media layer.
+
+The shell is fixed at the final card size and starts visually clipped/scaled to the source rect:
 
 ```ts
 gsap.set(overlay, {
-  x: originRect.x,
-  y: originRect.y,
+  x: targetRect.x,
+  y: targetRect.y,
   width: targetRect.width,
   height: targetRect.height,
   borderRadius: originRect.borderRadius,
   opacity: 1,
   scaleX: initialScaleX,
   scaleY: initialScaleY,
+  clipPath: `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px round ${originRect.borderRadius}px)`,
   boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
   transformOrigin: '0% 0%',
 });
 ```
 
-The expand animation:
+The media layer starts with inverse scale:
+
+```ts
+gsap.set(mediaLayer, {
+  scaleX: prefersReducedMotion ? 1 : 1 / initialScaleX,
+  scaleY: prefersReducedMotion ? 1 : 1 / initialScaleY,
+  opacity: 0.68,
+  xPercent: 0,
+  yPercent: 0,
+  transformOrigin: '0% 0%',
+});
+```
+
+Why this matters:
+
+- The card shell can scale from source to viewport.
+- The inner media is counter-scaled, so gradients/grid/content do not look crushed or stretched during the morph.
+- This fixes the roughest visual issue from the earlier implementation where the overlay content looked too elastic.
+
+### 7. Expand Timeline
+
+The expand animation uses:
+
+- shell scale to full size;
+- clip-path to reveal full card;
+- border radius transition;
+- deeper shadow;
+- scrim fade-in;
+- media inverse scale back to `1`;
+- delayed gradient scrim;
+- staggered text reveal.
 
 ```ts
 timeline
@@ -235,6 +282,7 @@ timeline
         width: targetRect.width,
         height: targetRect.height,
         borderRadius: targetRect.borderRadius,
+        clipPath: `inset(0px 0px 0px 0px round ${targetRect.borderRadius}px)`,
         opacity: 1,
         duration: 0.18,
       }
@@ -244,26 +292,47 @@ timeline
         scaleX: 1,
         scaleY: 1,
         borderRadius: targetRect.borderRadius,
+        clipPath: `inset(0px 0px 0px 0px round ${targetRect.borderRadius}px)`,
         boxShadow: '0 44px 120px rgba(10, 10, 10, 0.22), 0 12px 40px rgba(249, 92, 75, 0.08)',
-        duration: 0.72,
+        duration: 0.6,
       }, 0)
-  .to(overlayInner, {
-    scale: prefersReducedMotion ? 1 : 1.025,
+  .to(mediaLayer, {
+    scaleX: 1,
+    scaleY: 1,
     opacity: 1,
-    duration: prefersReducedMotion ? 0.18 : 0.72,
-  }, 0);
+    duration: prefersReducedMotion ? 0.18 : 0.6,
+  }, 0)
+  .to(gradientScrim, {
+    opacity: 1,
+    duration: 0.4,
+    ease: 'power2.out',
+  }, prefersReducedMotion ? 0.08 : 0.38)
+  .to(textCatRef.current, { opacity: 1, y: 0, duration: 0.38, ease: 'power3.out' }, prefersReducedMotion ? 0.08 : 0.46)
+  .to(textTitleRef.current, { opacity: 1, y: 0, duration: 0.42, ease: 'power3.out' }, prefersReducedMotion ? 0.1 : 0.52)
+  .to(textDescRef.current, { opacity: 1, y: 0, duration: 0.38, ease: 'power3.out' }, prefersReducedMotion ? 0.12 : 0.58)
+  .to(textTagsRef.current, { opacity: 1, y: 0, duration: 0.32, ease: 'power3.out' }, prefersReducedMotion ? 0.14 : 0.63);
 ```
 
-### Morph-Based Collapse
+### 8. Morph-Based Collapse
 
-Normal collapse re-measures the source placeholder and morphs the expanded card back to it.
+Collapse remeasures the destination placeholder and morphs the expanded card back to that rect.
 
 ```ts
 const destinationRect = getSourceRect(activePlaceholderIdRef.current) ?? originRectRef.current;
 const scaleX = destinationRect.width / targetRect.width;
 const scaleY = destinationRect.height / targetRect.height;
+const clipTop = destinationRect.y - targetRect.y;
+const clipLeft = destinationRect.x - targetRect.x;
+const clipRight = targetRect.width - (clipLeft + destinationRect.width);
+const clipBottom = targetRect.height - (clipTop + destinationRect.height);
+```
 
+Normal close path:
+
+```ts
 timeline
+  .to(gradientScrim, { opacity: 0, duration: 0.18, ease: 'power2.in' }, 0)
+  .to(getTextNodes(), { opacity: 0, y: 8, duration: 0.18, ease: 'power2.in' }, 0)
   .to(scrim, { opacity: 0, duration: duration * 0.72 }, 0)
   .to(overlay, {
     x: destinationRect.x,
@@ -271,127 +340,151 @@ timeline
     scaleX,
     scaleY,
     borderRadius: destinationRect.borderRadius,
+    clipPath: `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px round ${destinationRect.borderRadius}px)`,
     boxShadow: '0 4px 24px rgba(10, 10, 10, 0.01)',
     duration,
   }, 0)
-  .to(overlayInner, {
-    scale: 1,
+  .to(mediaLayer, {
+    scaleX: 1 / scaleX,
+    scaleY: 1 / scaleY,
     opacity: 0.68,
     duration: duration * 0.9,
   }, 0);
 ```
 
-### Off-Screen Collapse Fallback
-
-If the source card is fully off-screen at close time, the card fades out instead of morphing to an invisible/off-screen target.
-
-```ts
-const isOffScreen = destinationRect.y + destinationRect.height < 0 || destinationRect.y > window.innerHeight;
-
-if (isOffScreen) {
-  timeline
-    .to(scrim, { opacity: 0, duration: 0.2 }, 0)
-    .to(overlay, {
-      opacity: 0,
-      scale: 0.96,
-      duration: prefersReducedMotion ? 0.16 : 0.25,
-      ease: 'power2.in',
-    }, 0);
-  return;
-}
-```
-
-### Event Blocking
-
-Close handlers ignore programmatic scroll from `scrollToPlaceholder()`.
-
-```ts
-const handleScrollIntent = () => {
-  if (isScrollingToCardRef.current) return;
-  collapsePlaceholder();
-};
-```
-
-Applied to:
-
-- `keydown`
-- `wheel`
-- `touchmove`
-- `scroll`
-- `resize`
-
-### Signature Path Pause
-
-The Work signature path scrub is disabled while a card is expanded, then enabled again after close.
-
-```ts
-signatureScrollTriggerRef.current?.disable();
-```
-
-Re-enabled in close completion:
-
-```ts
-const resetSignaturePath = useCallback(() => {
-  signatureScrollTriggerRef.current?.enable();
-}, []);
-```
+This is the important fix for the user's complaint that scroll-close should not suddenly fade. Scroll now triggers the same reverse morph as other normal close actions.
 
 ## Interaction Behavior
 
-### Open
+Open:
 
-1. User clicks/taps/presses Enter or Space on a placeholder.
-2. The clicked placeholder reveal tween is killed and snapped to a stable final transform.
-3. If the placeholder is clipped, the page scrolls smoothly so the card top lands near `12%` of viewport height.
-4. Source rect is measured after the scroll.
-5. Signature path scrub is disabled.
-6. The fixed overlay morphs from source rect to near-viewport size.
+- click/tap on a placeholder;
+- Enter or Space on a focused placeholder;
+- repeated clicks are ignored while preparing or morphing.
 
-### Close
+Close:
 
-Close can be triggered by:
-
-- wheel/scroll/touch scroll;
+- scroll;
+- wheel;
+- touchmove;
+- outside click on scrim;
 - Escape;
 - resize;
-- outside click;
 - close button;
-- desktop pointer leave after `120ms`.
+- desktop pointer leave after a 120ms debounce.
 
-Normal close morphs back to the re-measured source rect. Off-screen source fallback fades out.
+Mobile:
+
+- no dependency on hover leave;
+- tap outside or scroll closes.
+
+Reduced motion:
+
+- uses shorter opacity/scale behavior instead of the full morph timing.
+
+## Important CSS Additions
+
+The overlay layer is fixed and independent from the Work document layout:
+
+```css
+.work-morph-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  pointer-events: none;
+}
+
+.work-morph-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: auto;
+  will-change: transform, clip-path, border-radius, box-shadow, opacity;
+  contain: layout paint;
+}
+```
+
+The source placeholder is hidden without removing layout space:
+
+```css
+.work-placeholder.is-morph-source-hidden {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+```
+
+The media layer is separate from the card shell:
+
+```css
+.work-morph-media-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.68;
+  will-change: transform, opacity;
+  transform-origin: 0% 0%;
+}
+```
+
+The expanded preview gets a bottom readability gradient and placeholder text panel:
+
+```css
+.work-morph-gradient-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.84) 0%,
+    rgba(0, 0, 0, 0.58) 42%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+```
 
 ## Tradeoffs
 
-- Transform-only FLIP is smoother than animating `width`/`height`, but content inside the card scales during the morph. This is acceptable while content is abstract placeholder art. When real project text/images are added, an inverse-scale inner layer may be needed for perfect typography.
-- Programmatic scroll before open adds a short delay when a card is clipped, but prevents awkward off-screen morph origins.
-- Signature path scrub pause reduces background motion while expanded, but it means the signature path will not visually respond to scroll until the card closes.
-- Off-screen fallback intentionally uses fade-out because morphing to a source outside viewport looks worse than a controlled dissolve.
+### Why not a normal modal?
 
-## Problems Encountered
+A normal centered modal would be simpler, but it would not preserve the sense that the clicked card becomes the expanded card. The requirement was shared-element morph, so the implementation measures the source and animates a fixed overlay from that source.
 
-1. **Clicking clipped cards produced visually wrong morph origins**
-   - Cause: source rect was measured while the card was partially off-screen.
-   - Fix: scroll to ideal position first, then measure.
+### Why keep the original placeholder mounted?
 
-2. **Scroll close initially faded abruptly**
-   - Cause: early implementation used a separate soft close mode.
-   - Fix: all normal close paths now use the same transform-based morph.
+Removing it would cause layout shift in Work. Keeping it mounted and only hiding it visually preserves spacing and makes reverse morph possible.
 
-3. **Morph initially felt rough**
-   - Cause: animation used `width`/`height`, causing per-frame layout work.
-   - Fix: card uses fixed target dimensions and animates `translate + scaleX/scaleY`.
+### Why use transform and clip-path instead of width/height animation?
 
-4. **Source placeholder sometimes stayed visible**
-   - Cause: reveal ScrollTrigger applied inline opacity.
-   - Fix: source hidden class uses `opacity: 0 !important`.
+Animating width and height every frame is more likely to feel rough and can cost more layout work. The current implementation keeps the card at target dimensions and animates transform plus clip-path. This is smoother, but more complex.
 
-5. **Ambient tween blocked close**
-   - Cause: repeat tween was part of the main morph timeline.
-   - Fix: ambient tween is separate and killed before close.
+### Why add media counter-scale?
 
-## Verification
+Scaling a whole card makes inner gradients and placeholder visuals stretch. The counter-scale media layer reduces that distortion. It is more code, but gives a more premium morph feel.
 
-Commands run:
+### Why still have an off-screen fade fallback?
+
+If the user scrolls so far that the source card is fully outside the viewport before close can resolve a destination, a perfect reverse morph would target an invisible location. In that rare case, fading is safer than animating to a bad rect.
+
+### Why disable signature scrub while expanded?
+
+The signature path uses ScrollTrigger scrub behavior. Scroll is also a close trigger for the expanded placeholder. Temporarily disabling the signature scrub reduces visual conflict while the overlay is active, then restores it on close.
+
+## Known Limitations
+
+- The card is still placeholder-only. Real image/video content will need separate asset handling later.
+- The current implementation is custom GSAP logic, not GSAP Flip plugin. It is explicit and controlled, but more manual.
+- If the destination source is fully off-screen, the collapse uses the fallback fade instead of a full reverse morph.
+- Pointer-leave close only applies to hover-capable desktop devices after expansion completes.
+- The Work section still has many CSS rules inside `ProjectShowcase.tsx`; this task did not split styling into a separate stylesheet.
+
+## Verification Performed
+
+Commands run after implementation:
 
 ```bash
 npx tsc --noEmit
@@ -399,35 +492,38 @@ npm run lint
 npm run build
 ```
 
-Results:
+Result:
 
 - TypeScript passed.
-- ESLint passed with `0` errors and existing warnings only.
+- Lint passed with existing warnings only.
 - Production build passed.
 
-Runtime Puppeteer verification:
+Runtime check was also performed against the local preview on `http://localhost:3002`:
 
-- Card clicked while clipped:
-  - before click source top: `-265`
-  - after programmatic scroll source top: `120`
-  - expanded overlay: `1296 x 860`
-- Scroll close:
-  - overlay remained visible during collapse
-  - opacity remained `1`
-  - transform matrix showed card scaling back toward the source
-  - overlay unmounted only after animation completed
+- clicked a clipped placeholder;
+- programmatic scroll moved it into a better source position before morph;
+- expanded overlay measured around near-viewport size;
+- media layer ended at normal scale after expand;
+- gradient scrim and text reveal reached visible opacity;
+- scroll close kept the overlay visible during reverse morph instead of instantly fading/unmounting.
 
-## Current Edited Files
+## Current Git Scope
 
-```txt
-components/work/ProjectShowcase.tsx
-lib/gsap.ts
-docs/06-development/FEATURE_003J_WORK_PLACEHOLDER_SCROLL_THEN_MORPH_REPORT.md
-```
+Current modified runtime file:
+
+- `components/work/ProjectShowcase.tsx`
+
+Documentation file:
+
+- `docs/06-development/FEATURE_003J_WORK_PLACEHOLDER_SCROLL_THEN_MORPH_REPORT.md`
+
+Related GSAP file if not already committed in the current branch:
+
+- `lib/gsap.ts`
 
 ## Follow-Up Recommendations
 
-- When real project images are added, add media slots inside `work-morph-card-inner`.
-- If text appears stretched during the morph, add inverse-scale content compensation.
-- If hover-leave close feels too aggressive in manual testing, remove pointer-leave close and keep only scroll/outside/Escape.
-- If real routing is added later, keep this morph as the preview state and route only from an explicit CTA inside the expanded card.
+1. Test manually on real device Safari/Chrome mobile because `clip-path` plus transform can vary slightly by browser.
+2. When real project media exists, keep the shell/media split so image content does not stretch during morph.
+3. If the interaction needs even more native shared-element precision later, evaluate replacing the manual math with GSAP Flip plugin.
+4. Consider extracting Work morph styles into a dedicated CSS module or component once the interaction stabilizes.
