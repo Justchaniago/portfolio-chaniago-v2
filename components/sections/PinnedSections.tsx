@@ -362,7 +362,6 @@ export default function PinnedSections() {
           setContactTargetProgress(0, { immediate: true });
         } else {
           setContactTargetProgress(nextProgress);
-          scheduleContactSettle();
         }
         return false;
       }
