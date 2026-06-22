@@ -37,8 +37,8 @@ export function createContactScene(): ContactScene {
   let previousState: ContactSceneState = 'HIDDEN';
   let revealTimeline: gsap.core.Timeline | null = null;
   const panelEase = gsap.parseEase('power3.out');
-  const CONTENT_REVEAL_START = 0.42;
-  const CONTENT_REVEAL_DEADZONE = 0.2;
+  const PANEL_REVEAL_END = 0.68;
+  const CONTENT_REVEAL_START = 0.68;
   let contentVisible = false;
   let releaseFrame: number | null = null;
   let contactBackdropActive = false;
@@ -230,12 +230,13 @@ export function createContactScene(): ContactScene {
       cancelReleaseFrame();
 
       const clampedProgress = gsap.utils.clamp(0, 1, progress);
-      const panelProgress = gsap.utils.clamp(0, 1, clampedProgress / CONTENT_REVEAL_START);
+      const panelProgress = gsap.utils.clamp(0, 1, clampedProgress / PANEL_REVEAL_END);
       const easedPanelProgress = panelEase(panelProgress);
-      const rawContentProgress = gsap.utils.clamp(0, 1, (clampedProgress - CONTENT_REVEAL_START) / (1 - CONTENT_REVEAL_START));
-      const contentProgress = rawContentProgress <= CONTENT_REVEAL_DEADZONE
-        ? 0
-        : gsap.utils.clamp(0, 1, (rawContentProgress - CONTENT_REVEAL_DEADZONE) / (1 - CONTENT_REVEAL_DEADZONE));
+      const contentProgress = gsap.utils.clamp(
+        0,
+        1,
+        (clampedProgress - CONTENT_REVEAL_START) / (1 - CONTENT_REVEAL_START)
+      );
       const isReverseExit = contactBackdropActive && clampedProgress < previousProgress;
       const shouldHoldPanel = contactBackdropActive && clampedProgress > 0;
 

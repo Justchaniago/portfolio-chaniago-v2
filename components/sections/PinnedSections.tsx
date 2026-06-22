@@ -27,7 +27,12 @@ type PortfolioWindow = Window & {
   };
 };
 
-const CONTACT_OVERSCROLL_DISTANCE = 900;
+const CONTACT_OVERSCROLL_DISTANCE = 1800;
+const CONTACT_MAX_PROGRESS_STEP = 0.12;
+const CONTACT_PROGRESS_LERP = 0.12;
+const CONTACT_SETTLE_THRESHOLD = 0.62;
+const CONTACT_SETTLE_DELAY = 320;
+const CONTACT_PROGRESS_EPSILON = 0.0015;
 const BOTTOM_LOCK_EPSILON = 4;
 
 function getMainScrollBottom() {
@@ -41,9 +46,13 @@ export default function PinnedSections() {
   const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
   const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
   const contactSceneRef = useRef<ReturnType<typeof createContactScene> | null>(null);
-  const contactProgressRef = useRef(0);
+  const renderedContactProgressRef = useRef(0);
+  const targetContactProgressRef = useRef(0);
+  const contactAnimationFrameRef = useRef<number | null>(null);
+  const contactSettleTimerRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const contactActiveSectionRef = useRef(false);
+  const prefersReducedMotionRef = useRef(false);
 
   if (aboutEnvironmentRef.current === null) {
     aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
@@ -89,22 +98,84 @@ export default function PinnedSections() {
     );
   }, []);
 
-  const setContactProgress = useCallback((nextProgress: number) => {
-    const progress = gsap.utils.clamp(0, 1, nextProgress);
-
-    contactProgressRef.current = progress;
-    contactSceneRef.current?.setProgress(progress);
-
-    if (progress > 0) {
-      lockMainScrollToWorkBottom();
-    }
-
+  const syncContactActiveSection = useCallback((progress: number) => {
     const shouldMarkContactActive = progress > 0;
     if (shouldMarkContactActive !== contactActiveSectionRef.current) {
       contactActiveSectionRef.current = shouldMarkContactActive;
       dispatchOverlaySection(shouldMarkContactActive ? 'contact' : 'work');
     }
-  }, [dispatchOverlaySection, lockMainScrollToWorkBottom]);
+  }, [dispatchOverlaySection]);
+
+  const renderContactProgress = useCallback((progress: number) => {
+    const clampedProgress = gsap.utils.clamp(0, 1, progress);
+
+    renderedContactProgressRef.current = clampedProgress;
+    contactSceneRef.current?.setProgress(clampedProgress);
+
+    if (clampedProgress > 0) {
+      lockMainScrollToWorkBottom();
+    }
+
+    syncContactActiveSection(clampedProgress);
+  }, [lockMainScrollToWorkBottom, syncContactActiveSection]);
+
+  const clearContactSettleTimer = useCallback(() => {
+    if (contactSettleTimerRef.current === null || typeof window === 'undefined') return;
+
+    window.clearTimeout(contactSettleTimerRef.current);
+    contactSettleTimerRef.current = null;
+  }, []);
+
+  const animateContactProgress = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const current = renderedContactProgressRef.current;
+    const target = targetContactProgressRef.current;
+    const next = current + (target - current) * CONTACT_PROGRESS_LERP;
+    const settled = Math.abs(target - next) <= CONTACT_PROGRESS_EPSILON;
+    const renderedProgress = settled ? target : next;
+
+    renderContactProgress(renderedProgress);
+
+    if (!settled) {
+      contactAnimationFrameRef.current = window.requestAnimationFrame(animateContactProgress);
+      return;
+    }
+
+    contactAnimationFrameRef.current = null;
+  }, [renderContactProgress]);
+
+  const setContactTargetProgress = useCallback((nextProgress: number, options: { immediate?: boolean } = {}) => {
+    const progress = gsap.utils.clamp(0, 1, nextProgress);
+
+    targetContactProgressRef.current = progress;
+
+    if (options.immediate) {
+      if (contactAnimationFrameRef.current !== null && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(contactAnimationFrameRef.current);
+        contactAnimationFrameRef.current = null;
+      }
+      renderContactProgress(progress);
+      return;
+    }
+
+    if (contactAnimationFrameRef.current === null && typeof window !== 'undefined') {
+      contactAnimationFrameRef.current = window.requestAnimationFrame(animateContactProgress);
+    }
+  }, [animateContactProgress, renderContactProgress]);
+
+  const scheduleContactSettle = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    clearContactSettleTimer();
+    contactSettleTimerRef.current = window.setTimeout(() => {
+      const target = targetContactProgressRef.current;
+      setContactTargetProgress(
+        target >= CONTACT_SETTLE_THRESHOLD ? 1 : 0
+      );
+      contactSettleTimerRef.current = null;
+    }, CONTACT_SETTLE_DELAY);
+  }, [clearContactSettleTimer, setContactTargetProgress]);
 
   useEffect(() => {
     const isTrans = portfolioExperience?.isTransitioning ?? false;
@@ -127,9 +198,9 @@ export default function PinnedSections() {
       }
 
       if (pending === 'contact') {
-        setContactProgress(1);
+        setContactTargetProgress(1, { immediate: true });
       } else {
-        setContactProgress(0);
+        setContactTargetProgress(0, { immediate: true });
       }
     } else {
       // Transition completed! Sync active section on window.
@@ -144,23 +215,22 @@ export default function PinnedSections() {
         );
       }
 
-      if (active === 'contact') {
-        setContactProgress(1);
-      } else if (active === 'hero' || active === 'about' || active === 'work') {
-        setContactProgress(0);
+      if (active === 'hero' || active === 'about' || active === 'work') {
+        setContactTargetProgress(0, { immediate: true });
       }
     }
   }, [
     portfolioExperience?.isTransitioning,
     portfolioExperience?.pendingSection,
     portfolioExperience?.activeSection,
-    setContactProgress,
+    setContactTargetProgress,
   ]);
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
     const portfolioWindow = window as unknown as PortfolioWindow;
+    prefersReducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const aboutController = createAboutController({
       environment: aboutEnvironmentRef.current ?? undefined,
     });
@@ -168,12 +238,12 @@ export default function PinnedSections() {
     const contactScene = createContactScene();
     contactSceneRef.current = contactScene;
     contactScene.prepare();
-    contactScene.setProgress(contactProgressRef.current);
+    contactScene.setProgress(renderedContactProgressRef.current);
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
     const dispatchActiveSection = (sectionId: string) => {
       if (isTransitioningRef.current) return;
-      if (contactProgressRef.current > 0 && sectionId !== 'contact') return;
+      if (renderedContactProgressRef.current > 0 && sectionId !== 'contact') return;
       portfolioWindow.__activeSection = sectionId;
       window.dispatchEvent(
         new CustomEvent('activeSectionChange', {
@@ -249,13 +319,28 @@ export default function PinnedSections() {
     );
 
     const updateContactByDelta = (deltaY: number) => {
-      const progress = contactProgressRef.current;
+      const progress = targetContactProgressRef.current;
       const shouldOpenFromBottom = deltaY > 0 && isAtMainBottom();
       const shouldControlContact = progress > 0 || shouldOpenFromBottom;
 
       if (!shouldControlContact) return false;
 
-      setContactProgress(progress + deltaY / CONTACT_OVERSCROLL_DISTANCE);
+      clearContactSettleTimer();
+      const progressDelta = gsap.utils.clamp(
+        -CONTACT_MAX_PROGRESS_STEP,
+        CONTACT_MAX_PROGRESS_STEP,
+        deltaY / CONTACT_OVERSCROLL_DISTANCE
+      );
+      const nextProgress = progress + progressDelta;
+
+      if (prefersReducedMotionRef.current) {
+        setContactTargetProgress(nextProgress >= CONTACT_SETTLE_THRESHOLD ? 1 : 0, {
+          immediate: true,
+        });
+      } else {
+        setContactTargetProgress(nextProgress);
+        scheduleContactSettle();
+      }
       return true;
     };
 
@@ -324,6 +409,11 @@ export default function PinnedSections() {
       window.removeEventListener('touchmove', handleTouchMove, { capture: true });
       window.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('touchcancel', handleTouchEnd);
+      clearContactSettleTimer();
+      if (contactAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(contactAnimationFrameRef.current);
+        contactAnimationFrameRef.current = null;
+      }
       ScrollTrigger.getAll().forEach((st) => st.kill());
       contactScene.destroy();
       aboutController.destroy();
@@ -333,7 +423,11 @@ export default function PinnedSections() {
         delete portfolioWindow.__isTransitioning;
       }
     };
-  }, [setContactProgress]);
+  }, [
+    clearContactSettleTimer,
+    scheduleContactSettle,
+    setContactTargetProgress,
+  ]);
 
   return (
     <div className="w-full relative bg-[var(--color-bg)]">
