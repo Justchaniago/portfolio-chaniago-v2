@@ -28,11 +28,9 @@ type PortfolioWindow = Window & {
   };
 };
 
-const CONTACT_OVERSCROLL_DISTANCE = 1800;
+const CONTACT_OVERSCROLL_DISTANCE = 1100;
 const CONTACT_MAX_PROGRESS_STEP = 0.12;
 const CONTACT_PROGRESS_LERP = 0.12;
-const CONTACT_SETTLE_THRESHOLD = 0.62;
-const CONTACT_SETTLE_DELAY = 320;
 const CONTACT_PROGRESS_EPSILON = 0.0015;
 const CONTACT_UNLOCK_PROGRESS = 0.1;
 const BOTTOM_LOCK_EPSILON = 4;
@@ -51,7 +49,6 @@ export default function PinnedSections() {
   const renderedContactProgressRef = useRef(0);
   const targetContactProgressRef = useRef(0);
   const contactAnimationFrameRef = useRef<number | null>(null);
-  const contactSettleTimerRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const contactActiveSectionRef = useRef(false);
   const prefersReducedMotionRef = useRef(false);
@@ -136,13 +133,6 @@ export default function PinnedSections() {
     }
   }, [applySectionTheme, lockMainScrollToWorkBottom, syncContactActiveSection]);
 
-  const clearContactSettleTimer = useCallback(() => {
-    if (contactSettleTimerRef.current === null || typeof window === 'undefined') return;
-
-    window.clearTimeout(contactSettleTimerRef.current);
-    contactSettleTimerRef.current = null;
-  }, []);
-
   const animateContactProgress = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -180,19 +170,6 @@ export default function PinnedSections() {
       contactAnimationFrameRef.current = window.requestAnimationFrame(animateContactProgress);
     }
   }, [animateContactProgress, renderContactProgress]);
-
-  const scheduleContactSettle = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    clearContactSettleTimer();
-    contactSettleTimerRef.current = window.setTimeout(() => {
-      const target = targetContactProgressRef.current;
-      setContactTargetProgress(
-        target >= CONTACT_SETTLE_THRESHOLD ? 1 : 0
-      );
-      contactSettleTimerRef.current = null;
-    }, CONTACT_SETTLE_DELAY);
-  }, [clearContactSettleTimer, setContactTargetProgress]);
 
   useEffect(() => {
     const isTrans = portfolioExperience?.isTransitioning ?? false;
@@ -349,7 +326,6 @@ export default function PinnedSections() {
 
       if (!shouldControlContact) return false;
 
-      clearContactSettleTimer();
       const progressDelta = gsap.utils.clamp(
         -CONTACT_MAX_PROGRESS_STEP,
         CONTACT_MAX_PROGRESS_STEP,
@@ -367,12 +343,9 @@ export default function PinnedSections() {
       }
 
       if (prefersReducedMotionRef.current) {
-        setContactTargetProgress(nextProgress >= CONTACT_SETTLE_THRESHOLD ? 1 : 0, {
-          immediate: true,
-        });
+        setContactTargetProgress(nextProgress, { immediate: true });
       } else {
         setContactTargetProgress(nextProgress);
-        scheduleContactSettle();
       }
       return true;
     };
@@ -442,7 +415,6 @@ export default function PinnedSections() {
       window.removeEventListener('touchmove', handleTouchMove, { capture: true });
       window.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('touchcancel', handleTouchEnd);
-      clearContactSettleTimer();
       if (contactAnimationFrameRef.current !== null) {
         window.cancelAnimationFrame(contactAnimationFrameRef.current);
         contactAnimationFrameRef.current = null;
@@ -457,8 +429,6 @@ export default function PinnedSections() {
       }
     };
   }, [
-    clearContactSettleTimer,
-    scheduleContactSettle,
     setContactTargetProgress,
   ]);
 
