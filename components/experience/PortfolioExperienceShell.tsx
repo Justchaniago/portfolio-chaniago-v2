@@ -99,7 +99,7 @@ function ContactSceneView() {
   }, []);
 
   return (
-    <section id="contact-section" className="portfolio-scene-surface contact-virtual-scene">
+    <section id="contact-overlay-scene" className="portfolio-scene-surface contact-virtual-scene">
       <Contact />
     </section>
   );

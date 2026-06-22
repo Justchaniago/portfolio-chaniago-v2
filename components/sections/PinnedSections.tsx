@@ -19,17 +19,31 @@ type PortfolioWindow = Window & {
   __activeSection?: string;
   __scrollTriggerProgress?: number;
   __isTransitioning?: boolean;
+  lenis?: {
+    scrollTo(
+      target: HTMLElement | string | number,
+      options?: { immediate?: boolean }
+    ): void;
+  };
 };
+
+const CONTACT_OVERSCROLL_DISTANCE = 900;
+const BOTTOM_LOCK_EPSILON = 4;
+
+function getMainScrollBottom() {
+  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
 
 export default function PinnedSections() {
   const portfolioExperience = usePortfolioExperience();
   const isTransitioningRef = useRef(false);
-  const contactThemeResetDelayRef = useRef<gsap.core.Tween | null>(null);
 
   const aboutEnvironmentRef = useRef<ReturnType<typeof createAboutEnvironmentLifecycle> | null>(null);
   const aboutControllerRef = useRef<ReturnType<typeof createAboutController> | null>(null);
-  const contactScrollSpacerRef = useRef<HTMLDivElement>(null);
   const contactSceneRef = useRef<ReturnType<typeof createContactScene> | null>(null);
+  const contactProgressRef = useRef(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const contactActiveSectionRef = useRef(false);
 
   if (aboutEnvironmentRef.current === null) {
     aboutEnvironmentRef.current = createAboutEnvironmentLifecycle();
@@ -49,17 +63,57 @@ export default function PinnedSections() {
     aboutControllerRef.current?.setTransitionComplete(complete);
   }, []);
 
+  const lockMainScrollToWorkBottom = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const bottom = getMainScrollBottom();
+    const portfolioWindow = window as unknown as PortfolioWindow;
+
+    if (portfolioWindow.lenis) {
+      portfolioWindow.lenis.scrollTo(bottom, { immediate: true });
+      return;
+    }
+
+    window.scrollTo(0, bottom);
+  }, []);
+
+  const dispatchOverlaySection = useCallback((sectionId: 'work' | 'contact') => {
+    if (typeof window === 'undefined' || isTransitioningRef.current) return;
+
+    const portfolioWindow = window as unknown as PortfolioWindow;
+    portfolioWindow.__activeSection = sectionId;
+    window.dispatchEvent(
+      new CustomEvent('activeSectionChange', {
+        detail: { activeSection: sectionId },
+      })
+    );
+  }, []);
+
+  const setContactProgress = useCallback((nextProgress: number) => {
+    const progress = gsap.utils.clamp(0, 1, nextProgress);
+
+    contactProgressRef.current = progress;
+    contactSceneRef.current?.setProgress(progress);
+
+    if (progress > 0) {
+      lockMainScrollToWorkBottom();
+    }
+
+    const shouldMarkContactActive = progress > 0;
+    if (shouldMarkContactActive !== contactActiveSectionRef.current) {
+      contactActiveSectionRef.current = shouldMarkContactActive;
+      dispatchOverlaySection(shouldMarkContactActive ? 'contact' : 'work');
+    }
+  }, [dispatchOverlaySection, lockMainScrollToWorkBottom]);
+
   useEffect(() => {
     const isTrans = portfolioExperience?.isTransitioning ?? false;
     isTransitioningRef.current = isTrans;
     if (typeof window !== 'undefined') {
-      (window as PortfolioWindow).__isTransitioning = isTrans;
+      (window as unknown as PortfolioWindow).__isTransitioning = isTrans;
     }
 
     if (portfolioExperience?.isTransitioning) {
-      // Kill any active delayed theme resets and active GSAP tweens on html element
-      contactThemeResetDelayRef.current?.kill();
-      contactThemeResetDelayRef.current = null;
       gsap.killTweensOf('html');
 
       // Sync the About Environment lifecycle state instantly by killing active tweens
@@ -72,15 +126,16 @@ export default function PinnedSections() {
         applyThemeVariables(document.documentElement, targetTheme);
       }
 
-      // Reset contact scene if transitioning away from contact
-      if (pending !== 'contact') {
-        contactSceneRef.current?.setProgress(0);
+      if (pending === 'contact') {
+        setContactProgress(1);
+      } else {
+        setContactProgress(0);
       }
     } else {
       // Transition completed! Sync active section on window.
       const active = portfolioExperience?.activeSection;
       if (active && typeof window !== 'undefined') {
-        const portfolioWindow = window as PortfolioWindow;
+        const portfolioWindow = window as unknown as PortfolioWindow;
         portfolioWindow.__activeSection = active;
         window.dispatchEvent(
           new CustomEvent('activeSectionChange', {
@@ -88,29 +143,37 @@ export default function PinnedSections() {
           })
         );
       }
+
+      if (active === 'contact') {
+        setContactProgress(1);
+      } else if (active === 'hero' || active === 'about' || active === 'work') {
+        setContactProgress(0);
+      }
     }
-  }, [portfolioExperience?.isTransitioning, portfolioExperience?.pendingSection, portfolioExperience?.activeSection]);
+  }, [
+    portfolioExperience?.isTransitioning,
+    portfolioExperience?.pendingSection,
+    portfolioExperience?.activeSection,
+    setContactProgress,
+  ]);
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const portfolioWindow = window as PortfolioWindow;
+    const portfolioWindow = window as unknown as PortfolioWindow;
     const aboutController = createAboutController({
       environment: aboutEnvironmentRef.current ?? undefined,
     });
     aboutControllerRef.current = aboutController;
     const contactScene = createContactScene();
     contactSceneRef.current = contactScene;
-    let contactThemeResetDelay: gsap.core.Tween | null = null;
-    const syncTween = (val: gsap.core.Tween | null) => {
-      contactThemeResetDelay = val;
-      contactThemeResetDelayRef.current = val;
-    };
     contactScene.prepare();
+    contactScene.setProgress(contactProgressRef.current);
 
     // Helper to dispatch active section ID to listeners (NavRail, MorphNav)
     const dispatchActiveSection = (sectionId: string) => {
       if (isTransitioningRef.current) return;
+      if (contactProgressRef.current > 0 && sectionId !== 'contact') return;
       portfolioWindow.__activeSection = sectionId;
       window.dispatchEvent(
         new CustomEvent('activeSectionChange', {
@@ -120,7 +183,7 @@ export default function PinnedSections() {
     };
 
     // 1. Setup Section Observer (determines active section when visible area >= 40%)
-    const sectionIds = ['hero', 'about', 'work', 'contact'];
+    const sectionIds = ['hero', 'about', 'work'];
     sectionIds.forEach((id) => {
       ScrollTrigger.create({
         trigger: `#${id}-section`,
@@ -181,58 +244,56 @@ export default function PinnedSections() {
     // 4. About Section Local Timelines & Pinning
     aboutController.prepare();
 
-    const updateContactOverlayProgress = () => {
-      const workSection = document.getElementById('work-section');
-      if (!workSection) return;
+    const isAtMainBottom = () => (
+      window.scrollY >= getMainScrollBottom() - BOTTOM_LOCK_EPSILON
+    );
 
-      const workBounds = workSection.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const contactScrollDistance = contactScrollSpacerRef.current?.offsetHeight || viewportHeight;
-      const progress = contactScrollDistance > 0
-        ? gsap.utils.clamp(0, 1, (viewportHeight - workBounds.bottom) / contactScrollDistance)
-        : 0;
+    const updateContactByDelta = (deltaY: number) => {
+      const progress = contactProgressRef.current;
+      const shouldOpenFromBottom = deltaY > 0 && isAtMainBottom();
+      const shouldControlContact = progress > 0 || shouldOpenFromBottom;
 
-      contactScene.setProgress(progress);
+      if (!shouldControlContact) return false;
+
+      setContactProgress(progress + deltaY / CONTACT_OVERSCROLL_DISTANCE);
+      return true;
     };
 
-    // 5. Contact Section Overlay Reveal
-    ScrollTrigger.create({
-      trigger: '#work-section',
-      start: 'bottom bottom',
-      end: () => `+=${contactScrollSpacerRef.current?.offsetHeight || window.innerHeight}`,
-      scrub: true,
-      onEnter: updateContactOverlayProgress,
-      onEnterBack: updateContactOverlayProgress,
-      onUpdate: updateContactOverlayProgress,
-      onRefresh: updateContactOverlayProgress,
-      onLeave: () => contactScene?.setProgress(1),
-      onLeaveBack: () => contactScene?.setProgress(0),
-    });
-    window.addEventListener('resize', updateContactOverlayProgress);
-    updateContactOverlayProgress();
-
-    // Trigger theme variables to revert when exiting contact section upwards
-    ScrollTrigger.create({
-      trigger: '#contact-section',
-      start: 'top bottom',
-      onEnter: () => {
-        if (isTransitioningRef.current) return;
-        contactThemeResetDelay?.kill();
-        syncTween(null);
-      },
-      onLeaveBack: () => {
-        if (isTransitioningRef.current) return;
-        contactThemeResetDelay?.kill();
-        syncTween(gsap.delayedCall(0.4, () => {
-          gsap.to('html', {
-            ...getSectionTheme('work'),
-            '--about-env-opacity': '1',
-            duration: 0.3,
-          });
-          syncTween(null);
-        }));
+    const handleWheel = (event: WheelEvent) => {
+      if (updateContactByDelta(event.deltaY)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
       }
-    });
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY;
+      const previousY = touchStartYRef.current;
+
+      if (currentY === undefined || previousY === null) return;
+
+      const deltaY = previousY - currentY;
+      touchStartYRef.current = currentY;
+
+      if (updateContactByDelta(deltaY)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchStartYRef.current = null;
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
 
     const handleScrollUpdate = () => {
       const scrollY = window.scrollY;
@@ -258,9 +319,11 @@ export default function PinnedSections() {
 
     return () => {
       window.removeEventListener('scroll', handleScrollUpdate);
-      window.removeEventListener('resize', updateContactOverlayProgress);
-      contactThemeResetDelay?.kill();
-      syncTween(null);
+      window.removeEventListener('wheel', handleWheel, { capture: true });
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove, { capture: true });
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
       ScrollTrigger.getAll().forEach((st) => st.kill());
       contactScene.destroy();
       aboutController.destroy();
@@ -270,7 +333,7 @@ export default function PinnedSections() {
         delete portfolioWindow.__isTransitioning;
       }
     };
-  }, []);
+  }, [setContactProgress]);
 
   return (
     <div className="w-full relative bg-[var(--color-bg)]">
@@ -297,18 +360,7 @@ export default function PinnedSections() {
         <ProjectShowcase />
       </div>
 
-      <div
-        id="contact-section"
-        ref={contactScrollSpacerRef}
-        className="w-full relative overflow-visible"
-        style={{
-          height: '64vh',
-          minHeight: '480px',
-          backgroundColor: '#F6F4F1',
-        }}
-      >
-        <Contact />
-      </div>
+      <Contact />
 
       {/* Floating Debug Scroll Ruler */}
       <div
