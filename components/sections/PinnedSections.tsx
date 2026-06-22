@@ -32,7 +32,7 @@ const CONTACT_OVERSCROLL_DISTANCE = 1100;
 const CONTACT_MAX_PROGRESS_STEP = 0.12;
 const CONTACT_PROGRESS_LERP = 0.12;
 const CONTACT_PROGRESS_EPSILON = 0.0015;
-const CONTACT_UNLOCK_PROGRESS = 0.1;
+const CONTACT_UNLOCK_PROGRESS = 0;
 const BOTTOM_LOCK_EPSILON = 4;
 
 function getMainScrollBottom() {
@@ -332,15 +332,6 @@ export default function PinnedSections() {
         deltaY / CONTACT_OVERSCROLL_DISTANCE
       );
       const nextProgress = progress + progressDelta;
-
-      if (deltaY < 0 && nextProgress <= CONTACT_UNLOCK_PROGRESS) {
-        if (prefersReducedMotionRef.current) {
-          setContactTargetProgress(0, { immediate: true });
-        } else {
-          setContactTargetProgress(nextProgress);
-        }
-        return false;
-      }
 
       if (prefersReducedMotionRef.current) {
         setContactTargetProgress(nextProgress, { immediate: true });
