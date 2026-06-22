@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { SlotText } from 'slot-text/react';
+import { gsap } from '@/lib/gsap';
 import type { PortfolioTransitionPhase } from './PortfolioExperienceContext';
 
 type CurtainTransitionLayerProps = {
@@ -10,6 +10,19 @@ type CurtainTransitionLayerProps = {
   onCovered(): void;
   onRevealed(): void;
 };
+
+const BRAND_TITLE = 'CHANIAGO STUDIO';
+const ROLL_STEP_COUNT = 5;
+const ROLL_DURATION = 1.08;
+const ROLL_START_DELAY = 0.08;
+const ROLL_STAGGER = 0.014;
+const CHARACTER_HEIGHT_EM = 0.92;
+
+function getRollSequence(char: string) {
+  if (char === ' ') return [' '];
+
+  return Array.from({ length: ROLL_STEP_COUNT + 1 }, () => char);
+}
 
 export default function CurtainTransitionLayer({
   phase,
@@ -22,13 +35,13 @@ export default function CurtainTransitionLayer({
   const coverHoldTimerRef = useRef<number | null>(null);
   const isCovering = phase === 'covering';
   const isRevealing = phase === 'revealing';
-  const [slotTextValue, setSlotTextValue] = useState('Loading');
+  const brandRef = useRef<HTMLDivElement>(null);
+  const reelRefs = useRef<Array<HTMLSpanElement | null>>([]);
 
   useEffect(() => {
     if (phase === 'idle') {
       coveredNotifiedRef.current = false;
       revealedNotifiedRef.current = false;
-      setSlotTextValue('Loading');
       if (coverHoldTimerRef.current !== null) {
         window.clearTimeout(coverHoldTimerRef.current);
         coverHoldTimerRef.current = null;
@@ -37,14 +50,36 @@ export default function CurtainTransitionLayer({
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== 'idle') {
-      setSlotTextValue('Loading');
-      const timer = window.setTimeout(() => {
-        setSlotTextValue('Transit');
-      }, prefersReducedMotion ? 180 : 720);
+    if (phase === 'idle') return;
 
-      return () => window.clearTimeout(timer);
-    }
+    const ctx = gsap.context(() => {
+      gsap.set(brandRef.current, {
+        opacity: 1,
+        y: 0,
+      });
+
+      reelRefs.current.forEach((reel, index) => {
+        if (!reel) return;
+
+        const rollsUp = index % 2 === 0;
+        const travel = ROLL_STEP_COUNT * CHARACTER_HEIGHT_EM;
+
+        gsap.set(reel, {
+          y: prefersReducedMotion || rollsUp ? '0em' : `${-travel}em`,
+        });
+
+        if (prefersReducedMotion) return;
+
+        gsap.to(reel, {
+          y: rollsUp ? `${-travel}em` : '0em',
+          duration: ROLL_DURATION + (index % 4) * 0.04,
+          delay: ROLL_START_DELAY + index * ROLL_STAGGER,
+          ease: 'power4.out',
+        });
+      });
+    }, brandRef);
+
+    return () => ctx.revert();
   }, [phase, prefersReducedMotion]);
 
   useEffect(() => {
@@ -124,29 +159,83 @@ export default function CurtainTransitionLayer({
           userSelect: 'none',
         }}
       >
-        <SlotText
-          text={slotTextValue}
-          options={{
-            direction: 'up',
-            stagger: prefersReducedMotion ? 0 : 56,
-            duration: prefersReducedMotion ? 0 : 420,
-            exitOffset: 36,
-            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-            bounce: 0.45,
-            skipUnchanged: true,
-            interrupt: true,
-          }}
+        <div
+          ref={brandRef}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'clamp(1px, 0.2vw, 3px)',
+            maxWidth: 'calc(100vw - 48px)',
+            paddingInline: '24px',
             color: 'rgba(255, 255, 255, 0.98)',
-            fontFamily: 'var(--font-mono, monospace)',
-            fontSize: 'clamp(42px, 8vw, 120px)',
-            fontWeight: 800,
-            letterSpacing: '0.12em',
+            fontFamily: 'var(--font-jost), sans-serif',
+            fontSize: 'clamp(28px, 5.6vw, 88px)',
+            fontWeight: 700,
+            letterSpacing: '0',
             textTransform: 'uppercase',
-            lineHeight: 1,
-            transform: 'translateY(-1px)',
+            lineHeight: 0.9,
+            whiteSpace: 'nowrap',
+            willChange: 'transform',
           }}
-        />
+        >
+          {Array.from(BRAND_TITLE).map((char, index) => {
+            const sequence = getRollSequence(char);
+
+            if (char === ' ') {
+              return (
+                <span
+                  key={`${char}-${index}`}
+                  aria-hidden="true"
+                  style={{
+                    width: '0.36em',
+                    flex: '0 0 0.36em',
+                  }}
+                />
+              );
+            }
+
+            return (
+              <span
+                key={`${char}-${index}`}
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  height: '0.92em',
+                  minWidth: '0.56em',
+                  overflow: 'hidden',
+                  textAlign: 'center',
+                  verticalAlign: 'top',
+                }}
+              >
+                <span
+                  ref={(node) => {
+                    reelRefs.current[index] = node;
+                  }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    willChange: 'transform',
+                  }}
+                >
+                  {sequence.map((item, sequenceIndex) => (
+                    <span
+                      key={`${item}-${sequenceIndex}`}
+                      style={{
+                        display: 'block',
+                        height: '0.92em',
+                        lineHeight: 0.9,
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            );
+          })}
+        </div>
       </div>
     </motion.div>
   );

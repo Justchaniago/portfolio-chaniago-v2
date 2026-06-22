@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto, Marck_Script } from "next/font/google";
+import { Playfair_Display, DM_Sans, JetBrains_Mono, Noto_Sans_PhagsPa, Roboto, Marck_Script, Fredoka, Jost } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import MorphNav from "@/components/layout/MorphNav";
@@ -42,6 +42,16 @@ const roboto = Roboto({
   weight: ["400", "500"],
 });
 
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin"],
+});
+
+const jost = Jost({
+  variable: "--font-jost",
+  subsets: ["latin"],
+});
+
 const bitcountGridSingle = localFont({
   src: "./fonts/bitcount-grid-single-latin.woff2",
   variable: "--font-bitcount",
@@ -50,7 +60,7 @@ const bitcountGridSingle = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio — Fullstack Creative Developer",
+  title: "Chaniago Studio",
   description: "Dark-first · Editorial · AI-assisted · Precision meets craft.",
 };
 
@@ -62,7 +72,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${roboto.variable} ${bitcountGridSingle.variable} ${marckScript.variable} h-full antialiased`}
+      className={`${playfairDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${notoPhagsPa.variable} ${roboto.variable} ${fredoka.variable} ${jost.variable} ${bitcountGridSingle.variable} ${marckScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-void text-white">
         <LoaderWrapper />

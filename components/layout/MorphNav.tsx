@@ -57,16 +57,12 @@ export default function MorphNav() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<'hero' | 'work' | 'about' | 'contact'>('hero');
   const [hovered, setHovered] = useState(false);
   const themeColorRef = useRef<string>('#FFFFFF');
 
   const activeSectionId = portfolioExperience?.activeSection ?? activeSection;
-  const sectionCollapsed = portfolioExperience
-    ? portfolioExperience.activeSection !== 'hero'
-    : isCollapsed;
-  const isReallyCollapsed = sectionCollapsed || navState !== 'closed';
+  const isReallyCollapsed = true;
 
   useEffect(() => {
     return () => {
@@ -166,7 +162,6 @@ export default function MorphNav() {
         activeSection: 'hero' | 'work' | 'about' | 'contact';
       }>).detail.activeSection;
       setActiveSection(nextActiveSection);
-      setIsCollapsed(nextActiveSection !== 'hero');
     };
 
     window.addEventListener('activeSectionChange', handleActiveSectionChange);
@@ -313,27 +308,31 @@ export default function MorphNav() {
         {/* Logo */}
         <button
           type="button"
-          aria-label="Home"
+          aria-label="Chaniago Studio home"
           onClick={(e) => handleNavigationClick(e, '/')}
           style={{
             appearance: 'none',
             border: 0,
             background: 'transparent',
             padding: 0,
-            fontFamily: 'var(--font-marck-script, cursive)',
-            fontSize: '26px',
-            fontWeight: 400,
+            fontFamily: 'var(--font-jost), sans-serif',
+            fontSize: '20px',
+            fontWeight: 700,
             color: 'var(--color-text-1)',
-            letterSpacing: 'normal',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
             textDecoration: 'none',
             pointerEvents: 'auto',
             zIndex: 1001,
             mixBlendMode: isOpen ? 'difference' : 'normal',
-            transition: 'color 0.4s ease-out, mix-blend-mode 0s',
             cursor: 'pointer',
+            position: 'absolute',
+            left: activeSectionId === 'hero' ? '50%' : '28px',
+            transform: activeSectionId === 'hero' ? 'translate(-50%, 0)' : 'translate(0, 0)',
+            transition: 'left 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease-out, mix-blend-mode 0s',
           }}
         >
-          justchaniago
+          CHANIAGO STUDIO
         </button>
       </nav>
 

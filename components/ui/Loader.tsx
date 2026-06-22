@@ -7,19 +7,28 @@ interface LoaderProps {
   onComplete: () => void;
 }
 
+const BRAND_TITLE = 'CHANIAGO STUDIO';
+const DARK_CANVAS = '#060606';
+const ROLL_STEP_COUNT = 8;
+const ROLL_DURATION = 2.75;
+const ROLL_START_DELAY = 0.24;
+const ROLL_STAGGER = 0.022;
+const ROLL_SETTLE_HOLD = 0.5;
+const LINE_FILL_DURATION = 3.05;
+const CHARACTER_HEIGHT_EM = 0.92;
+
+function getRollSequence(char: string) {
+  if (char === ' ') return [' '];
+
+  return Array.from({ length: ROLL_STEP_COUNT + 1 }, () => char);
+}
+
 export default function Loader({ onComplete }: LoaderProps) {
-  const overlayRef       = useRef<HTMLDivElement>(null);
-  const textRef          = useRef<HTMLDivElement>(null);
-  const percentRef       = useRef<HTMLSpanElement>(null);
-  
-  const risingGroupRef   = useRef<SVGGElement>(null);
-  const pullGroupRef     = useRef<SVGGElement>(null);
-  
-  const risePhosphorRef  = useRef<SVGPathElement>(null);
-  const riseWhiteRef     = useRef<SVGPathElement>(null);
-  
-  const pullPhosphorRef  = useRef<SVGPathElement>(null);
-  const pullWhiteRef     = useRef<SVGPathElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const lineFillRef = useRef<HTMLDivElement>(null);
+  const reelRefs = useRef<Array<HTMLSpanElement | null>>([]);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -27,240 +36,249 @@ export default function Loader({ onComplete }: LoaderProps) {
       return;
     }
 
-    // Pre-load the critical portrait image to browser cache
-    // This ensures it is instantly available for rendering the moment the curtain lifts
     let imageLoaded = false;
     const img = new Image();
     img.src = '/images/portrait.png';
-    const checkImage = () => {
-      if (img.complete) {
+
+    if (img.complete) {
+      imageLoaded = true;
+    } else {
+      img.onload = () => {
         imageLoaded = true;
-      } else {
-        img.onload = () => { imageLoaded = true; };
-        img.onerror = () => { imageLoaded = true; }; // Fail-safe to avoid loading freeze
-      }
-    };
-    checkImage();
+      };
+      img.onerror = () => {
+        imageLoaded = true;
+      };
+    }
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        onComplete: () => {
-          onComplete();
-        }
+      const tl = gsap.timeline();
+
+      gsap.set(brandRef.current, {
+        opacity: 0,
+        y: 10,
+        scale: 0.985,
       });
 
-      const progressObj = { value: 0 };
+      gsap.set(lineRef.current, {
+        opacity: 0,
+        y: 8,
+      });
 
-      // 1. Technical Percentage count-up (synced with liquid rise)
-      gsap.to(progressObj, {
-        value: 100,
-        duration: 4.0, // Slow, heavy liquid rise pacing
-        ease: 'power1.inOut',
-        onUpdate: () => {
-          const p = Math.round(progressObj.value);
-          if (percentRef.current) {
-            percentRef.current.textContent = `[ ${p.toString().padStart(2, '0')}% ]`;
+      gsap.set(lineFillRef.current, {
+        scaleX: 0,
+        transformOrigin: 'left center',
+      });
+
+      reelRefs.current.forEach((reel, index) => {
+        if (!reel) return;
+
+        const rollsUp = index % 2 === 0;
+        const travel = ROLL_STEP_COUNT * CHARACTER_HEIGHT_EM;
+
+        gsap.set(reel, {
+          y: rollsUp ? '0em' : `${-travel}em`,
+          opacity: 0,
+        });
+
+        const startTime = ROLL_START_DELAY + index * ROLL_STAGGER;
+
+        tl.to(reel, {
+          y: rollsUp ? `${-travel}em` : '0em',
+          duration: ROLL_DURATION + (index % 4) * 0.08,
+          ease: 'power4.out',
+        }, startTime);
+
+        tl.to(reel, {
+          opacity: 1,
+          duration: 0.25,
+          ease: 'power2.out',
+        }, startTime);
+      });
+
+      tl.to(brandRef.current, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.42,
+        ease: 'power3.out',
+      }, 0);
+
+      tl.to(lineRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.34,
+        ease: 'power2.out',
+      }, 0.1);
+
+      tl.to(lineFillRef.current, {
+        scaleX: 1,
+        duration: LINE_FILL_DURATION,
+        ease: 'power3.out',
+      }, 0.22);
+
+      tl.to({}, { duration: ROLL_SETTLE_HOLD });
+
+      tl.add(() => {
+        const revealWhenReady = () => {
+          if (!imageLoaded) {
+            requestAnimationFrame(revealWhenReady);
+            return;
           }
-        },
-        onComplete: () => {
-          // Wait for assets to be 100% loaded before starting the curtain pull-up!
-          // This guarantees a completely seamless, pop-in-free transition reveal.
-          const verifyAndTrigger = () => {
-            if (imageLoaded) {
-              triggerShutterTransition();
-            } else {
-              requestAnimationFrame(verifyAndTrigger);
-            }
-          };
-          verifyAndTrigger();
-        }
+
+          gsap.timeline({ onComplete })
+            .to(brandRef.current, {
+              opacity: 0,
+              y: -12,
+              scale: 0.985,
+              duration: 0.34,
+              ease: 'power2.out',
+            }, 0)
+            .to(overlayRef.current, {
+              opacity: 0,
+              duration: 0.62,
+              ease: 'power2.inOut',
+            }, 0.12);
+        };
+
+        revealWhenReady();
       });
-
-      // === PHASE 1: RISING FLUID LIQUID ===
-      // Set initial visibility states
-      gsap.set(risingGroupRef.current, { display: 'block' });
-      gsap.set(pullGroupRef.current, { display: 'none' });
-      
-      // Initialize pull-up positions immediately to cover the screen when displayed
-      gsap.set(pullPhosphorRef.current, { y: 110 });
-      gsap.set(pullWhiteRef.current, { y: 110 });
-
-      // Horizontal wave current loops (undulating in opposite directions)
-      gsap.to(risePhosphorRef.current, { x: 100, duration: 2.8, ease: 'none', repeat: -1 });
-      gsap.to(riseWhiteRef.current, { x: -100, duration: 3.4, ease: 'none', repeat: -1 });
-
-      // Vertical liquid rise from y:110 (hidden below screen) to y:-15 (fully covering screen)
-      // Phosphor liquid rises slightly ahead to create organic volumetric color layering
-      tl.fromTo(risePhosphorRef.current,
-        { y: 110 },
-        { y: -15, duration: 4.0, ease: 'power1.inOut' }
-      );
-      
-      tl.fromTo(riseWhiteRef.current,
-        { y: 110 },
-        { y: -15, duration: 4.2, ease: 'power1.inOut' },
-        '-=3.8' // White wave trails slightly behind, submerging typography
-      );
-
-      // Settle hold at full white coverage
-      tl.to({}, { duration: 0.3 });
-
-      // === PHASE 2: CHROMATIC LIQUID CURTAIN PULL-UP ===
-      function triggerShutterTransition() {
-        // Swap groups instantly while the screen is fully filled with white
-        gsap.set(risingGroupRef.current, { display: 'none' });
-        gsap.set(pullGroupRef.current, { display: 'block' });
-        
-        // Capture current playhead time and add a label to anchor immediate animations
-        const currentTime = tl.time();
-        tl.addLabel('trigger', currentTime);
-
-        // Smoothly fade out the counter text instead of instantly hiding it
-        tl.to(textRef.current, {
-          opacity: 0,
-          duration: 0.3,
-          ease: 'power1.out'
-        }, 'trigger');
-        
-        // Start infinite horizontal wave undulations on the pull-up curtains
-        gsap.to(pullPhosphorRef.current, { x: -100, duration: 2.6, ease: 'none', repeat: -1 });
-        gsap.to(pullWhiteRef.current, { x: 100, duration: 3.2, ease: 'none', repeat: -1 });
-
-        // Pull up (Phosphor green curtain rises first, followed immediately by white curtain)
-        // This offset creates a mind-blowing chromatic liquid tear-away edge revealing the home page!
-        tl.fromTo(pullPhosphorRef.current,
-          { y: 110 },
-          { y: -15, duration: 1.6, ease: 'power3.inOut' },
-          'trigger'
-        );
-
-        tl.fromTo(pullWhiteRef.current,
-          { y: 110 },
-          { y: -15, duration: 1.7, ease: 'power3.inOut' },
-          'trigger+=0.15' // Sucks up and reveals the dark main screen underneath with high fluid tension
-        );
-
-        // Fade out overlay wrapper synchronously at the very end
-        tl.to(overlayRef.current, {
-          opacity: 0,
-          duration: 0.6,
-          ease: 'power1.out',
-        }, 'trigger+=1.35');
-      }
-
-    });
+    }, overlayRef);
 
     return () => ctx.revert();
   }, [onComplete]);
 
-  // ── Polish notes ──
-  // - Responsive percentage-based SVG coords (0 to 100) ensure zero layout shifts on any screen.
-  // - SVG uses preserveAspectRatio="none" to stretch and cover the full viewport like a liquid sheet.
-  // - Dual wave offsets create a high-contrast chromatic tearing effect (coral leading white).
-
   return (
     <div
       ref={overlayRef}
-      role="progressbar"
-      aria-label="Loading creative portfolio"
+      role="status"
+      aria-label="Loading Chaniago Studio"
       style={{
-        position:       'fixed',
-        inset:          0,
-        backgroundColor:'#060606', // Void base color
-        zIndex:         99999,
-        display:        'flex',
-        alignItems:     'center',
-        justifyContent: 'center',
-        overflow:       'hidden',
-        pointerEvents:  'all',
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: DARK_CANVAS,
+        zIndex: 2147483647,
+        display: 'grid',
+        placeItems: 'center',
+        overflow: 'hidden',
+        pointerEvents: 'all',
+        isolation: 'isolate',
       }}
     >
-      {/* Centered Minimal Brand Typography (Inverted dynamically by rising fluid) */}
       <div
-        ref={textRef}
+        aria-hidden="true"
         style={{
-          position:      'absolute',
-          zIndex:        3, // On top of the SVG liquid layers
-          display:       'flex',
+          display: 'flex',
           flexDirection: 'column',
-          alignItems:    'center',
-          gap:           '10px',
-          fontFamily:    'var(--font-mono, monospace)',
-          pointerEvents: 'none',
-          willChange:    'transform, opacity',
-          mixBlendMode:  'difference', // Dynamic color-inversion masking
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 'clamp(18px, 3.4vw, 34px)',
+          width: '100%',
         }}
       >
-        <span
+        <div
+          ref={brandRef}
           style={{
-            fontSize:      '13px',
-            fontWeight:    700,
-            letterSpacing: '0.22em',
-            color:         '#FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'clamp(1px, 0.2vw, 3px)',
+            maxWidth: 'calc(100vw - 48px)',
+            paddingInline: '24px',
+            color: '#FFFFFF',
+            fontFamily: 'var(--font-jost), sans-serif',
+            fontSize: 'clamp(28px, 5.6vw, 88px)',
+            fontWeight: 700,
+            letterSpacing: '0',
+            lineHeight: 0.9,
             textTransform: 'uppercase',
-            opacity:       0.9,
+            whiteSpace: 'nowrap',
+            willChange: 'opacity, transform',
           }}
         >
-          JUSTCHANIAGO
-        </span>
-        <span
-          ref={percentRef}
+          {Array.from(BRAND_TITLE).map((char, index) => {
+            const sequence = getRollSequence(char);
+
+            if (char === ' ') {
+              return (
+                <span
+                  key={`${char}-${index}`}
+                  aria-hidden="true"
+                  style={{
+                    width: '0.36em',
+                    flex: '0 0 0.36em',
+                  }}
+                />
+              );
+            }
+
+            return (
+              <span
+                key={`${char}-${index}`}
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  height: '0.92em',
+                  minWidth: '0.56em',
+                  overflow: 'hidden',
+                  textAlign: 'center',
+                  verticalAlign: 'top',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <span
+                  ref={(node) => {
+                    reelRefs.current[index] = node;
+                  }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    willChange: 'transform',
+                  }}
+                >
+                  {sequence.map((item, sequenceIndex) => (
+                    <span
+                      key={`${item}-${sequenceIndex}`}
+                      style={{
+                        display: 'block',
+                        height: '0.92em',
+                        lineHeight: 0.9,
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+
+        <div
+          ref={lineRef}
           style={{
-            fontSize:      '10px',
-            color:         'rgba(255, 255, 255, 0.35)',
-            letterSpacing: '0.1em',
+            position: 'relative',
+            width: 'clamp(132px, 28vw, 420px)',
+            height: '1px',
+            overflow: 'hidden',
+            background: 'rgba(255, 255, 255, 0.16)',
+            willChange: 'opacity, transform',
           }}
         >
-          [ 00% ]
-        </span>
+          <div
+            ref={lineFillRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(255, 255, 255, 0.92)',
+              transform: 'scaleX(0)',
+              transformOrigin: 'left center',
+              willChange: 'transform',
+            }}
+          />
+        </div>
       </div>
-
-      {/* SVG Canvas for Full-Screen Liquid Physics */}
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none" // Stretches vector paths to cover full screen responsive
-        style={{
-          position:      'absolute',
-          inset:         0,
-          width:         '100vw',
-          height:        '100vh',
-          zIndex:        2, // On top of typography
-          pointerEvents: 'none',
-          overflow:      'visible',
-        }}
-      >
-        {/* === GROUP 1: RISING FLUID (Top wavy block) === */}
-        <g ref={risingGroupRef}>
-          {/* Translucent Phosphor Wave */}
-          <path
-            ref={risePhosphorRef}
-            d="M -100 0 C -70 -5 -30 5 0 0 C 30 -5 70 5 100 0 C 130 -5 170 5 200 0 L 200 115 L -100 115 Z"
-            fill="rgba(249, 92, 75, 0.9)" // Coral
-          />
-          {/* Solid White Wave */}
-          <path
-            ref={riseWhiteRef}
-            d="M -100 0 C -75 -6 -25 6 0 0 C 25 -6 75 6 100 0 C 125 -6 175 6 200 0 L 200 115 L -100 115 Z"
-            fill="#FFFFFF" // Solid White
-          />
-        </g>
-
-        {/* === GROUP 2: PULL-UP CURTAIN (Bottom wavy block) === */}
-        <g ref={pullGroupRef}>
-          {/* Translucent Phosphor Curtain */}
-          <path
-            ref={pullPhosphorRef}
-            d="M -100 -115 L 200 -115 L 200 0 C 170 6 130 -6 100 0 C 70 6 30 -6 0 0 C -30 6 -70 -6 -100 0 Z"
-            fill="rgba(249, 92, 75, 0.9)" // Coral
-          />
-          {/* Solid White Curtain */}
-          <path
-            ref={pullWhiteRef}
-            d="M -100 -115 L 200 -115 L 200 0 C 175 5 125 -5 100 0 C 75 5 25 -5 0 0 C -25 5 -75 -5 -100 0 Z"
-            fill="#FFFFFF" // Solid White
-          />
-        </g>
-      </svg>
     </div>
   );
 }
