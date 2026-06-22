@@ -231,9 +231,12 @@ export function createContactScene(): ContactScene {
       const contentProgress = rawContentProgress <= CONTENT_REVEAL_DEADZONE
         ? 0
         : gsap.utils.clamp(0, 1, (rawContentProgress - CONTENT_REVEAL_DEADZONE) / (1 - CONTENT_REVEAL_DEADZONE));
+      const shouldHoldPanel = contactBackdropActive && clampedProgress > 0;
 
       gsap.set('.contact-section-container', {
-        yPercent: contentProgress > 0 ? 0 : (1 - easedPanelProgress) * 100,
+        yPercent: shouldHoldPanel || contentProgress > 0
+          ? 0
+          : (1 - easedPanelProgress) * 100,
         opacity: 1,
         visibility: 'visible',
       });
