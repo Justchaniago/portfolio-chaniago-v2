@@ -42,6 +42,7 @@ export function createContactScene(): ContactScene {
   let contentVisible = false;
   let releaseFrame: number | null = null;
   let contactBackdropActive = false;
+  let previousProgress = 0;
   const contactResetTargets = [
     '.contact-content-wrapper',
     '.contact-utility-link',
@@ -139,6 +140,7 @@ export function createContactScene(): ContactScene {
 
   const setHidden = () => {
     cancelReleaseFrame();
+    previousProgress = 0;
     gsap.set('.contact-section-container', {
       opacity: 1,
       visibility: 'visible',
@@ -231,7 +233,35 @@ export function createContactScene(): ContactScene {
       const contentProgress = rawContentProgress <= CONTENT_REVEAL_DEADZONE
         ? 0
         : gsap.utils.clamp(0, 1, (rawContentProgress - CONTENT_REVEAL_DEADZONE) / (1 - CONTENT_REVEAL_DEADZONE));
+      const isReverseExit = contactBackdropActive && clampedProgress < previousProgress;
       const shouldHoldPanel = contactBackdropActive && clampedProgress > 0;
+
+      if (isReverseExit) {
+        if (clampedProgress <= 0) {
+          previousProgress = clampedProgress;
+          setState('HIDDEN');
+          setHidden();
+          return;
+        }
+
+        contentVisible = true;
+        setContactBackdrop(true);
+        gsap.set('.contact-section-container', {
+          yPercent: (1 - clampedProgress) * 100,
+          opacity: 1,
+          visibility: 'visible',
+        });
+        gsap.set('.contact-content-wrapper', {
+          opacity: 1,
+          visibility: 'visible',
+        });
+        gsap.set('.contact-title-debug', { opacity: 1 });
+        revealTimeline?.progress(1).pause();
+        syncInteractivity(clampedProgress, 1);
+        setState('EXITING');
+        previousProgress = clampedProgress;
+        return;
+      }
 
       gsap.set('.contact-section-container', {
         yPercent: shouldHoldPanel || contentProgress > 0
@@ -247,12 +277,14 @@ export function createContactScene(): ContactScene {
         syncInteractivity(clampedProgress, contentProgress);
 
         if (clampedProgress <= 0) {
+          previousProgress = clampedProgress;
           setState('HIDDEN');
           setHidden();
           return;
         }
 
         setState('ENTERING');
+        previousProgress = clampedProgress;
         return;
       }
 
@@ -267,17 +299,20 @@ export function createContactScene(): ContactScene {
       syncInteractivity(clampedProgress, contentProgress);
 
       if (clampedProgress <= 0) {
+        previousProgress = clampedProgress;
         setState('HIDDEN');
         setHidden();
         return;
       }
 
       if (clampedProgress >= 1) {
+        previousProgress = clampedProgress;
         scene.activate();
         return;
       }
 
       setState('ENTERING');
+      previousProgress = clampedProgress;
     },
 
     enter() {
