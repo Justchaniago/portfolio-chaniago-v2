@@ -81,7 +81,9 @@ export function createContactScene(): ContactScene {
     }
   };
 
-  const resetContent = (options: { force?: boolean; notify?: boolean } = {}) => {
+  const resetContent = (
+    options: { force?: boolean; notify?: boolean; resetBackdrop?: boolean } = {}
+  ) => {
     if (!options.force && !contentVisible) return;
 
     contentVisible = false;
@@ -119,7 +121,9 @@ export function createContactScene(): ContactScene {
       });
     }
 
-    setContactBackdrop(false);
+    if (options.resetBackdrop !== false) {
+      setContactBackdrop(false);
+    }
 
     if (options.notify !== false && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('contactSceneReset'));
@@ -236,7 +240,7 @@ export function createContactScene(): ContactScene {
 
       if (contentProgress <= 0) {
         revealTimeline?.progress(0).pause();
-        resetContent();
+        resetContent({ resetBackdrop: clampedProgress <= 0 });
         syncInteractivity(clampedProgress, contentProgress);
 
         if (clampedProgress <= 0) {

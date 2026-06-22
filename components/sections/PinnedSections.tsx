@@ -289,7 +289,11 @@ export default function PinnedSections() {
         <About />
       </div>
 
-      <div id="work-section" className="w-full min-h-screen relative overflow-hidden">
+      <div
+        id="work-section"
+        className="w-full min-h-screen relative overflow-hidden"
+        style={{ backgroundColor: '#F6F4F1' }}
+      >
         <ProjectShowcase />
       </div>
 
@@ -300,6 +304,7 @@ export default function PinnedSections() {
         style={{
           height: '64vh',
           minHeight: '480px',
+          backgroundColor: '#050505',
         }}
       >
         <Contact />
