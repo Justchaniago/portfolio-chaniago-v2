@@ -232,8 +232,14 @@ export function createContactScene(): ContactScene {
         });
 
         if (contentProgress <= 0) {
+          contentVisible = true;
+          gsap.set('.contact-content-wrapper', {
+            opacity: 1,
+            visibility: 'visible',
+            pointerEvents: 'none',
+          });
+          gsap.set('.contact-title-debug', { opacity: 1 });
           revealTimeline?.progress(0).pause();
-          resetContent({ resetBackdrop: false });
           syncInteractivity(clampedProgress, 0);
         } else {
           contentVisible = true;
