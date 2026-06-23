@@ -126,19 +126,63 @@ export default function Loader({ onComplete }: LoaderProps) {
             return;
           }
 
-          gsap.timeline({ onComplete })
-            .to(brandRef.current, {
-              opacity: 0,
-              y: -12,
-              scale: 0.985,
-              duration: 0.34,
-              ease: 'power2.out',
-            }, 0)
-            .to(overlayRef.current, {
-              opacity: 0,
-              duration: 0.62,
-              ease: 'power2.inOut',
-            }, 0.12);
+          const targetLogo = document.querySelector('nav button[aria-label="Chaniago Studio home"]');
+          if (targetLogo && brandRef.current && overlayRef.current) {
+            const brandRect = brandRef.current.getBoundingClientRect();
+            const logoRect = targetLogo.getBoundingClientRect();
+
+            const scaleTarget = logoRect.width / brandRect.width;
+            const brandCenterX = brandRect.left + brandRect.width / 2;
+            const brandCenterY = brandRect.top + brandRect.height / 2;
+            const logoCenterX = logoRect.left + logoRect.width / 2;
+            const logoCenterY = logoRect.top + logoRect.height / 2;
+
+            const deltaX = logoCenterX - brandCenterX;
+            const deltaY = logoCenterY - brandCenterY;
+
+            gsap.timeline({
+              onComplete: () => {
+                if (targetLogo) {
+                  (targetLogo as HTMLElement).style.opacity = '1';
+                  (targetLogo as HTMLElement).style.pointerEvents = 'auto';
+                }
+                onComplete();
+              }
+            })
+              .to(brandRef.current, {
+                x: deltaX,
+                y: deltaY,
+                scale: scaleTarget,
+                transformOrigin: 'center center',
+                duration: 0.85,
+                ease: 'power3.inOut',
+              }, 0)
+              .to(lineRef.current, {
+                opacity: 0,
+                y: 12,
+                duration: 0.45,
+                ease: 'power2.inOut',
+              }, 0)
+              .to(overlayRef.current, {
+                backgroundColor: 'rgba(6, 6, 6, 0)',
+                duration: 0.75,
+                ease: 'power2.inOut',
+              }, 0.15);
+          } else {
+            gsap.timeline({ onComplete })
+              .to(brandRef.current, {
+                opacity: 0,
+                y: -12,
+                scale: 0.985,
+                duration: 0.34,
+                ease: 'power2.out',
+              }, 0)
+              .to(overlayRef.current, {
+                opacity: 0,
+                duration: 0.62,
+                ease: 'power2.inOut',
+              }, 0.12);
+          }
         };
 
         revealWhenReady();

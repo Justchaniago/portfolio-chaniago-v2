@@ -57,12 +57,28 @@ export default function MorphNav() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuTheme, setMenuTheme] = useState<'light-curtain' | 'dark-curtain'>('light-curtain');
-  const [activeSection, setActiveSection] = useState<'hero' | 'work' | 'about' | 'contact'>('hero');
   const [hovered, setHovered] = useState(false);
+  const [logoVisible, setLogoVisible] = useState(false);
   const themeColorRef = useRef<string>('#FFFFFF');
 
-  const activeSectionId = portfolioExperience?.activeSection ?? activeSection;
+  const activeSectionId = portfolioExperience?.activeSection ?? 'hero';
   const isReallyCollapsed = true;
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (document.documentElement.classList.contains('is-loaded')) {
+        setLogoVisible(true);
+      } else {
+        const handleLoaderComplete = () => {
+          setLogoVisible(true);
+        };
+        document.addEventListener('loaderComplete', handleLoaderComplete);
+        return () => {
+          document.removeEventListener('loaderComplete', handleLoaderComplete);
+        };
+      }
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -150,26 +166,6 @@ export default function MorphNav() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-
-  // Active section tracking for the virtual experience shell.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (portfolioExperience) return;
-
-    const handleActiveSectionChange = (e: Event) => {
-      const nextActiveSection = (e as CustomEvent<{
-        activeSection: 'hero' | 'work' | 'about' | 'contact';
-      }>).detail.activeSection;
-      setActiveSection(nextActiveSection);
-    };
-
-    window.addEventListener('activeSectionChange', handleActiveSectionChange);
-
-    return () => {
-      window.removeEventListener('activeSectionChange', handleActiveSectionChange);
-    };
-  }, [portfolioExperience]);
 
   const handleOpen = useCallback(() => {
     if (navState !== 'closed') return;
@@ -318,11 +314,12 @@ export default function MorphNav() {
             fontFamily: 'var(--font-jost), sans-serif',
             fontSize: '20px',
             fontWeight: 700,
-            color: 'var(--color-text-1)',
+            color: (activeSectionId === 'hero' || activeSectionId === 'contact') ? '#FFFFFF' : 'var(--color-text-1)',
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
             textDecoration: 'none',
-            pointerEvents: 'auto',
+            pointerEvents: logoVisible ? 'auto' : 'none',
+            opacity: logoVisible ? 1 : 0,
             zIndex: 1001,
             mixBlendMode: isOpen ? 'difference' : 'normal',
             cursor: 'pointer',

@@ -30,6 +30,7 @@ export default function NavRail() {
   const containerRef = useRef<HTMLDivElement>(null);
   const baseTargetYRef = useRef(0);
   const mouseYRef = useRef<number | null>(null);
+  const activeSection = portfolioExperience?.activeSection ?? 'hero';
 
   const y = useMotionValue(0);
   const scaleY = useMotionValue(1);
@@ -68,10 +69,8 @@ export default function NavRail() {
   }, [springY, scaleY, scaleX]);
 
   useEffect(() => {
-    if (portfolioExperience?.activeSection) {
-      moveIndicatorToIndex(getSectionIndex(portfolioExperience.activeSection));
-    }
-  }, [portfolioExperience?.activeSection]); // eslint-disable-line react-hooks/exhaustive-deps
+    moveIndicatorToIndex(getSectionIndex(activeSection));
+  }, [activeSection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -123,11 +122,9 @@ export default function NavRail() {
     portfolioExperience?.navigateTo(sectionId);
   };
 
-  const displayedActiveIndex = portfolioExperience
-    ? getSectionIndex(portfolioExperience.activeSection)
-    : 0;
+  const displayedActiveIndex = getSectionIndex(activeSection);
 
-  const isContactSection = portfolioExperience?.activeSection === 'contact';
+  const isContactSection = activeSection === 'contact';
 
   return (
     <div

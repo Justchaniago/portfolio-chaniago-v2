@@ -145,16 +145,6 @@ function PortfolioExperienceRuntime() {
   }, []);
 
   useEffect(() => {
-    (window as Window & { __activeSection?: PortfolioSectionId }).__activeSection =
-      activeSection;
-    window.dispatchEvent(
-      new CustomEvent('activeSectionChange', {
-        detail: { activeSection },
-      })
-    );
-  }, [activeSection]);
-
-  useEffect(() => {
     applySectionTheme(activeSection);
   }, [activeSection]);
 

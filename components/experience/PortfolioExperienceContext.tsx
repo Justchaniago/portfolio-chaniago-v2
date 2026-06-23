@@ -33,6 +33,7 @@ type PortfolioExperienceContextValue = {
   pendingSection: PortfolioSectionId;
   transitionPhase: PortfolioTransitionPhase;
   isTransitioning: boolean;
+  setActiveSection(sectionId: PortfolioSectionId): void;
   navigateTo(sectionId: PortfolioSectionId): void;
   markCovered(): void;
   markRevealed(): void;
@@ -54,22 +55,6 @@ export function PortfolioExperienceProvider({
     useState<PortfolioTransitionPhase>('idle');
 
   const isTransitioning = transitionPhase !== 'idle';
-
-  // Synchronize active section with the scroll-based activeSectionChange events
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleActiveSectionChange = (event: Event) => {
-      const sectionId = (event as CustomEvent).detail.activeSection as PortfolioSectionId;
-      setActiveSection(sectionId);
-    };
-
-    window.addEventListener('activeSectionChange', handleActiveSectionChange);
-
-    return () => {
-      window.removeEventListener('activeSectionChange', handleActiveSectionChange);
-    };
-  }, []);
 
   const navigateTo = useCallback(
     (sectionId: PortfolioSectionId) => {
@@ -111,6 +96,7 @@ export function PortfolioExperienceProvider({
       pendingSection,
       transitionPhase,
       isTransitioning,
+      setActiveSection,
       navigateTo,
       markCovered,
       markRevealed,
@@ -120,6 +106,7 @@ export function PortfolioExperienceProvider({
       pendingSection,
       transitionPhase,
       isTransitioning,
+      setActiveSection,
       navigateTo,
       markCovered,
       markRevealed,
